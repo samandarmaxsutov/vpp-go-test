@@ -1,0 +1,234 @@
+{{ template "base" . }}
+
+{{ define "routing_page" }}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">Static & Dynamic Routing</h4>
+
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="refreshRoutes()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRouteModal">
+                <i class="bi bi-plus-lg"></i> Create New Route
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <div class="input-group input-group-sm" style="max-width: 300px;">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" id="routeSearch" class="form-control bg-light border-start-0"
+                    placeholder="Search prefix or gateway...">
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="routingTable">
+                <thead class="bg-light text-muted small fw-bold text-uppercase">
+                    <tr>
+                        <th class="ps-3">Type</th>
+                        <th>Destination (Prefix)</th>
+                        <th>Gateway (Next Hop)</th>
+                        <th>Interface</th>
+                        <th>Distance/Metric</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="routeTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addRouteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">Add Static Route</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <form id="addRouteForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Destination Prefix</label>
+                        <input type="text" name="destination" class="form-control" placeholder="e.g., 10.10.10.0/24"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Gateway IP</label>
+                        <input type="text" name="gateway" class="form-control" placeholder="e.g., 192.168.1.1">
+                        <div class="form-text">Leave blank if directly connected.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Interface</label>
+                        <select name="sw_if_index" id="modalInterfaceSelect" class="form-select" required>
+                            <option value="">Loading interfaces...</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitRoute()">Add Route</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .route-icon {
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.7rem;
+    }
+
+    .bg-s {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+
+    /* Static */
+    .bg-c {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+
+    /* Connected */
+</style>
+
+<script>
+    // 1. Marshrutlarni yuklash (GET API)
+    async function refreshRoutes() {
+        const tbody = document.getElementById('routeTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Loading routes...</td></tr>';
+
+        try {
+            const res = await fetch('/api/routes');
+            const data = await res.json();
+
+            tbody.innerHTML = '';
+            data.forEach(route => {
+                const typeChar = route.protocol === 'connected' ? 'C' : 'S';
+                const typeClass = route.protocol === 'connected' ? 'bg-c' : 'bg-s';
+
+                tbody.innerHTML += `
+                <tr>
+                    <td class="ps-3"><div class="route-icon ${typeClass}">${typeChar}</div></td>
+                    <td><span class="fw-bold text-dark">${route.prefix}</span></td>
+                    <td><code>${route.next_hops.join(', ') || 'Directly Connected'}</code></td>
+                    <td><span class="badge bg-light text-dark border fw-normal">${route.interface}</span></td>
+                    <td><small class="text-muted">${route.distance}/${route.metric}</small></td>
+                    <td class="text-end pe-3">
+                        <button class="btn btn-sm text-danger" onclick="deleteRoute('${route.prefix}')" ${route.protocol === 'connected' ? 'disabled' : ''}>
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            });
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    // 2. Yangi marshrut qo'shish (POST API)
+    async function submitRoute() {
+        const form = document.getElementById('addRouteForm');
+        const formData = new FormData(form);
+        const rawData = Object.fromEntries(formData.entries());
+
+        // Backend kutingan formatga o'tkazamiz
+        const payload = {
+            destination: rawData.destination.trim(),
+            gateway: rawData.gateway.trim(),
+            // sw_if_index ni raqamga o'giramiz, chunki FormData hammasini string qiladi
+            sw_if_index: parseInt(rawData.sw_if_index)
+        };
+
+        if (!payload.destination) {
+            alert("Destination Prefix majburiy!");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/routes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('addRouteModal')).hide();
+                form.reset();
+                await refreshRoutes(); // Jadvalni yangilash
+                alert("Muvaffaqiyatli qo'shildi!");
+            } else {
+                const err = await res.json();
+                alert("Xato: " + err.error);
+            }
+        } catch (e) {
+            alert("Server bilan aloqa uzildi");
+        }
+    }
+
+    // 3. Modal uchun interfeyslarni yuklash
+    async function loadInterfaces() {
+        const select = document.getElementById('modalInterfaceSelect');
+        try {
+            const res = await fetch('/api/interfaces');
+            const data = await res.json();
+
+            select.innerHTML = '<option value="">Select Interface</option>';
+            data.forEach(iface => {
+                // VALUE sifatida iface.index (sw_if_index) yuborilishi shart!
+                select.innerHTML += `<option value="${iface.index}">${iface.name} (idx: ${iface.index})</option>`;
+            });
+        } catch (e) {
+            select.innerHTML = '<option>Error loading interfaces</option>';
+        }
+    }
+    // Qidiruv mantiqi
+    document.getElementById('routeSearch').addEventListener('input', function (e) {
+        const term = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#routeTableBody tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    });
+
+    // Modal ochilganda interfeyslarni yangilash
+    document.getElementById('addRouteModal').addEventListener('show.bs.modal', loadInterfaces);
+
+    async function deleteRoute(prefix) {
+        if (!confirm(`${prefix} marshrutini o'chirmoqchimisiz?`)) return;
+
+        try {
+            const res = await fetch(`/api/routes?prefix=${encodeURIComponent(prefix)}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert('Marshrut o\'chirildi');
+                refreshRoutes(); // Jadvalni yangilash
+            } else {
+                const err = await res.json();
+                alert("Xato: " + err.error);
+            }
+        } catch (e) {
+            alert("Server bilan aloqa uzildi");
+        }
+    }
+    // Sahifa yuklanganda marshrutlarni olish
+    refreshRoutes();
+</script>
+{{ end }}

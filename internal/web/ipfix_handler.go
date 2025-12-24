@@ -1,0 +1,128 @@
+package web
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"vpp-go-test/internal/vpp"
+	"vpp-go-test/internal/vpp/ipfix"
+)
+
+type IpfixHandler struct {
+	vppClient *vpp.VPPClient
+	manager   *ipfix.IpfixManager
+}
+
+func NewIpfixHandler(client *vpp.VPPClient) *IpfixHandler {
+	return &IpfixHandler{
+		vppClient: client,
+		manager:   ipfix.NewIpfixManager(client.Conn),
+	}
+}
+
+// GET /api/ipfix
+func (h *IpfixHandler) ShowSettings(c *gin.Context) {
+	status, err := h.manager.GetExporterStatus(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusOK, ipfix.IpfixStatus{IsActive: false})
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+// POST /api/ipfix
+func (h *IpfixHandler) SaveSettings(c *gin.Context) {
+	var cfg ipfix.IpfixConfig
+
+	if err := c.ShouldBindJSON(&cfg); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Noto‘g‘ri JSON"})
+		return
+	}
+
+	if err := cfg.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.manager.SetExporter(c.Request.Context(), cfg); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IPFIX muvaffaqiyatli sozlandi"})
+}
+
+// POST /api/ipfix/flush
+func (h *IpfixHandler) FlushFlows(c *gin.Context) {
+	if err := h.manager.FlushIPFIX(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Flowlar yuborildi"})
+}
+
+// GET /api/ipfix/flowprobe
+func (h *IpfixHandler) GetFlowprobe(c *gin.Context) {
+	activeTimeout, recordL4, err := h.manager.GetFlowprobeParams(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"active_timeout": activeTimeout,
+		"record_l4":      recordL4,
+	})
+}
+
+// POST /api/ipfix/flowprobe
+func (h *IpfixHandler) UpdateFlowprobe(c *gin.Context) {
+	var cfg ipfix.FlowprobeParamsConfig
+
+	if err := c.ShouldBindJSON(&cfg); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Xato parametrlar"})
+		return
+	}
+
+	if err := h.manager.SetFlowprobeParams(
+		c.Request.Context(),
+		cfg.ActiveTimeout,
+		cfg.RecordL4,
+	); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Flowprobe yangilandi"})
+}
+
+// POST /api/flow/interface
+func (h *IpfixHandler) ToggleInterface(c *gin.Context) {
+	var req ipfix.InterfaceToggleRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Xato interfeys ID"})
+		return
+	}
+
+	if err := h.manager.InterfaceEnable(
+		c.Request.Context(),
+		req.SwIfIndex,
+		req.Enable,
+	); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Interfeys holati o‘zgartirildi"})
+}
+
+// GET /api/ipfix/interfaces/enabled
+func (h *IpfixHandler) GetEnabledInterfaces(c *gin.Context) {
+	ids, err := h.manager.GetEnabledInterfaces(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, ids)
+}

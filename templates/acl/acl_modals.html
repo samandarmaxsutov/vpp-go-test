@@ -1,0 +1,56 @@
+{{ define "acl_modals" }}
+<div class="modal fade" id="addACLModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-gear-fill me-2"></i>ACL Konfiguratsiyasi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addACLForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">ACL Identifikatori (Tag)</label>
+                        <input type="text" class="form-control shadow-sm" name="tag" placeholder="web_filter_v4" required>
+                    </div>
+                    <div id="rulesContainer">
+                        </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+                <button type="button" class="btn btn-primary px-4" onclick="IP_ACL_LIST.saveACL()">
+                    <i class="bi bi-check-circle me-1"></i> Saqlash va Qo'llash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="applyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Interface Bindings</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="applySwIfIndex">
+                <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1"></i> Interfeys uchun bir nechta ACL tanlash mumkin (Ctrl tugmasini bosing).</p>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Inbound ACLs (Ingress)</label>
+                    <select id="applyInputAcls" class="form-select shadow-sm" multiple size="5"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Outbound ACLs (Egress)</label>
+                    <select id="applyOutputAcls" class="form-select shadow-sm" multiple size="5"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100 py-2" onclick="IP_ACL_LIST.saveBinding()">
+                    VPP-ga integratsiya qilish
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

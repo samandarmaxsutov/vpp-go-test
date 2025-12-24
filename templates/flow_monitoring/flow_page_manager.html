@@ -1,0 +1,71 @@
+{{ template "base" . }}
+
+{{ define "flow_page_manager" }}
+<ul class="nav nav-tabs mb-3" id="flowTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" href="#dashboard_pane">
+            <i class="bi bi-graph-up"></i> Dashboard
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="live-tab" data-bs-toggle="tab" href="#live_pane">
+            <i class="bi bi-list-ul"></i> Live Flows
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="security-tab" data-bs-toggle="tab" href="#security_pane">
+            <i class="bi bi-shield-exclamation text-danger"></i> Security Alerts
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#exporter_settings_pane">
+            <i class="bi bi-gear"></i> Exporter Settings
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="flowprobe-tab" data-bs-toggle="tab" href="#flowprobe_settings_pane">
+            <i class="bi bi-search"></i> Flowprobe Settings
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content border p-4 bg-white shadow-sm rounded">
+    <div class="tab-pane fade show active" id="dashboard_pane">
+        {{ template "flow_dashboard" . }}
+    </div>
+    <div class="tab-pane fade" id="live_pane">
+        {{ template "flow_live_stream" . }}
+    </div>
+    <div class="tab-pane fade" id="security_pane">
+        {{ template "flow_security_alerts" . }}
+    </div>
+    <div class="tab-pane fade" id="exporter_settings_pane">
+        {{ template "flow_settings" . }}
+    </div>
+    <div class="tab-pane fade" id="flowprobe_settings_pane">
+        {{ template "flowprobe_settings" . }}
+    </div>
+</div>
+
+<div id="alertBox" class="alert d-none position-fixed top-0 end-0 m-3 shadow" style="z-index: 9999; min-width: 300px;">
+    <span id="alertMessage"></span>
+</div>
+
+<script>
+/* ---------------- Global JS Funksiyalar ---------------- */
+function showAlert(message, type = 'info') {
+    const box = document.getElementById('alertBox');
+    box.className = `alert alert-${type} position-fixed top-0 end-0 m-3 shadow`;
+    box.classList.remove('d-none');
+    document.getElementById('alertMessage').innerText = message;
+    setTimeout(() => box.classList.add('d-none'), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Sahifa yuklanganda barcha sozlamalarni serverdan olish
+    if (typeof loadIpfixSettings === 'function') loadIpfixSettings();
+    if (typeof loadFlowprobeSettings === 'function') loadFlowprobeSettings();
+    if (typeof loadInterfaces === 'function') loadInterfaces();
+});
+</script>
+{{ end }}

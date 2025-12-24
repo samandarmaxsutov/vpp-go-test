@@ -1,0 +1,246 @@
+{{ define "snat" }}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-arrow-left-right me-2"></i>Static Mappings (DNAT)</h6>
+        <button class="btn btn-primary btn-sm shadow-sm" onclick="openStaticMappingModal()">
+            <i class="bi bi-plus-lg me-1"></i> New Static Mapping
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Protocol</th>
+                    <th>External (IP/If) : Port</th>
+                    <th><i class="bi bi-arrow-right"></i></th>
+                    <th>Local IP : Port</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody id="snat-table-body">
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">Loading mappings...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="staticMappingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">New Static Mapping</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="staticMappingForm">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Protocol</label>
+                            <select class="form-select" id="mappingProto">
+                                <option value="6">TCP</option>
+                                <option value="17">UDP</option>
+                                <option value="1">ICMP</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label d-block">Mapping Type</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="mapType" id="mapTypeIP" value="ip" checked
+                                    onchange="toggleMapInputs()">
+                                <label class="btn btn-outline-primary" for="mapTypeIP">External IP</label>
+
+                                <input type="radio" class="btn-check" name="mapType" id="mapTypeIf" value="if"
+                                    onchange="toggleMapInputs()">
+                                <label class="btn btn-outline-primary" for="mapTypeIf">External Interface</label>
+                            </div>
+                        </div>
+
+                        <div id="extIPGroup" class="col-md-8">
+                            <label class="form-label">External IP</label>
+                            <input type="text" class="form-control" id="mappingExtIP" placeholder="e.g. 1.2.3.4">
+                        </div>
+
+                        <div id="extIfGroup" class="col-md-8 d-none">
+                            <label class="form-label">External Interface</label>
+                            <select class="form-select" id="mappingExtIf">
+                                <option value="4294967295">Select Interface...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Ext. Port</label>
+                            <input type="number" class="form-control" id="mappingExtPort" placeholder="8080">
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label">Local IP (Target Server)</label>
+                            <input type="text" class="form-control" id="mappingLocIP" placeholder="e.g. 192.168.1.10">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Loc. Port</label>
+                            <input type="number" class="form-control" id="mappingLocPort" placeholder="80">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" onclick="submitStaticMapping()">Create
+                    Mapping</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let bootstrapMappingModal;
+
+    // Mapping kiritish maydonlarini almashtirish
+    function toggleMapInputs() {
+        const type = document.querySelector('input[name="mapType"]:checked').value;
+        const ipGroup = document.getElementById('extIPGroup');
+        const ifGroup = document.getElementById('extIfGroup');
+
+        if (type === 'ip') {
+            ipGroup.classList.remove('d-none');
+            ifGroup.classList.add('d-none');
+            document.getElementById('mappingExtIf').value = "4294967295";
+        } else {
+            ipGroup.classList.add('d-none');
+            ifGroup.classList.remove('d-none');
+            document.getElementById('mappingExtIP').value = "0.0.0.0";
+        }
+    }
+
+    // Interfeyslarni yuklash (Select option uchun)
+    async function loadInterfacesForMapping() {
+        try {
+            const res = await fetch('/api/interfaces'); // O'zingizni interfeys list API manzilingizga moslang
+            const ifaces = await res.json();
+            const select = document.getElementById('mappingExtIf');
+            select.innerHTML = '<option value="4294967295">Select Interface...</option>';
+            ifaces.forEach(i => {
+                select.innerHTML += `<option value="${i.index}">${i.name} (idx: ${i.index})</option>`;
+            });
+        } catch (e) { console.error("Ifaces load error", e); }
+    }
+
+    async function loadStaticMappings() {
+        try {
+            const res = await fetch('/api/nat/static');
+            const data = (await res.json()) || [];
+            const tbody = document.getElementById('snat-table-body');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No active static mappings</td></tr>';
+                return;
+            }
+
+            data.forEach(m => {
+                // Protokol nomini aniqlash
+                const protoName = m.protocol == "6" ? "TCP" : (m.protocol == "17" ? "UDP" : (m.protocol == "1" ? "ICMP" : "OTHER"));
+
+                // Ranglarni belgilash (Bootstrap klasslari)
+                let badgeClass = "bg-secondary-subtle text-secondary"; // Default (Other)
+                if (protoName === "TCP") badgeClass = "bg-primary-subtle text-primary border-primary";
+                if (protoName === "UDP") badgeClass = "bg-warning-subtle text-warning border-warning";
+                if (protoName === "ICMP") badgeClass = "bg-info-subtle text-info border-info";
+
+                // Interface-based bo'lsa ko'rsatish
+                const extDisplay = (m.external_ip === "0.0.0.0" || m.external_ip === "") ?
+                    `<span class="badge bg-light text-dark border"><i class="bi bi-cpu me-1"></i>If: ${m.external_if}</span>` :
+                    `<span class="fw-bold text-dark">${m.external_ip}</span>`;
+
+                tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge ${badgeClass} border px-2">${protoName}</span></td>
+                    <td>${extDisplay} <span class="text-muted mx-1">:</span> <span class="badge bg-dark-subtle text-dark">${m.external_port}</span></td>
+                    <td><i class="bi bi-arrow-right text-primary"></i></td>
+                    <td><span class="fw-medium">${m.local_ip}</span> <span class="text-muted mx-1">:</span> <span class="badge bg-dark-subtle text-dark">${m.local_port}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger border-0 hover-shadow" 
+                            onclick='deleteStaticMapping(${JSON.stringify(m)})' title="Delete Mapping">
+                            <i class="bi bi-trash3-fill"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        } catch (err) {
+            document.getElementById('snat-table-body').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>`;
+        }
+    }
+    function openStaticMappingModal() {
+        const modalEl = document.getElementById('staticMappingModal');
+        if (!bootstrapMappingModal) {
+            bootstrapMappingModal = new bootstrap.Modal(modalEl);
+        }
+        document.getElementById('staticMappingForm').reset();
+        toggleMapInputs();
+        loadInterfacesForMapping();
+        bootstrapMappingModal.show();
+    }
+
+    async function submitStaticMapping() {
+        const type = document.querySelector('input[name="mapType"]:checked').value;
+        const payload = {
+            local_ip: document.getElementById('mappingLocIP').value,
+            local_port: parseInt(document.getElementById('mappingLocPort').value),
+            external_ip: document.getElementById('mappingExtIP').value || "0.0.0.0",
+            external_port: parseInt(document.getElementById('mappingExtPort').value),
+            external_if: parseInt(document.getElementById('mappingExtIf').value) || 4294967295,
+            protocol: document.getElementById('mappingProto').value,
+            is_add: true
+        };
+
+        try {
+            const res = await fetch('/api/nat/static', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                bootstrapMappingModal.hide();
+                loadStaticMappings();
+            } else {
+                const err = await res.json();
+                alert("Error: " + (err.error || "Failed"));
+            }
+        } catch (e) { alert("Network error"); }
+    }
+
+    async function deleteStaticMapping(mapping) {
+        if (!confirm(`O'chirishni tasdiqlaysizmi?`)) return;
+
+        const payload = {
+            local_ip: mapping.local_ip,
+            local_port: parseInt(mapping.local_port),
+            external_ip: mapping.external_ip,
+            external_port: parseInt(mapping.external_port),
+            // Agar IP-based bo'lsa backend buni 4294967295 ga o'zgartiradi
+            external_if: parseInt(mapping.external_if),
+            protocol: String(mapping.protocol),
+            is_add: false
+        };
+
+        const res = await fetch('/api/nat/static', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            loadStaticMappings();
+        } else {
+            const err = await res.json();
+            alert("Xatolik: " + (err.error || "O'chirib bo'lmadi"));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadStaticMappings);
+</script>
+{{ end }}

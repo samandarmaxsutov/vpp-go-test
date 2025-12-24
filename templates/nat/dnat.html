@@ -1,0 +1,266 @@
+{{ define "dnat" }}
+
+<div class="d-flex justify-content-end mb-3">
+    <button class="btn btn-warning shadow-sm fw-bold" onclick="enableNatGlobal()">
+        <i class="bi bi-power me-2"></i> Enable NAT Engine
+    </button>
+</div>
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-ethernet me-2"></i>Interface NAT Roles</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Interface</th>
+                            <th>Role</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nat-iface-body">
+                        <tr>
+                            <td colspan="3" class="text-center py-3 text-muted">Loading interfaces...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-collection me-2"></i>External IP Pool</h6>
+                <button class="btn btn-sm btn-primary" onclick="openAddPoolModal()">+ Add IP</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>External IP Address</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nat-pool-body">
+                        <tr>
+                            <td colspan="2" class="text-center py-3 text-muted">No external IPs</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addPoolModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add External IP</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Public IP Address</label>
+                    <input type="text" id="poolIpInput" class="form-control" placeholder="e.g. 1.1.1.1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitPoolIP()">Save IP</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ifaceNatModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold" id="ifaceModalName">Interface</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="targetSwIfIndex">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-success text-start" onclick="saveInterfaceNat(true)">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Set as <b>Inside</b>
+                    </button>
+                    <button class="btn btn-outline-primary text-start" onclick="saveInterfaceNat(false)">
+                        <i class="bi bi-box-arrow-out-left me-2"></i> Set as <b>Outside</b>
+                    </button>
+                    <hr class="my-1">
+                    <button class="btn btn-outline-danger text-start border-0" onclick="removeInterfaceNat()">
+                        <i class="bi bi-trash me-2"></i> Disable NAT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function enableNatGlobal() {
+    if(!confirm("VPP NAT engine-ni yoqmoqchimisiz?")) return;
+    
+    const res = await fetch('/api/nat/enable', { method: 'POST' });
+    if(res.ok) {
+        alert("NAT engine yoqildi. Endi interfeyslarni sozlasangiz bo'ladi.");
+        loadNatInfrastructure();
+    } else {
+        const data = await res.json();
+        alert("Xato: " + data.error);
+    }
+}
+    // 1. Global modal o'zgaruvchilari
+    let bootstrapPoolModal;
+    let bootstrapIfaceModal;
+
+    // 2. Ma'lumotlarni yuklash funksiyasi
+
+    async function loadNatInfrastructure() {
+        console.log("NAT so'rovlari yuborilmoqda...");
+        try {
+            const [ifacesRes, natIfacesRes, poolRes] = await Promise.all([
+                fetch('/api/interfaces'),
+                fetch('/api/nat/interfaces'),
+                fetch('/api/nat/pool')
+            ]);
+
+            // Ma'lumotlarni olish va null bo'lsa bo'sh massivga aylantirish
+            const allIfaces = (await ifacesRes.json()) || [];
+            const natIfaces = (await natIfacesRes.json()) || []; // NULL bo'lsa [] bo'ladi
+            const pool = (await poolRes.json()) || [];
+
+            // Interfeyslarni chizish
+            const ifaceBody = document.getElementById('nat-iface-body');
+            if (ifaceBody) {
+                ifaceBody.innerHTML = '';
+
+                if (allIfaces.length === 0) {
+                    ifaceBody.innerHTML = '<tr><td colspan="3" class="text-center">No interfaces found</td></tr>';
+                }
+
+
+                allIfaces.forEach(iface => {
+                    // Backenddan kelgan 'index' va 'name' maydonlaridan foydalanamiz
+                    const natInfo = natIfaces.find(n => n && n.sw_if_index === iface.index);
+
+                    let roleBadge = '<span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.65rem;">None</span>';
+                    if (natInfo) {
+                        roleBadge = natInfo.is_inside
+                            ? '<span class="badge bg-success-subtle text-success border border-success-subtle shadow-sm">INSIDE</span>'
+                            : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle shadow-sm">OUTSIDE</span>';
+                    }
+
+                    ifaceBody.innerHTML += `
+        <tr>
+            <td>
+                <div class="fw-bold text-dark">${iface.name}</div>
+                <small class="text-muted">ID: ${iface.index} | MAC: ${iface.mac}</small>
+            </td>
+            <td>${roleBadge}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-white border shadow-sm" onclick="openIfaceNatModal(${iface.index}, '${iface.name}')">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                </button>
+            </td>
+        </tr>`;
+                });
+            }
+
+            // Poolni chizish qismi (o'zgarishsiz qolishi mumkin, lekin xavfsizlik uchun):
+            const poolBody = document.getElementById('nat-pool-body');
+            if (poolBody) {
+                poolBody.innerHTML = '';
+                if (pool.length === 0) {
+                    poolBody.innerHTML = '<tr><td colspan="2" class="text-center py-3 text-muted small">No IPs added</td></tr>';
+                } else {
+                    pool.forEach(item => {
+                        poolBody.innerHTML += `
+                            <tr>
+                                <td><code class="fw-bold text-primary">${item.ip_address}</code></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-light text-danger border shadow-sm" onclick="deletePoolIP('${item.ip_address}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("NAT Load Error:", err);
+            // Foydalanuvchiga xatolik haqida xabar ko'rsatish ixtiyoriy
+        }
+    }
+    // 3. Modal ochish funksiyalari (Xavfsiz initialization bilan)
+    function openAddPoolModal() {
+        if (!bootstrapPoolModal) {
+            bootstrapPoolModal = new bootstrap.Modal(document.getElementById('addPoolModal'));
+        }
+        document.getElementById('poolIpInput').value = '';
+        bootstrapPoolModal.show();
+    }
+
+    function openIfaceNatModal(index, name) {
+        if (!bootstrapIfaceModal) {
+            bootstrapIfaceModal = new bootstrap.Modal(document.getElementById('ifaceNatModal'));
+        }
+        document.getElementById('targetSwIfIndex').value = index;
+        document.getElementById('ifaceModalName').innerText = name;
+        bootstrapIfaceModal.show();
+    }
+
+    // 4. API Bilan ishlash (Save/Delete)
+    async function submitPoolIP() {
+        const ip = document.getElementById('poolIpInput').value;
+        if (!ip) return;
+        const res = await fetch('/api/nat/pool', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip_address: ip, is_add: true })
+        });
+        if (res.ok) { bootstrapPoolModal.hide(); loadNatInfrastructure(); }
+    }
+
+    async function deletePoolIP(ip) {
+        if (!confirm(`Delete IP ${ip} from pool?`)) return;
+        await fetch('/api/nat/pool', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip_address: ip, is_add: false })
+        });
+        loadNatInfrastructure();
+    }
+
+    async function saveInterfaceNat(isInside) {
+        const index = parseInt(document.getElementById('targetSwIfIndex').value);
+        const res = await fetch('/api/nat/interface', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sw_if_index: index, is_inside: isInside, is_add: true })
+        });
+        if (res.ok) { bootstrapIfaceModal.hide(); loadNatInfrastructure(); }
+    }
+
+    async function removeInterfaceNat() {
+        const index = parseInt(document.getElementById('targetSwIfIndex').value);
+        const res = await fetch('/api/nat/interface', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sw_if_index: index, is_inside: true, is_add: false })
+        });
+        if (res.ok) { bootstrapIfaceModal.hide(); loadNatInfrastructure(); }
+    }
+
+    // 5. Hammasi yuklangandan keyin ishga tushirish
+    window.addEventListener('load', () => {
+        console.log("Window loaded, initializing NAT...");
+        loadNatInfrastructure();
+    });
+</script>
+{{ end }}

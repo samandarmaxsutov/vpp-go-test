@@ -1,0 +1,227 @@
+{{ define "mac_acl_list" }}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-hdd-network me-2"></i>L2 MAC Filtering Policies</h5>
+        <p class="text-muted small mb-0">MAC manzillar va IP prefikslar (anti-spoofing) asosida kirishni nazorat qilish</p>
+    </div>
+    <button class="btn btn-primary btn-sm shadow-sm px-3" onclick="openMacAclModal()">
+        <i class="bi bi-plus-lg me-1"></i> Create MAC Policy
+    </button>
+</div>
+
+<div class="table-responsive card border-0 shadow-sm mb-4">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-secondary">
+            <tr>
+                <th style="width: 80px;" class="ps-3">ID</th>
+                <th style="width: 200px;">Policy Name (Tag)</th>
+                <th>Rules Summary</th>
+                <th class="text-center" style="width: 120px;">Status</th>
+                <th class="text-end pe-3" style="width: 150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="mac-acl-list-body">
+            <tr>
+                <td colspan="5" class="text-center py-5 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
+                    VPP dan MAC qoidalari yuklanmoqda...
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="macAclModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>MAC ACL Policy Editor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="macAclForm">
+                    <input type="hidden" id="macAclIndex" value="-1">
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">Policy Name / Tag</label>
+                        <input type="text" class="form-control shadow-sm border-2" id="macAclTag" placeholder="Masalan: Web-Server-Access" required>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold text-dark mb-0">Rules Configuration</label>
+                        <button type="button" class="btn btn-outline-success btn-sm border-2 fw-bold" onclick="addMacRuleRow()">
+                            <i class="bi bi-plus-lg"></i> Add Rule
+                        </button>
+                    </div>
+
+                    <div class="rule-container border rounded p-3 bg-light shadow-inner" id="macRuleRows" style="max-height: 400px; overflow-y: auto;">
+                        </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 shadow" onclick="saveMacAcl()">
+                    <i class="bi bi-cloud-upload me-1"></i> Save to VPP
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="macRuleTemplate">
+    <div class="row g-2 mb-3 align-items-end rule-row border-bottom border-white pb-3">
+        <div class="col-md-2">
+            <label class="small text-muted fw-bold">Action</label>
+            <select class="form-select form-select-sm mac-action border-2">
+                <option value="permit">PERMIT</option>
+                <option value="deny">DENY</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="small text-muted fw-bold">Source MAC</label>
+            <input type="text" class="form-control form-select-sm mac-address border-2" placeholder="00:11:22:33:44:55">
+        </div>
+        <div class="col-md-3">
+            <label class="small text-muted fw-bold">MAC Mask</label>
+            <input type="text" class="form-control form-select-sm mac-mask border-2" value="ff:ff:ff:ff:ff:ff">
+        </div>
+        <div class="col-md-3">
+            <label class="small text-muted fw-bold">IP Prefix</label>
+            <input type="text" class="form-control form-select-sm mac-ip border-2" placeholder="10.0.0.1/32 or any">
+        </div>
+        <div class="col-md-1 text-center">
+            <button class="btn btn-outline-danger btn-sm border-0" onclick="this.closest('.rule-row').remove()">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMacACLs();
+    });
+
+    function openMacAclModal() {
+        document.getElementById('macAclIndex').value = "-1";
+        document.getElementById('macAclTag').value = "";
+        document.getElementById('macRuleRows').innerHTML = "";
+        addMacRuleRow(); 
+        new bootstrap.Modal(document.getElementById('macAclModal')).show();
+    }
+
+    function loadMacACLs() {
+        const tbody = document.getElementById('mac-acl-list-body');
+        fetch('/api/mac-acl')
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Hech qanday MAC policy topilmadi.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                data.forEach(acl => {
+                    const rulesSummary = acl.rules.map(r =>
+                        `<span class="badge rounded-pill bg-white text-dark border me-1 shadow-sm">
+                            <i class="bi bi-ethernet text-primary me-1"></i>${r.src_mac}
+                         </span>`
+                    ).join('');
+
+                    tbody.innerHTML += `
+                    <tr>
+                        <td class="ps-3 fw-bold text-secondary">#${acl.acl_index}</td>
+                        <td><span class="badge bg-primary-subtle text-primary px-2 py-1">${acl.tag}</span></td>
+                        <td><div class="d-flex flex-wrap gap-1">${rulesSummary}</div></td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                        <td class="text-end pe-3">
+                            <div class="btn-group shadow-sm">
+                                <button class="btn btn-sm btn-light border" onclick="editMacAcl(${acl.acl_index})" title="Edit"><i class="bi bi-pencil-square text-primary"></i></button>
+                                <button class="btn btn-sm btn-light border" onclick="deleteMacAcl(${acl.acl_index})" title="Delete"><i class="bi bi-trash3 text-danger"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error: ${err}</td></tr>`;
+            });
+    }
+
+    function addMacRuleRow(data = null) {
+        const template = document.getElementById('macRuleTemplate');
+        const clone = template.content.cloneNode(true);
+
+        if (data) {
+            clone.querySelector('.mac-action').value = data.is_permit === 1 ? 'permit' : 'deny';
+            clone.querySelector('.mac-address').value = data.src_mac;
+            clone.querySelector('.mac-mask').value = data.src_mask;
+            clone.querySelector('.mac-ip').value = data.src_prefix;
+        }
+
+        document.getElementById('macRuleRows').appendChild(clone);
+    }
+
+    function saveMacAcl() {
+        const index = document.getElementById('macAclIndex').value;
+        const tag = document.getElementById('macAclTag').value;
+        const rows = document.querySelectorAll('.rule-row');
+
+        if (!tag) { alert("Iltimos, Policy nomini kiriting!"); return; }
+        if (rows.length === 0) { alert("Kamida bitta qoida qo'shish kerak!"); return; }
+
+        const rules = Array.from(rows).map(row => ({
+            action: row.querySelector('.mac-action').value,
+            src_mac: row.querySelector('.mac-address').value,
+            src_mask: row.querySelector('.mac-mask').value,
+            src_prefix: row.querySelector('.mac-ip').value || "0.0.0.0/0"
+        }));
+
+        const isNew = index === "-1";
+        const url = isNew ? "/api/mac-acl" : `/api/mac-acl/${index}`;
+        const method = isNew ? "POST" : "PUT";
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag, rules })
+        }).then(async res => {
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('macAclModal')).hide();
+                loadMacACLs();
+            } else {
+                const err = await res.json();
+                alert("VPP Xatosi: " + err.error);
+            }
+        });
+    }
+
+    function editMacAcl(index) {
+        fetch('/api/mac-acl')
+            .then(res => res.json())
+            .then(data => {
+                const acl = data.find(a => a.acl_index === index);
+                if (acl) {
+                    document.getElementById('macAclIndex').value = acl.acl_index;
+                    document.getElementById('macAclTag').value = acl.tag;
+                    document.getElementById('macRuleRows').innerHTML = "";
+                    acl.rules.forEach(r => addMacRuleRow(r));
+                    new bootstrap.Modal(document.getElementById('macAclModal')).show();
+                }
+            });
+    }
+
+    function deleteMacAcl(index) {
+        if (!confirm(`Haqiqatdan ham #${index} policy ni o'chirib tashlamoqchimisiz?`)) return;
+        fetch(`/api/mac-acl/${index}`, { method: 'DELETE' })
+            .then(res => res.ok ? loadMacACLs() : alert("O'chirishda xatolik!"));
+    }
+</script>
+
+<style>
+    .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); }
+    .rule-container::-webkit-scrollbar { width: 6px; }
+    .rule-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .bg-primary-subtle { background-color: #e0f2fe; }
+    .bg-success-subtle { background-color: #dcfce7; }
+</style>
+{{ end }}

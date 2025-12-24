@@ -1,0 +1,244 @@
+{{ template "base" . }}
+
+{{ define "dashboard_page" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    /* FortiGate Style Professional Overrides */
+    .card { border-radius: 4px; border: 1px solid #e0e0e0 !important; background-color: #fff; }
+    .text-muted-forti { color: #666; font-size: 0.8rem; letter-spacing: 0.5px; }
+    .progress { border-radius: 2px; height: 6px !important; background-color: #f0f0f0; }
+    canvas { max-height: 240px; width: 100% !important; }
+    .status-value { font-size: 1.8rem; color: #212529; }
+    
+    /* FortiGate Side Borders */
+    .border-primary-forti { border-left: 4px solid #1c3664 !important; }
+    .border-danger-forti { border-left: 4px solid #d9534f !important; }
+    .border-warning-forti { border-left: 4px solid #f0ad4e !important; }
+    .border-success-forti { border-left: 4px solid #5cb85c !important; }
+</style>
+
+<div class="container-fluid py-3">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3 border-primary-forti">
+                <div class="text-muted-forti fw-bold text-uppercase">Total Drops</div>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 id="card-drops" class="mb-0 fw-bold status-value">0</h3>
+                    <i class="bi bi-shield-slash text-muted opacity-25 fs-2"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3 border-danger-forti">
+                <div class="text-muted-forti fw-bold text-uppercase">CPU Usage</div>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 id="card-cpu" class="mb-0 fw-bold status-value">0%</h3>
+                    <div class="w-50">
+                        <div class="progress">
+                            <div id="cpu-bar" class="progress-bar bg-danger" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3 border-warning-forti">
+                <div class="text-muted-forti fw-bold text-uppercase">Memory Usage</div>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 id="card-mem" class="mb-0 fw-bold status-value">0%</h3>
+                    <div class="w-50">
+                        <div class="progress">
+                            <div id="mem-bar" class="progress-bar bg-warning" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3 border-success-forti">
+                <div class="text-muted-forti fw-bold text-uppercase">System Uptime</div>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 id="card-uptime" class="mb-0 fw-bold status-value">-</h3>
+                    <i class="bi bi-clock-history text-muted opacity-25 fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <h6 class="fw-bold mb-0 text-dark">Interface Throughput (BPS)</h6>
+                    <select id="interfaceSelect" class="form-select form-select-sm w-auto border-0 bg-light" onchange="changeInterface()">
+                        <option value="all">Aggregate (All)</option>
+                    </select>
+                </div>
+                <canvas id="bpsChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <h6 class="fw-bold mb-0 text-dark">Packet Rate (PPS)</h6>
+                </div>
+                <canvas id="ppsChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <h6 class="fw-bold mb-0 text-dark">Resource Utilization History (%)</h6>
+                </div>
+                <canvas id="resourceChart" style="max-height: 180px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let lastData = null;
+    let lastTime = Date.now();
+    let currentInterface = "all";
+    const maxDataPoints = 40;
+
+    // FortiGate Colors (RGBA for Area Fill)
+    const fBlue = 'rgba(28, 54, 100, 1)';
+    const fBlueFill = 'rgba(28, 54, 100, 0.12)';
+    const fGreen = 'rgba(92, 184, 92, 1)';
+    const fGreenFill = 'rgba(92, 184, 92, 0.12)';
+    const fRed = 'rgba(217, 83, 79, 1)';
+    const fRedFill = 'rgba(217, 83, 79, 0.08)';
+    const fOrange = 'rgba(240, 173, 78, 1)';
+    const fOrangeFill = 'rgba(240, 173, 78, 0.08)';
+
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } },
+        scales: { 
+            y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 10 } } }, 
+            x: { display: false } 
+        },
+        animation: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { 
+            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } } 
+        }
+    };
+
+    // Initialize Charts
+    const bpsChart = new Chart(document.getElementById('bpsChart'), {
+        type: 'line',
+        data: { labels: [], datasets: [
+            { label: 'Inbound (bps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
+            { label: 'Outbound (bps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 }
+        ]},
+        options: commonOptions
+    });
+
+    const ppsChart = new Chart(document.getElementById('ppsChart'), {
+        type: 'line',
+        data: { labels: [], datasets: [
+            { label: 'Inbound (pps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
+            { label: 'Outbound (pps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 }
+        ]},
+        options: commonOptions
+    });
+
+    const resourceChart = new Chart(document.getElementById('resourceChart'), {
+        type: 'line',
+        data: { labels: [], datasets: [
+            { label: 'CPU %', borderColor: fRed, backgroundColor: fRedFill, data: [], fill: true, tension: 0.3 },
+            { label: 'Mem %', borderColor: fOrange, backgroundColor: fOrangeFill, data: [], fill: true, tension: 0.3 }
+        ]},
+        options: commonOptions
+    });
+
+    async function updateDashboard() {
+        try {
+            const res = await fetch('/api/stats');
+            const data = await res.json();
+            const now = Date.now();
+            const deltaTime = (now - lastTime) / 1000;
+
+            // Update Status Widgets
+            const cpuVal = Math.round(data.cpu_usage) || 0;
+            const memVal = parseFloat(data.mem_usage.toFixed(1)) || 0;
+            
+            document.getElementById('card-drops').innerText = data.total_drops.toLocaleString();
+            document.getElementById('card-cpu').innerText = cpuVal + '%';
+            document.getElementById('cpu-bar').style.width = cpuVal + '%';
+            document.getElementById('card-mem').innerText = memVal + '%';
+            document.getElementById('mem-bar').style.width = memVal + '%';
+            document.getElementById('card-uptime').innerText = data.uptime;
+
+            // Populate Interface Selector once
+            const select = document.getElementById('interfaceSelect');
+            if (select.options.length === 1) {
+                data.interfaces.forEach(iface => {
+                    select.add(new Option(iface.name, iface.index));
+                });
+            }
+
+            // Calculate Rates
+            if (lastData && deltaTime > 0) {
+                let rxB = 0, txB = 0, rxP = 0, txP = 0;
+                
+                if (currentInterface === "all") {
+                    data.interfaces.forEach(iface => {
+                        const prev = lastData.interfaces.find(p => p.index === iface.index);
+                        if (prev) {
+                            rxB += (iface.rx_bytes - prev.rx_bytes) * 8 / deltaTime;
+                            txB += (iface.tx_bytes - prev.tx_bytes) * 8 / deltaTime;
+                            rxP += (iface.rx_pkts - prev.rx_pkts) / deltaTime;
+                            txP += (iface.tx_pkts - prev.tx_pkts) / deltaTime;
+                        }
+                    });
+                } else {
+                    const currIf = data.interfaces.find(i => i.index == currentInterface);
+                    const prevIf = lastData.interfaces.find(i => i.index == currentInterface);
+                    if (currIf && prevIf) {
+                        rxB = (currIf.rx_bytes - prevIf.rx_bytes) * 8 / deltaTime;
+                        txB = (currIf.tx_bytes - prevIf.tx_bytes) * 8 / deltaTime;
+                        rxP = (currIf.rx_pkts - prevIf.rx_pkts) / deltaTime;
+                        txP = (currIf.tx_pkts - prevIf.tx_pkts) / deltaTime;
+                    }
+                }
+
+                const timeLabel = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                pushData(bpsChart, timeLabel, [rxB, txB]);
+                pushData(ppsChart, timeLabel, [rxP, txP]);
+                pushData(resourceChart, timeLabel, [cpuVal, memVal]);
+            }
+
+            lastData = data;
+            lastTime = now;
+        } catch (e) { console.error("Update fail:", e); }
+    }
+
+    function pushData(chart, label, values) {
+        chart.data.labels.push(label);
+        values.forEach((v, i) => chart.data.datasets[i].data.push(v));
+        if (chart.data.labels.length > maxDataPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets.forEach(d => d.data.shift());
+        }
+        chart.update('none');
+    }
+
+    function changeInterface() {
+        currentInterface = document.getElementById('interfaceSelect').value;
+        [bpsChart, ppsChart].forEach(c => {
+            c.data.labels = [];
+            c.data.datasets.forEach(d => d.data = []);
+            c.update();
+        });
+    }
+
+    setInterval(updateDashboard, 2000);
+    updateDashboard();
+</script>
+{{ end }}

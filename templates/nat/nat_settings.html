@@ -1,0 +1,165 @@
+{{ define "nat_settings" }}
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">
+                <i class="bi bi-clock-history me-2 text-primary"></i>Session Timeouts (seconds)
+            </h6>
+            <div class="mb-3 row">
+                <label class="col-sm-6 col-form-label">UDP Timeout</label>
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" value="300" id="udp_timeout">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="col-sm-6 col-form-label">TCP Established Timeout</label>
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" value="7440" id="tcp_timeout">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="col-sm-6 col-form-label">TCP Transitory Timeout</label>
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" value="240" id="tcp_transitory">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="col-sm-6 col-form-label">ICMP Timeout</label>
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" value="60" id="icmp_timeout">
+                </div>
+            </div>
+            <div class="text-end mt-3">
+                <button id="saveSettingsBtn" class="btn btn-primary px-4 shadow-sm" onclick="saveNatSettings()">
+                    <i class="bi bi-save me-2"></i>Save Timeouts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4 h-100 d-flex flex-column">
+            <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">
+                <i class="bi bi-cpu me-2 text-primary"></i>Advanced Control & IPFIX
+            </h6>
+            
+            <div class="p-3 bg-light rounded mb-4">
+                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0">
+                    <div>
+                        <label class="form-check-label fw-bold d-block" for="ipfixSwitch">IPFIX Logging (Local IP Tracking)</label>
+                        <small class="text-muted">Kibana-da lokal IP-larni ko'rish uchun buni yoqing</small>
+                    </div>
+                    <input class="form-check-input ms-2" type="checkbox" role="switch" id="ipfixSwitch" style="width: 3em; height: 1.5em;" onchange="toggleIpfix(this)">
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center mb-4">
+                <div class="flex-shrink-0">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                        <i class="bi bi-activity fs-4"></i>
+                    </div>
+                </div>
+                <div class="ms-3">
+                    <div class="fw-bold">VPP NAT44-ED Service</div>
+                    <div id="natStatusBadge" class="badge bg-success">Active</div>
+                    <button class="btn btn-link btn-sm p-0 d-block text-decoration-none" onclick="enableNatPlugin()">Re-initialize Plugin</button>
+                </div>
+            </div>
+
+            <div class="alert alert-info border-0 small mt-2">
+                <h6 class="alert-heading fw-bold small"><i class="bi bi-info-circle me-2"></i>IPFIX haqida</h6>
+                Agar Kibana'da faqat gateway IP ko'rinsa, yuqoridagi <b>IPFIX Logging</b> tugmasini yoqing. Bu VPP-ga har bir NAT sessiyasi uchun lokal IP manzilini yuborishni buyuradi.
+            </div>
+
+            <div class="mt-auto pt-3 border-top">
+                <button class="btn btn-outline-danger w-100 btn-sm" onclick="clearAllSessions()">
+                    <i class="bi bi-trash me-2"></i>Clear All Active Sessions
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sahifa yuklanganda joriy config'ni olish
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/api/nat/config');
+            if (res.ok) {
+                const config = await res.json();
+                // IPFIX holatini switchga o'rnatish
+                document.getElementById('ipfixSwitch').checked = config.ipfix_logging_enabled;
+            }
+        } catch (e) { console.error("Config yuklashda xato:", e); }
+    });
+
+    // IPFIX Loggingni yoqish/o'chirish
+    async function toggleIpfix(el) {
+        const enabled = el.checked;
+        try {
+            const res = await fetch('/api/nat/ipfix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enable: enabled })
+            });
+            if (!res.ok) {
+                el.checked = !enabled;
+                alert("IPFIX holatini o'zgartirib bo'lmadi");
+            }
+        } catch (e) {
+            el.checked = !enabled;
+            alert("Tarmoq xatosi");
+        }
+    }
+
+    // NAT Pluginni yoqish (Agar o'chgan bo'lsa)
+    async function enableNatPlugin() {
+        if(!confirm("NAT44-ED pluginini qayta ishga tushirmoqchimisiz?")) return;
+        try {
+            const res = await fetch('/api/nat/enable', { method: 'POST' });
+            if (res.ok) alert("Plugin muvaffaqiyatli yoqildi");
+        } catch (e) { alert("Xatolik yuz berdi"); }
+    }
+
+    // NAT Timeoutlarini saqlash
+    async function saveNatSettings() {
+        const btn = document.getElementById('saveSettingsBtn');
+        const originalText = btn.innerHTML;
+        
+        const payload = {
+            udp: parseInt(document.getElementById('udp_timeout').value),
+            tcp_established: parseInt(document.getElementById('tcp_timeout').value),
+            tcp_transitory: parseInt(document.getElementById('tcp_transitory').value),
+            icmp: parseInt(document.getElementById('icmp_timeout').value)
+        };
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            const res = await fetch('/api/nat/settings/timeouts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) alert("NAT timeout sozlamalari saqlandi!");
+            else alert("Xatolik yuz berdi");
+        } catch (e) {
+            alert("Server bilan aloqa yo'q");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    async function clearAllSessions() {
+        if (!confirm("Haqiqatan ham barcha faol NAT sessiyalarini uzib tashlamoqchimisiz?")) return;
+        try {
+            const res = await fetch('/api/nat/sessions/clear', { method: 'POST' });
+            if (res.ok) {
+                alert("Barcha sessiyalar muvaffaqiyatli tozalandi.");
+                if (typeof loadActiveSessions === 'function') loadActiveSessions();
+            }
+        } catch (e) { alert("Xatolik yuz berdi."); }
+    }
+</script>
+{{ end }}

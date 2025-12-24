@@ -1,0 +1,111 @@
+{{ define "topbar" }}
+<nav class="navbar navbar-expand navbar-white bg-white border-bottom p-2 shadow-sm">
+    <div class="container-fluid">
+        <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary me-3 border-0">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="navbar-text fw-bold text-uppercase text-secondary">
+            System > {{ .title }}
+        </span>
+        <div class="ms-auto d-flex align-items-center">
+            <div class="me-3 text-end">
+                <div class="small fw-bold">Administrator</div>
+                <div class="text-success small" style="font-size: 0.7rem;">● Online</div>
+            </div>
+            
+            <div class="dropdown">
+                <div class="rounded-circle bg-info text-white p-2 d-flex justify-content-center align-items-center cursor-pointer" 
+                     id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" 
+                     style="width: 35px; height: 35px; cursor: pointer;">
+                    A
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userMenu">
+                    <li><h6 class="dropdown-header">Admin Sozlamalari</h6></li>
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
+                            ⚙️ Profil
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger fw-bold" href="/logout">
+                            🚪 Tizimdan chiqish
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">⚙️ Profil Sozlamalari</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Joriy parol</label>
+                        <input type="password" name="current_password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Yangi parol</label>
+                        <input type="password" id="new_password" name="new_password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Yangi parolni tasdiqlang</label>
+                        <input type="password" id="confirm_password" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-primary" onclick="updatePassword()">Saqlash</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function updatePassword() {
+    const newPass = document.getElementById('new_password').value;
+    const confirmPass = document.getElementById('confirm_password').value;
+
+    if (newPass === "" || confirmPass === "") {
+        alert("Iltimos, yangi parolni kiriting!");
+        return;
+    }
+
+    if (newPass !== confirmPass) {
+        alert("Yangi parollar mos kelmadi!");
+        return;
+    }
+
+    const form = document.getElementById('changePasswordForm');
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/api/admin/change-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("Parol muvaffaqiyatli yangilandi!");
+            bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
+            form.reset();
+        } else {
+            const err = await res.json();
+            alert("Xato: " + err.error);
+        }
+    } catch (e) {
+        alert("Server bilan aloqa uzildi!");
+    }
+}
+</script>
+{{ end }}

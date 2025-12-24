@@ -1,0 +1,177 @@
+{{ template "base" . }}
+{{ define "logs_page" }}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">System Audit Logs</h4>
+            <p class="text-muted small mb-0">Jami ma'lumotlar asosida filtrlang va boshqaring</p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm shadow-sm" id="pageSize" onchange="resetAndRender()" style="width: 130px;">
+                <option value="10">10 talik</option>
+                <option value="25" selected>25 talik</option>
+                <option value="50">50 talik</option>
+            </select>
+            
+            <div class="btn-group shadow-sm bg-white p-1 rounded border">
+                <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('system', this)">System</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('vpp', this)">VPP</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('auth', this)">Auth</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('web', this)">Web</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body p-2">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
+                <input type="text" id="logSearch" class="form-control border-0 shadow-none" placeholder="Qidiruv (Harakat, Obyekt yoki Holat bo'yicha)..." onkeyup="handleSearch()">
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small fw-bold text-uppercase">
+                    <tr>
+                        <th class="ps-3" style="width: 200px;">Vaqt</th>
+                        <th>Tur</th>
+                        <th>Harakat</th>
+                        <th>Obyekt</th>
+                        <th class="text-end pe-3">Holat</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody"></tbody>
+            </table>
+        </div>
+        
+        <div class="card-footer bg-white border-top py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="small text-muted" id="logCounter">Jami: 0 yozuv</span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                        </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+let allData = [];      // Serverdan kelgan hamma ma'lumot
+let filteredData = []; // Qidiruvdan keyingi ma'lumot
+let currentPage = 1;
+
+async function loadLogs(type = 'system', element = null) {
+    if (element) {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'text-white'));
+        element.classList.add('active', 'btn-primary', 'text-white');
+    }
+
+    const tbody = document.getElementById('logTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
+
+    try {
+        const res = await fetch(`/api/logs?type=${type}`);
+        allData = await res.json();
+        filteredData = [...allData]; 
+        currentPage = 1;
+        renderTable();
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger">Xatolik: Ma\'lumot yuklanmadi.</td></tr>';
+    }
+}
+
+function renderTable() {
+    const pageSize = parseInt(document.getElementById('pageSize').value);
+    const tbody = document.getElementById('logTableBody');
+    
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    const items = filteredData.slice(start, end);
+
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Ma\'lumot topilmadi.</td></tr>';
+        renderPagination(0);
+        return;
+    }
+
+    tbody.innerHTML = items.map(log => `
+        <tr>
+            <td class="ps-3 small text-muted font-monospace">${log.timestamp}</td>
+            <td><span class="badge ${getBadgeClass(log.type || 'system')}">${(log.type || 'system').toUpperCase()}</span></td>
+            <td class="fw-bold">${log.action}</td>
+            <td><code>${log.target}</code></td>
+            <td class="text-end pe-3">
+                <span class="badge ${log.status === 'SUCCESS' ? 'bg-success' : 'bg-danger'}">${log.status}</span>
+            </td>
+        </tr>
+    `).join('');
+
+    document.getElementById('logCounter').innerText = `Ko'rsatilyapti: ${start + 1}-${Math.min(end, filteredData.length)} / Jami: ${filteredData.length}`;
+    renderPagination(filteredData.length);
+}
+
+function renderPagination(totalItems) {
+    const pageSize = parseInt(document.getElementById('pageSize').value);
+    const pageCount = Math.ceil(totalItems / pageSize);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+
+    if (pageCount <= 1) return;
+
+    for (let i = 1; i <= pageCount; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+        pagination.appendChild(li);
+    }
+}
+
+function changePage(page) {
+    currentPage = page;
+    renderTable();
+}
+
+function handleSearch() {
+    const term = document.getElementById('logSearch').value.toLowerCase();
+    filteredData = allData.filter(log => 
+        log.action.toLowerCase().includes(term) || 
+        log.target.toLowerCase().includes(term) ||
+        (log.type && log.type.toLowerCase().includes(term))
+    );
+    currentPage = 1;
+    renderTable();
+}
+
+function resetAndRender() {
+    currentPage = 1;
+    renderTable();
+}
+
+function getBadgeClass(type) {
+    switch(type.toLowerCase()) {
+        case 'vpp': return 'bg-info-subtle text-info border border-info';
+        case 'auth': return 'bg-warning-subtle text-warning border border-warning';
+        case 'web': return 'bg-purple-subtle text-purple border border-purple';
+        default: return 'bg-secondary-subtle text-secondary border border-secondary';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => loadLogs('system'));
+</script>
+
+<style>
+    .bg-purple-subtle { background-color: #f3e5f5; }
+    .text-purple { color: #8e24aa; }
+    .border-purple { border-color: #ce93d8 !important; }
+    .btn-light.active { background-color: #0d6efd !important; border-color: #0d6efd !important; color: white !important; }
+    .pagination .page-link { border: none; margin: 0 2px; border-radius: 4px; color: #666; }
+    .pagination .page-item.active .page-link { background-color: #0d6efd; color: white; }
+</style>
+{{ end }}

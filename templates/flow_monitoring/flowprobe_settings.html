@@ -1,0 +1,112 @@
+{{ define "flowprobe_settings" }}
+<div class="card border-0">
+    <div class="card-body">
+        <h5 class="card-title mb-4"><i class="bi bi-search me-2"></i>Flowprobe Parametrlari</h5>
+
+        <form id="flowprobeForm" class="mb-4">
+            <div class="row bg-light p-3 rounded mb-4">
+                <div class="col-md-5 mb-3">
+                    <label class="form-label">Active Timeout (sekund)</label>
+                    <input type="number" name="active_timeout" class="form-control" value="20">
+                </div>
+                <div class="col-md-5 mb-3 d-flex align-items-end pb-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="recordL4" name="record_l4">
+                        <label class="form-check-label" for="recordL4">L4 Protocol (Portlarni) yozish</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-dark w-100">Saqlash</button>
+                </div>
+            </div>
+        </form>
+
+        <h6><i class="bi bi-ethernet me-2"></i>Interfeyslar bo'yicha nazorat</h6>
+        <div id="interfaceList" class="list-group shadow-sm">
+            <div class="text-center p-4 text-muted">Interfeyslar yuklanmoqda...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* 1. Flowprobe global parametrlarini yuklash */
+    async function loadFlowprobeSettings() {
+        try {
+            const res = await fetch('/api/ipfix/flowprobe'); // API yo'lini tekshiring
+            if (!res.ok) return;
+            const data = await res.json();
+            document.querySelector('[name="active_timeout"]').value = data.active_timeout || 20;
+            document.getElementById('recordL4').checked = data.record_l4;
+        } catch (err) { console.error('Flowprobe yuklashda xato:', err); }
+    }
+
+    /* 2. Interfeyslar ro'yxatini va ularning statusini yuklash */
+    async function loadInterfaces() {
+        try {
+            const [resAll, resEnabled] = await Promise.all([
+                fetch('/api/interfaces'),
+                fetch('/api/ipfix/interfaces/enabled')
+            ]);
+
+            const allIfs = await resAll.json();
+            const enabledIfs = await resEnabled.json(); // Masalan: [1, 2, 5]
+
+
+            const container = document.getElementById('interfaceList');
+            container.innerHTML = '';
+            isEnabled=0
+
+            allIfs.forEach(iface => {
+                if(enabledIfs!=null){
+                     isEnabled = enabledIfs.includes(iface.index) }
+                else  isEnabled = 0
+                const item = document.createElement('div');
+                item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                item.innerHTML = `
+                <div>
+                    <strong>${iface.name}</strong>
+                    <div class="text-muted small">Index: ${iface.index} | Status: ${iface.status}</div>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" 
+                           ${isEnabled ? 'checked' : ''} 
+                           onchange="toggleFlowprobe(${iface.index}, this.checked)">
+                </div>
+            `;
+                container.appendChild(item);
+            });
+        } catch (err) { console.error('Interfeyslarni yuklashda xato:', err); }
+    }
+
+    /* 3. Global Flowprobe sozlamalarini saqlash */
+    document.getElementById('flowprobeForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const payload = {
+            active_timeout: parseInt(e.target.active_timeout.value),
+            record_l4: document.getElementById('recordL4').checked
+        };
+
+        const res = await fetch('/api/ipfix/flowprobe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) showAlert('Flowprobe parametrlari saqlandi', 'success');
+        else showAlert('Saqlashda xato', 'danger');
+    });
+
+    /* 4. Interfeysda Flowprobeni yoqish/o'chirish */
+    async function toggleFlowprobe(swIfIndex, enable) {
+        try {
+            const res = await fetch('/api/ipfix/interface', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sw_if_index: swIfIndex, enable: enable })
+            });
+            if (res.ok) showAlert(`Interfeys ${enable ? 'yoqildi' : "o'chirildi"}`, 'info');
+            else showAlert('Xato yuz berdi', 'danger');
+        } catch (err) { console.error('Toggle xatosi:', err); }
+    }
+</script>
+{{ end }}

@@ -1,0 +1,62 @@
+{{ define "flow_live_stream" }}
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-activity me-2"></i> Real-Time Flow Stream</h5>
+        <span class="badge bg-success" id="flowStatus">Live</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 500px;">
+            <table class="table table-hover mb-0" id="flowTable">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Vaqt</th>
+                        <th>Source IP</th>
+                        <th>Destination IP</th>
+                        <th>Portlar (S/D)</th>
+                        <th>Protocol</th>
+                    </tr>
+                </thead>
+                <tbody id="flowBody">
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Oqimlar kutilmoqda...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+async function updateFlows() {
+    try {
+        const response = await fetch('/api/flow/live');
+        const data = await response.json();
+        
+        const tbody = document.getElementById('flowBody');
+        if (!data || data.length === 0) return;
+
+        // Jadvalni tozalash va yangi ma'lumotlarni qo'shish
+        tbody.innerHTML = '';
+        data.reverse().forEach(flow => {
+            const row = `
+                <tr>
+                    <td><small>${new Date(flow.timestamp).toLocaleTimeString()}</small></td>
+                    <td><span class="badge bg-info text-dark">${flow.src_ip}</span></td>
+                    <td><span class="badge bg-primary">${flow.dst_ip}</span></td>
+                    <td><small>${flow.src_port} → ${flow.dst_port}</small></td>
+                    <td><span class="badge bg-secondary">${flow.protocol_name || flow.protocol}</span></td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Flow error:', error);
+    }
+}
+
+// // Har 2 sekundda yangilab turish
+// setInterval(updateFlows, 2000);
+// // Birinchi marta darrov yuklash
+// updateFlows();
+</script>
+{{ end }}

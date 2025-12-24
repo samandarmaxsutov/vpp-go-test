@@ -1,0 +1,14 @@
+{"timestamp":"2025-12-22 14:18:36","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 0 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:19:17","user":"Administrator","type":"acl","action":"Create ACL","target":"test_ACL","status":"FAILED: invalid source CIDR: invalid CIDR address: "}
+{"timestamp":"2025-12-22 14:19:46","user":"Administrator","type":"acl","action":"Create ACL","target":"Tag: test_ACL, Index: 0, Rules: 1","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:19:46","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:20:10","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:22:01","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:22:26","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:22:43","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:22:48","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:22:55","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 14:26:14","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 15:09:23","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 15:09:54","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}
+{"timestamp":"2025-12-22 15:13:51","user":"Administrator","type":"acl","action":"Get All ACLs","target":"Found 1 ACLs","status":"SUCCESS"}

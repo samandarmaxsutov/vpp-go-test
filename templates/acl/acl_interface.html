@@ -1,0 +1,436 @@
+{{ define "interface_bind" }}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-connector-cascade me-2 text-primary"></i>Interface ACL Assignment
+            </h4>
+            <p class="text-muted small">Interfeyslarga IP va MAC darajasidagi xavfsizlik qoidalarini biriktirish</p>
+        </div>
+        <button class="btn btn-outline-primary shadow-sm" onclick="loadAllAssignments()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-7 col-lg-12">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-shield-check me-2"></i>IP ACL Assignments (Ingress/Egress)
+                    </h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Interface</th>
+                                <th>Input (Ingress)</th>
+                                <th>Output (Egress)</th>
+                                <th class="text-end pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ip-assign-body">
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5 col-lg-12">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-hdd-network me-2"></i>MAC/IP Anti-Spoofing (L2)
+                    </h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Interface</th>
+                                <th>Attached MAC ACL</th>
+                                <th class="text-end pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mac-assign-body">
+                            <tr>
+                                <td colspan="3" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-dark"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ipAssignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">IP ACL Assignment: <span id="ipModalIfaceName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <input type="hidden" id="ipTargetIfIndex">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-primary">Input ACLs (Ingress) - Drag to Reorder</label>
+                    <div id="inputSortable" class="list-group border p-2 bg-light" style="min-height: 50px;">
+                    </div>
+                    <select id="ipInputSelect" class="form-select mt-2 border-primary-subtle"
+                        onchange="addAclToList('input')">
+                        <option value="">+ Add Input ACL</option>
+                    </select>
+                </div>
+
+                <div class="mb-0">
+                    <label class="form-label fw-bold text-info">Output ACLs (Egress) - Drag to Reorder</label>
+                    <div id="outputSortable" class="list-group border p-2 bg-light" style="min-height: 50px;">
+                    </div>
+                    <select id="ipOutputSelect" class="form-select mt-2 border-info-subtle"
+                        onchange="addAclToList('output')">
+                        <option value="">+ Add Output ACL</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-danger" onclick="clearIpAssignment()">
+                    <i class="bi bi-trash-fill me-1"></i> Unbind All
+                </button>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4" onclick="saveIpAssignment()">Save
+                        Changes</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="macAssignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">MAC ACL Binding</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="macTargetIfIndex">
+                <label class="form-label fw-bold">Select MAC Policy</label>
+                <select id="macPolicySelect" class="form-select border-2">
+                    <option value="">-- No MAC ACL --</option>
+                </select>
+                <p class="small text-muted mt-2 mb-0">MACIP ACL interfeysga faqat bitta biriktirilishi mumkin.</p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-dark px-4" onclick="saveMacAssignment()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAllAssignments();
+    });
+
+    async function loadAllAssignments() {
+        try {
+            const [ifaces, fullMap, ipAcls, macAcls] = await Promise.all([
+                fetch('/api/interfaces').then(r => r.json()),
+                fetch('/api/acl/interface/full-map').then(r => r.json()),
+                fetch('/api/acl').then(r => r.json()),
+                fetch('/api/mac-acl').then(r => r.json())
+            ]);
+
+            window.availableIpAcls = ipAcls || [];
+            window.availableMacAcls = macAcls || [];
+
+            renderIpTable(ifaces, fullMap.ip_assignments || []);
+            renderMacTable(ifaces, fullMap.mac_assignments || {});
+        } catch (err) {
+            console.error("Yuklashda xato:", err);
+        }
+    }
+
+    function renderIpTable(ifaces, assignments) {
+        const body = document.getElementById('ip-assign-body');
+        body.innerHTML = '';
+
+        ifaces.forEach(item => {
+            const idx = item.index; // VPP index
+            const name = item.name;  // Interface name
+
+            // Backend "ip_assignments" ichidan sw_if_index bo'yicha topamiz
+            const map = assignments.find(m => m.sw_if_index === idx) || { input_acls: [], output_acls: [] };
+
+            body.innerHTML += `
+            <tr>
+                <td class="ps-3 fw-bold text-dark">${name} <small class="text-muted d-block">ID: ${idx}</small></td>
+                <td>${renderBadges(map.input_acls, 'primary')}</td>
+                <td>${renderBadges(map.output_acls, 'info')}</td>
+                <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openIpModal(${idx}, '${name}', ${JSON.stringify(map.input_acls || [])}, ${JSON.stringify(map.output_acls || [])})">
+                        <i class="bi bi-gear-fill"></i>
+                    </button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    function renderMacTable(ifaces, assignments) {
+        const body = document.getElementById('mac-assign-body');
+        body.innerHTML = '';
+
+        ifaces.forEach(item => {
+            const idx = item.index;
+            const name = item.name;
+
+            // assignments bu map[uint32]uint32
+            const macAclIdx = assignments[idx];
+            const hasAcl = macAclIdx !== undefined && macAclIdx !== 4294967295;
+
+            body.innerHTML += `
+            <tr>
+                <td class="ps-3 fw-bold text-dark">${name}</td>
+                <td>${hasAcl ? `<span class="badge bg-dark border px-3">MAC ACL #${macAclIdx}</span>` : '<span class="text-muted small">None</span>'}</td>
+                <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-outline-dark" onclick="openMacModal(${idx}, ${hasAcl ? macAclIdx : 'null'})">
+                        <i class="bi bi-link-45deg"></i>
+                    </button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    function renderBadges(list, color) {
+        if (!list || list.length === 0) return '<span class="text-muted small">None</span>';
+        return list.map(id => `<span class="badge bg-${color}-subtle text-${color} border border-${color}-subtle me-1 px-2">#${id}</span>`).join('');
+    }
+
+      // IP Modalni ochish funksiyasini yangilaymiz
+    let inputSortableInst = null;
+    let outputSortableInst = null;
+
+    // Modal ochilganda Sortable-ni ishga tushiramiz
+    function initSortables() {
+        const inEl = document.getElementById('inputSortable');
+        const outEl = document.getElementById('outputSortable');
+
+        if (!inputSortable) inputSortable = new Sortable(inEl, { animation: 150, ghostClass: 'bg-warning-subtle' });
+        if (!outputSortable) outputSortable = new Sortable(outEl, { animation: 150, ghostClass: 'bg-warning-subtle' });
+    }
+
+    // Ro'yxatga yangi ACL qo'shish
+  function addAclToList(type, aclId = null, aclTag = null) {
+    const select = document.getElementById(type === 'input' ? 'ipInputSelect' : 'ipOutputSelect');
+    const container = document.getElementById(type === 'input' ? 'inputSortable' : 'outputSortable');
+
+    const id = aclId !== null ? aclId.toString() : select.value;
+    if (!id || id === "") return;
+
+    // Mavjudligini tekshirish (faqat bitta ACL bir marta qo'shilishi uchun)
+    const exists = [...container.querySelectorAll('.acl-item')].some(el => el.dataset.id === id);
+    if (exists) {
+        select.value = "";
+        return;
+    }
+
+    const tag = aclTag || select.options[select.selectedIndex].text;
+    const color = type === 'input' ? 'primary' : 'info';
+
+    const item = document.createElement('div');
+    item.className = `list-group-item d-flex justify-content-between align-items-center acl-item border-${color} mb-2 shadow-sm bg-white rounded`;
+    item.dataset.id = id;
+    item.style.cursor = 'move';
+    item.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-grip-vertical me-2 text-muted"></i>
+            <span class="fw-medium text-dark">${tag}</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="this.closest('.acl-item').remove()">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    `;
+    container.appendChild(item);
+    select.value = "";
+}
+
+
+    function openIpModal(idx, name, input, output) {
+        document.getElementById('ipModalIfaceName').innerText = name;
+        document.getElementById('ipTargetIfIndex').value = idx;
+
+        const inSelect = document.getElementById('ipInputSelect');
+        const outSelect = document.getElementById('ipOutputSelect');
+        const inList = document.getElementById('inputSortable');
+        const outList = document.getElementById('outputSortable');
+
+        // 1. Avvalgi elementlarni va instansiyalarni tozalaymiz (Ustma-ust tushmasligi uchun)
+        if (inputSortableInst) { inputSortableInst.destroy(); inputSortableInst = null; }
+        if (outputSortableInst) { outputSortableInst.destroy(); outputSortableInst = null; }
+
+        inList.innerHTML = '';
+        outList.innerHTML = '';
+        inSelect.innerHTML = '<option value="">+ Add Input ACL</option>';
+        outSelect.innerHTML = '<option value="">+ Add Output ACL</option>';
+
+        // 2. Select-ni to'ldirish
+        window.availableIpAcls.forEach(acl => {
+            const txt = `${acl.tag} (#${acl.acl_index})`;
+            inSelect.add(new Option(txt, acl.acl_index));
+            outSelect.add(new Option(txt, acl.acl_index));
+        });
+
+        // 3. VPP dan kelgan tartibda ACL kartochkalarini yaratish
+        // MUHIM: VPP tartibni qanday yuborgan bo'lsa, shunday ko'rsatishimiz kerak
+        if (input && Array.isArray(input)) {
+            input.forEach(aclId => {
+                const found = window.availableIpAcls.find(a => a.acl_index === aclId);
+                if (found) addAclToList('input', found.acl_index, `${found.tag} (#${found.acl_index})`);
+            });
+        }
+
+        if (output && Array.isArray(output)) {
+            output.forEach(aclId => {
+                const found = window.availableIpAcls.find(a => a.acl_index === aclId);
+                if (found) addAclToList('output', found.acl_index, `${found.tag} (#${found.acl_index})`);
+            });
+        }
+
+        // 4. Sortable-ni yangidan ishga tushiramiz
+        inputSortableInst = new Sortable(inList, { animation: 150, ghostClass: 'bg-warning-light' });
+        outputSortableInst = new Sortable(outList, { animation: 150, ghostClass: 'bg-warning-light' });
+
+        new bootstrap.Modal(document.getElementById('ipAssignModal')).show();
+    }
+    // Saqlashda vizual tartibni olamiz
+    async function saveIpAssignment() {
+        const swIdx = parseInt(document.getElementById('ipTargetIfIndex').value);
+
+        // Aynan DOM-dagi tartib bo'yicha IDlarni yig'amiz
+        const inputAcls = [...document.getElementById('inputSortable').querySelectorAll('.acl-item')]
+            .map(el => parseInt(el.dataset.id));
+        const outputAcls = [...document.getElementById('outputSortable').querySelectorAll('.acl-item')]
+            .map(el => parseInt(el.dataset.id));
+
+        const res = await fetch('/api/acl/interface/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sw_if_index: swIdx, input_acls: inputAcls, output_acls: outputAcls })
+        });
+
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('ipAssignModal')).hide();
+            loadAllAssignments();
+        }
+    }
+
+    async function clearIpAssignment() {
+        if (!confirm("Ushbu interfeysdagi barcha IP ACLlarni olib tashlamoqchimisiz?")) return;
+
+        const swIdx = parseInt(document.getElementById('ipTargetIfIndex').value);
+
+        // Bo'sh massivlar yuboriladi
+        const res = await fetch('/api/acl/interface/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sw_if_index: swIdx,
+                input_acls: [],
+                output_acls: []
+            })
+        });
+
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('ipAssignModal')).hide();
+            loadAllAssignments();
+        } else {
+            alert("Tozalashda xato yuz berdi");
+        }
+    }
+
+    // --- MAC ACL MODAL ---
+    function openMacModal(idx, currentIdx) {
+        document.getElementById('macTargetIfIndex').value = idx;
+        const select = document.getElementById('macPolicySelect');
+        select.innerHTML = '<option value="">-- No MAC ACL --</option>';
+
+        window.availableMacAcls.forEach(acl => {
+            const opt = new Option(`${acl.tag} (#${acl.acl_index})`, acl.acl_index);
+            if (currentIdx === acl.acl_index) opt.selected = true;
+            select.add(opt);
+        });
+
+        window.currentAttachedMac = currentIdx;
+        new bootstrap.Modal(document.getElementById('macAssignModal')).show();
+    }
+
+    async function saveMacAssignment() {
+        const swIdx = parseInt(document.getElementById('macTargetIfIndex').value);
+        const newAclIdx = document.getElementById('macPolicySelect').value;
+
+        // 1. Eskisini yechish (unapply endpointi!)
+        if (window.currentAttachedMac !== null) {
+            await fetch('/api/mac-acl/interface/unapply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sw_if_index: swIdx, acl_index: window.currentAttachedMac })
+            });
+        }
+
+        // 2. Yangisini biriktirish
+        if (newAclIdx !== "") {
+            const res = await fetch('/api/mac-acl/interface/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sw_if_index: swIdx, acl_index: parseInt(newAclIdx) })
+            });
+            if (!res.ok) alert("Apply failed");
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('macAssignModal')).hide();
+        loadAllAssignments();
+    }
+</script>
+
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .badge {
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff;
+        color: #0d6efd;
+    }
+
+    .bg-info-subtle {
+        background-color: #e1f5fe;
+        color: #01579b;
+    }
+
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: none;
+    }
+</style>
+{{ end }}

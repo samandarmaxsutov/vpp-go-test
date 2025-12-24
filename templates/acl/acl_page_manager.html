@@ -1,0 +1,103 @@
+{{ template "base" . }}
+{{ define "acl_page_manager" }}
+
+<style>
+    /* Professional Dashboard Styles */
+    .nav-pills-custom .nav-link {
+        color: #6c757d;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        margin-right: 10px;
+        border-radius: 6px;
+        padding: 10px 20px;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    .nav-pills-custom .nav-link.active {
+        background-color: #0d6efd !important;
+        color: #fff !important;
+        border-color: #0d6efd;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    }
+    .nav-pills-custom .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+    }
+    .main-card-container {
+        background: #fdfdfd;
+        border-radius: 12px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        padding: 25px;
+        min-height: 80vh;
+    }
+    .page-header-title {
+        border-left: 5px solid #0d6efd;
+        padding-left: 15px;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header-title">
+            <h3 class="fw-bold text-dark mb-1">Network Security Manager</h3>
+
+        </div>
+     
+    </div>
+
+    <ul class="nav nav-pills nav-pills-custom mb-4" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#ip-acls" type="button">
+                <i class="bi bi-shield-check me-2"></i>IPv4/IPv6 Policies
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#mac-acls" type="button">
+                <i class="bi bi-hdd-network me-2"></i>L2 MAC Filtering
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#interface-bind" type="button">
+                <i class="bi bi-ethernet me-2"></i>Interface Assignment
+            </button>
+        </li>
+    </ul>
+
+    <div class="main-card-container border">
+        <div class="tab-content" id="mainTabsContent">
+            <div class="tab-pane fade show active" id="ip-acls" role="tabpanel">
+                {{ template "ip_acl_list" . }}
+            </div>
+            
+            <div class="tab-pane fade" id="mac-acls" role="tabpanel">
+                {{ template "mac_acl_list" . }}
+            </div>
+            
+            <div class="tab-pane fade" id="interface-bind" role="tabpanel">
+                {{ template "interface_bind" . }}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ template "ip_modal" . }}
+{{ template "acl_modals" . }}
+
+<script>
+    // Tab xotirasini saqlash (Sahifa yangilanganda o'sha tabda qoladi)
+    document.addEventListener('DOMContentLoaded', function() {
+        let activeTab = localStorage.getItem('vppActiveTab');
+        if (activeTab) {
+            let tabTrigger = new bootstrap.Tab(document.querySelector(`button[data-bs-target="${activeTab}"]`));
+            tabTrigger.show();
+        }
+
+        let tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabs.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                localStorage.setItem('vppActiveTab', e.target.getAttribute('data-bs-target'));
+            });
+        });
+    });
+</script>
+{{ end }}
