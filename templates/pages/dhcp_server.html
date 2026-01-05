@@ -1,0 +1,243 @@
+{{ template "base" . }}
+
+{{ define "dhcp_server_page" }}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">DHCP Relay & Proxy</h3>
+            <p class="text-muted small">Forward DHCP requests from local clients to remote DHCP servers</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary shadow-sm" onclick="loadProxies()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+            <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#addProxyModal">
+                <i class="bi bi-plus-circle me-2"></i>Add DHCP Proxy
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase small opacity-75">Active Relays</h6>
+                    <h2 class="mb-0" id="relayCount">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-5">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="proxyTable">
+                <thead class="bg-light text-uppercase small fw-bold">
+                    <tr>
+                        <th>RX VRF (Client)</th>
+                        <th>Source IP (Gateway)</th>
+                        <th>DHCP Servers</th>
+                        <th>Stack</th>
+                        <th>VSS (Option 82)</th>
+                        <th class="text-end px-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="proxyTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                            <span class="ms-2">Loading configurations...</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Active DHCP Leases</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light small fw-bold text-uppercase">
+                    <tr>
+                        <th>IP Address</th>
+                        <th>MAC Address</th>
+                        <th>Hostname</th>
+                        <th>Expiration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="leaseTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProxyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">New DHCP Proxy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="proxyForm">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Client VRF (RX)</label>
+                            <input type="number" class="form-control" name="rx_vrf" value="0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Server VRF</label>
+                            <input type="number" class="form-control" name="server_vrf" value="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">DHCP Server IP</label>
+                            <input type="text" class="form-control" name="server_ip" placeholder="e.g. 10.10.10.1" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Relay Source IP (GIADDR)</label>
+                            <input type="text" class="form-control" name="src_ip" placeholder="VPP Interface IP" required>
+                            <div class="form-text small">Must be reachable by the DHCP server.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" onclick="submitProxy()">Create Relay</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadProxies();
+    loadLeases();
+    setInterval(loadLeases, 30000); // Auto-refresh every 30s
+});
+
+async function loadLeases() {
+    try {
+        const res = await fetch('/api/dhcp/leases');
+        const data = await res.json();
+        const tbody = document.getElementById('leaseTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No active leases found</td></tr>';
+            return;
+        }
+
+        data.sort((a, b) => a.ip_address.localeCompare(b.ip_address, undefined, {numeric: true}));
+
+        data.forEach(lease => {
+            const now = Math.floor(Date.now() / 1000);
+            // Lease is active if backend says so AND time hasn't passed
+            const isActive = lease.is_active && (lease.expires_raw > now);
+
+            const statusBadge = isActive ? 
+                '<span class="badge bg-success-soft text-success"><i class="bi bi-check-circle me-1"></i>Active</span>' : 
+                '<span class="badge bg-light text-muted">Released/Expired</span>';
+
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td><strong class="text-primary">${lease.ip_address}</strong></td>
+                    <td><code>${lease.mac_address}</code></td>
+                    <td>${lease.hostname || '<em>unknown</em>'}</td>
+                    <td><small class="text-muted">${lease.expires}</small></td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `);
+        });
+    } catch (e) {
+        console.error("Failed to load leases", e);
+    }
+}
+
+function formatVppAddr(addr) {
+    if (!addr) return "N/A";
+    if (typeof addr === 'string') return addr;
+    if (addr.un) return addr.un.ip4 || addr.un.ip6 || "N/A";
+    return "N/A";
+}
+
+async function loadProxies() {
+    try {
+        const response = await fetch('/api/dhcp/proxies');
+        const data = await response.json();
+        const tbody = document.getElementById('proxyTableBody');
+        tbody.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No proxies configured</td></tr>';
+            document.getElementById('relayCount').innerText = '0';
+            return;
+        }
+
+        document.getElementById('relayCount').innerText = data.length;
+
+        data.forEach(proxy => {
+            const rxVrf = (typeof proxy.rx_vrf_id !== 'undefined') ? proxy.rx_vrf_id : 0;
+            const srcAddr = formatVppAddr(proxy.dhcp_src_address);
+            const serverList = (proxy.servers) ? proxy.servers.map(s => formatVppAddr(s.dhcp_server)).join(', ') : "N/A";
+            
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td><span class="badge bg-secondary rounded-pill px-3">VRF ${rxVrf}</span></td>
+                    <td><code class="text-pink">${srcAddr}</code></td>
+                    <td><span class="fw-bold text-primary">${serverList}</span></td>
+                    <td><span class="badge ${proxy.is_ipv6 ? 'bg-info' : 'bg-primary'}">${proxy.is_ipv6 ? 'IPv6' : 'IPv4'}</span></td>
+                    <td><small class="text-muted">${proxy.vss_vpn_ascii_id || 'None'}</small></td>
+                    <td class="text-end px-4">
+                        <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteProxy('${serverList}', '${srcAddr}', ${rxVrf}, ${proxy.is_ipv6 || false})">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </td>
+                </tr>`);
+        });
+    } catch (err) { console.error(err); }
+}
+
+async function submitProxy() {
+    const form = document.getElementById('proxyForm');
+    const formData = new FormData(form);
+    const payload = {
+        rx_vrf: parseInt(formData.get('rx_vrf')),
+        server_vrf: parseInt(formData.get('server_vrf')),
+        server_ip: formData.get('server_ip'),
+        src_ip: formData.get('src_ip'),
+        is_add: true
+    };
+    const res = await fetch('/api/dhcp/proxy', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('addProxyModal')).hide();
+        loadProxies();
+        form.reset();
+    }
+}
+
+async function deleteProxy(serverIP, srcIP, vrf, isIPv6) {
+    if (!confirm('Remove this DHCP relay?')) return;
+    const res = await fetch('/api/dhcp/proxy', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({server_ip: serverIP, src_ip: srcIP, rx_vrf: vrf, server_vrf: vrf, is_add: false, is_ipv6: isIPv6})
+    });
+    if (res.ok) loadProxies();
+}
+</script>
+
+<style>
+    .text-pink { color: #d63384; font-weight: 500; }
+    .bg-success-soft { background-color: #e8f5e9; }
+    .table thead th { font-size: 0.75rem; letter-spacing: 0.05em; }
+</style>
+{{ end }}

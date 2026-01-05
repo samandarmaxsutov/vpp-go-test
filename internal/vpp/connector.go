@@ -12,6 +12,7 @@ import (
 	"vpp-go-test/internal/vpp/acl"
 	"vpp-go-test/internal/vpp/nat44"
 	"vpp-go-test/internal/vpp/ipfix"
+	"vpp-go-test/internal/vpp/dhcp"
 )
 
 type VPPClient struct {
@@ -21,6 +22,7 @@ type VPPClient struct {
 	ACLManager *acl.ACLManager //Acl 
 	NatManager  *nat44.NatManager
 	IpfixManager *ipfix.IpfixManager
+	DhcpManager *dhcp.DhcpManager
 	StartTime time.Time
 	IfNames map[uint32]string
 }
@@ -57,6 +59,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	client.ACLManager = acl.NewACLManager(conn)
 	client.NatManager = nat44.NewNatManager(conn)
 	client.IpfixManager = ipfix.NewIpfixManager(conn)
+	client.DhcpManager = dhcp.NewDhcpManager(conn)
 
 	return client, nil	
 }

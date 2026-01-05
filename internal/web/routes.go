@@ -31,6 +31,7 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	natHandler := NewNatHandler(client.NatManager)
 	logHandler := &LogHandler{}
 	ipfixHandler := NewIpfixHandler(client)
+	dhcpHandler := &DhcpHandler{DhcpMgr: client.DhcpManager}
 
 	r.GET("/login", auth.LoginGet)
 	r.POST("/login", auth.LoginPost)
@@ -66,6 +67,12 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			c.HTML(200, "nat_page_manager.html", gin.H{
 				"title":  "NAT44",
 				"active": "nat_page_manager",
+			})
+		})
+		protected.GET("/dhcp-server", func(c *gin.Context) {
+			c.HTML(200, "dhcp_server.html", gin.H{
+				"title":  "DHCP Server",
+				"active": "dhcp",
 			})
 		})
 		protected.GET("/acl", func(c *gin.Context) {
@@ -188,6 +195,13 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				ipfixApi.GET("/interfaces/enabled", ipfixHandler.GetEnabledInterfaces)
 			}
 
+			dhcpApi := api.Group("/dhcp")
+			{
+				dhcpApi.GET("/proxies", dhcpHandler.HandleGetProxies)
+				dhcpApi.POST("/proxy", dhcpHandler.HandleConfigureProxy)
+				dhcpApi.POST("/vss", dhcpHandler.HandleSetVSS)
+				dhcpApi.GET("/leases", dhcpHandler.HandleGetLeases)
+			}
 		}
 	}
 }

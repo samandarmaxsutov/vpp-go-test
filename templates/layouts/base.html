@@ -78,6 +78,8 @@
             {{ template "routing_page" . }}
             {{ else if eq .active "nat_page_manager" }}
             {{ template "nat_page_manager" . }}
+            {{ else if eq .active "dhcp" }}
+            {{ template "dhcp_server_page" . }}
             {{ else if eq .active "acl_page_manager" }}
             {{ template "acl_page_manager" . }}
             {{ else if eq .active "flow_page_manager" }}
