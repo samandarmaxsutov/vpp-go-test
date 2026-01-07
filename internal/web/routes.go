@@ -33,6 +33,8 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	ipfixHandler := NewIpfixHandler(client)
 	dhcpHandler := &DhcpHandler{DhcpMgr: client.DhcpManager}
 
+	abfHandler := &AbfHandler{AbfMgr: client.AbfManager}
+
 	r.GET("/login", auth.LoginGet)
 	r.POST("/login", auth.LoginPost)
 	r.GET("/logout", auth.Logout)
@@ -79,6 +81,12 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			c.HTML(200, "acl_page_manager.html", gin.H{
 				"title":  "Firewall ACL",
 				"active": "acl_page_manager",
+			})
+		})
+		protected.GET("/abf", func(c *gin.Context) {
+			c.HTML(200, "access_based_fwd.html", gin.H{
+				"title":  "Access Based Forwarding",
+				"active": "abf_page",
 			})
 		})
 		protected.GET("/flow-monitoring", func(c *gin.Context) {
@@ -214,6 +222,14 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				dhcpApi.GET("/kea-config", dhcpHandler.HandleGetKeaConfig)   // GET
 				dhcpApi.POST("/kea-config", dhcpHandler.HandleSaveKeaSubnet) // ADD/UPDATE (Append ishlaydi)
 				dhcpApi.DELETE("/kea-subnet/:id", dhcpHandler.HandleDeleteKeaSubnet)
+			}
+
+			abfApi := api.Group("/abf")
+			{
+				abfApi.GET("/policies", abfHandler.HandleGetPolicies)
+				abfApi.POST("/policy", abfHandler.HandleCreatePolicy)
+				abfApi.POST("/attach", abfHandler.HandleAttachInterface)
+				abfApi.GET("/attachments", abfHandler.HandleGetAttachments)
 			}
 		}
 	}

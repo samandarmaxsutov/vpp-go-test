@@ -13,6 +13,7 @@ import (
 	"vpp-go-test/internal/vpp/nat44"
 	"vpp-go-test/internal/vpp/ipfix"
 	"vpp-go-test/internal/vpp/dhcp"
+	"vpp-go-test/internal/vpp/abf_mgr"
 )
 
 type VPPClient struct {
@@ -23,6 +24,7 @@ type VPPClient struct {
 	NatManager  *nat44.NatManager
 	IpfixManager *ipfix.IpfixManager
 	DhcpManager *dhcp.DhcpManager
+	AbfManager  *abf_mgr.AbfManager
 	StartTime time.Time
 	IfNames map[uint32]string
 }
@@ -60,6 +62,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	client.NatManager = nat44.NewNatManager(conn)
 	client.IpfixManager = ipfix.NewIpfixManager(conn)
 	client.DhcpManager = dhcp.NewDhcpManager(conn)
+	client.AbfManager = abf_mgr.NewAbfManager(conn)
 
 	return client, nil	
 }

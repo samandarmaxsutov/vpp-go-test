@@ -3,22 +3,7 @@
 {{ define "flow_page_manager" }}
 <ul class="nav nav-tabs mb-3" id="flowTabs" role="tablist">
     <li class="nav-item">
-        <a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" href="#dashboard_pane">
-            <i class="bi bi-graph-up"></i> Dashboard
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="live-tab" data-bs-toggle="tab" href="#live_pane">
-            <i class="bi bi-list-ul"></i> Live Flows
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="security-tab" data-bs-toggle="tab" href="#security_pane">
-            <i class="bi bi-shield-exclamation text-danger"></i> Security Alerts
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#exporter_settings_pane">
+        <a class="nav-link active" id="settings-tab" data-bs-toggle="tab" href="#exporter_settings_pane">
             <i class="bi bi-gear"></i> Exporter Settings
         </a>
     </li>
@@ -30,16 +15,7 @@
 </ul>
 
 <div class="tab-content border p-4 bg-white shadow-sm rounded">
-    <div class="tab-pane fade show active" id="dashboard_pane">
-        {{ template "flow_dashboard" . }}
-    </div>
-    <div class="tab-pane fade" id="live_pane">
-        {{ template "flow_live_stream" . }}
-    </div>
-    <div class="tab-pane fade" id="security_pane">
-        {{ template "flow_security_alerts" . }}
-    </div>
-    <div class="tab-pane fade" id="exporter_settings_pane">
+    <div class="tab-pane fade show active" id="exporter_settings_pane">
         {{ template "flow_settings" . }}
     </div>
     <div class="tab-pane fade" id="flowprobe_settings_pane">

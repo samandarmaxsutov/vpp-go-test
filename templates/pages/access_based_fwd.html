@@ -1,0 +1,273 @@
+{{ template "base" . }}
+{{ define "abf_page" }}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">ABF (ACL-based Forwarding) Boshqaruvi</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="bi bi-plus-circle me-2"></i> Yangi ABF Policy Yaratish
+                </div>
+                <div class="card-body">
+                    <form id="abfPolicyForm">
+                        <div class="mb-3">
+                            <label class="form-label">Policy ID</label>
+                            <input type="number" class="form-control" id="policy_id" min="1" placeholder="Masalan: 1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ACL Index</label>
+                            <input type="number" class="form-control" id="acl_index" placeholder="ACL tartib raqami" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Next-Hop IP</label>
+                            <input type="text" class="form-control" id="next_hop" placeholder="10.0.0.1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Policy Saqlash</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-link-45deg me-2"></i> Interfeysga biriktirish (Attach)
+                </div>
+                <div class="card-body">
+                    <form id="abfAttachForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Policy ID</label>
+                                <input type="number" class="form-control" id="attach_policy_id" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Interfeys</label>
+                                <select class="form-select" id="sw_if_index_select" required>
+                                    <option value="">Interfeysni tanlang...</option>
+                                    </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ustuvorlik (Priority)</label>
+                                <input type="number" class="form-control" id="priority" value="10" required>
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="is_ipv6">
+                                    <label class="form-check-label">IPv6 rejim</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Interfeysga bog'lash</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between">
+                    <span><i class="bi bi-list-ul me-2"></i> Siyosatlar</span>
+                    <button class="btn btn-sm btn-outline-light" onclick="loadAbfPolicies()"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ACL</th>
+                                <th>Next-Hop</th>
+                                <th>Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="abfTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between">
+                    <span><i class="bi bi-intersect me-2"></i> Faol Biriktirmalar</span>
+                    <button class="btn btn-sm btn-outline-light" onclick="loadAbfAttachments()"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>IfIndex</th>
+                                <th>Priority</th>
+                                <th>Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attachTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sahifa yuklanganda barcha ma'lumotlarni olish
+    window.onload = function() {
+        loadInterfaces();
+        loadAbfPolicies();
+        loadAbfAttachments();
+    };
+
+    // 1. Interfeyslarni yuklash (Select uchun)
+    async function loadInterfaces() {
+        const res = await fetch('/api/interfaces');
+        const ifaces = await res.json();
+        const select = document.getElementById('sw_if_index_select');
+        ifaces.forEach(i => {
+            if (i.name !== 'local0') {
+                const opt = document.createElement('option');
+                opt.value = i.index;
+                opt.text = `${i.name} (Idx: ${i.index})`;
+                select.add(opt);
+            }
+        });
+    }
+
+    // 2. Policy Yaratish
+    document.getElementById('abfPolicyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            policy_id: parseInt(document.getElementById('policy_id').value),
+            acl_index: parseInt(document.getElementById('acl_index').value),
+            next_hop: document.getElementById('next_hop').value.trim(),
+            is_add: true
+        };
+        const res = await fetch('/api/abf/policy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        alert(result.message || result.error);
+        loadAbfPolicies();
+    });
+
+    // 3. Attach (Biriktirish)
+    document.getElementById('abfAttachForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            policy_id: parseInt(document.getElementById('attach_policy_id').value),
+            sw_if_index: parseInt(document.getElementById('sw_if_index_select').value),
+            priority: parseInt(document.getElementById('priority').value),
+            is_ipv6: document.getElementById('is_ipv6').checked,
+            is_add: true
+        };
+        const res = await fetch('/api/abf/attach', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        alert(result.message || result.error);
+        loadAbfAttachments();
+    });
+
+    // 4. Policy Ro'yxatini yuklash
+    async function loadAbfPolicies() {
+        const res = await fetch('/api/abf/policies');
+        const policies = await res.json();
+        const tbody = document.getElementById('abfTableBody');
+        tbody.innerHTML = '';
+        
+        if(!policies) return;
+
+        policies.forEach(p => {
+            const pId = p.policy.policy_id;
+            const aIdx = p.policy.acl_index || 0;
+            let firstIp = "";
+            const paths = p.policy.paths.map((path, idx) => {
+                const bytes = path.nh.address.XXX_UnionData;
+                const ip = `${bytes[0]}.${bytes[1]}.${bytes[2]}.${bytes[3]}`;
+                if (idx === 0) firstIp = ip;
+                return ip;
+            }).join(', ');
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${pId}</td>
+                    <td>${aIdx}</td>
+                    <td><small>${paths}</small></td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deletePolicy(${pId}, ${aIdx}, '${firstIp}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // 5. Attachment Ro'yxatini yuklash
+    async function loadAbfAttachments() {
+        const res = await fetch('/api/abf/attachments');
+        const attaches = await res.json();
+        const tbody = document.getElementById('attachTableBody');
+        tbody.innerHTML = '';
+
+        if(!attaches) return;
+
+        attaches.forEach(a => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${a.attach.policy_id}</b></td>
+                    <td>Idx: ${a.attach.sw_if_index}</td>
+                    <td>${a.attach.priority}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="detachInterface(${a.attach.policy_id}, ${a.attach.sw_if_index}, ${a.attach.priority})">
+                            <i class="bi bi-link-45deg"></i> Uzish
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // 6. Detach (Interfeysdan uzish)
+    async function detachInterface(pId, swIdx, priority) {
+        if(!confirm("Ushbu interfeysdan siyosatni uzasizmi?")) return;
+        const data = {
+            policy_id: pId,
+            sw_if_index: swIdx,
+            priority: priority,
+            is_add: false
+        };
+        const res = await fetch('/api/abf/attach', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        alert(result.message || "Uzildi");
+        loadAbfAttachments();
+    }
+
+    // 7. Policy o'chirish
+    async function deletePolicy(pId, aIdx, ip) {
+        if(!confirm("Policy o'chirilsinmi? (Eslatma: Avval interfeysdan uzing!)")) return;
+        const data = { policy_id: pId, acl_index: aIdx, next_hop: ip, is_add: false };
+        const res = await fetch('/api/abf/policy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        alert(result.message || "O'chirildi");
+        loadAbfPolicies();
+    }
+</script>
+{{ end }}
