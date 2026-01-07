@@ -29,6 +29,9 @@
     </div>
 
     <div class="card border-0 shadow-sm mb-5">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-Diagram-3 me-2"></i>Configured Proxies</h5>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="proxyTable">
                 <thead class="bg-light text-uppercase small fw-bold">
@@ -53,6 +56,57 @@
         </div>
     </div>
 
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-server me-2"></i>Kea DHCP Server Settings</h5>
+            <span class="badge bg-light text-dark border">Port: 8001</span>
+        </div>
+        <div class="card-body">
+            <form id="keaConfigForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Subnet (CIDR)</label>
+                        <input type="text" class="form-control" name="kea_subnet" placeholder="10.0.0.0/24" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Relay IP (GIADDR)</label>
+                        <input type="text" class="form-control" name="kea_relay" placeholder="10.0.0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Address Pool</label>
+                        <input type="text" class="form-control" name="kea_pool" placeholder="10.0.0.100-10.0.0.200" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary w-100" onclick="saveKeaConfig()">
+                            <i class="bi bi-save me-1"></i> Apply
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-list-ul me-2"></i>Kea Subnets</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light small fw-bold text-uppercase">
+                    <tr>
+                        <th>ID</th>
+                        <th>Subnet</th>
+                        <th>Relay (GIADDR)</th>
+                        <th>Pool</th>
+                        <th class="text-end px-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="keaSubnetTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
             <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Active DHCP Leases</h5>
@@ -69,7 +123,10 @@
                     </tr>
                 </thead>
                 <tbody id="leaseTableBody">
-                    </tbody>
+                    <tr>
+                        <td colspan="5" class="text-center py-4">No data</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -100,7 +157,6 @@
                         <div class="col-12">
                             <label class="form-label small fw-bold">Relay Source IP (GIADDR)</label>
                             <input type="text" class="form-control" name="src_ip" placeholder="VPP Interface IP" required>
-                            <div class="form-text small">Must be reachable by the DHCP server.</div>
                         </div>
                     </div>
                 </form>
@@ -113,131 +169,382 @@
     </div>
 </div>
 
+<div class="modal fade" id="vssModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">Configure VSS (Option 82)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="vssForm">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Table/VRF ID</label>
+                            <input type="number" class="form-control" name="vrf_id" id="vssVrfId" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">VSS Type</label>
+                            <select class="form-select" name="vss_type">
+                                <option value="1">Network ID (ASCII)</option>
+                                <option value="0">NVT</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">VPN ID (ASCII)</label>
+                            <input type="text" class="form-control" name="vpn_id" placeholder="e.g. vpn-100" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">OUI</label>
+                            <input type="number" class="form-control" name="oui" value="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">VPN Index</label>
+                            <input type="number" class="form-control" name="vpn_index" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger me-auto" onclick="submitVSS(false)">Remove</button>
+                <button type="button" class="btn btn-primary" onclick="submitVSS(true)">Save VSS</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    loadProxies();
-    loadLeases();
-    setInterval(loadLeases, 30000); // Auto-refresh every 30s
-});
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProxies();
+        loadLeases();
+        loadKeaSubnets();
+        setInterval(loadLeases, 30000);
+    });
 
-async function loadLeases() {
-    try {
-        const res = await fetch('/api/dhcp/leases');
-        const data = await res.json();
-        const tbody = document.getElementById('leaseTableBody');
-        tbody.innerHTML = '';
+    async function loadLeases() {
+        try {
+            const res = await fetch('/api/dhcp/leases');
+            const data = await res.json();
+            const tbody = document.getElementById('leaseTableBody');
+            tbody.innerHTML = '';
 
-        if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No active leases found</td></tr>';
-            return;
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No active leases</td></tr>';
+                return;
+            }
+
+            data.forEach(lease => {
+                const now = Math.floor(Date.now() / 1000);
+                const isActive = lease.is_active && (lease.expires_raw > now);
+                const statusBadge = isActive ?
+                    '<span class="badge bg-success-soft text-success">Active</span>' :
+                    '<span class="badge bg-light text-muted">Expired</span>';
+
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr>
+                        <td><strong class="text-primary">${lease.ip_address}</strong></td>
+                        <td><code>${lease.mac_address}</code></td>
+                        <td>${lease.hostname || 'unknown'}</td>
+                        <td><small>${lease.expires}</small></td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `);
+            });
+        } catch (e) {
+            console.error(e);
         }
+    }
 
-        data.sort((a, b) => a.ip_address.localeCompare(b.ip_address, undefined, {numeric: true}));
+    async function loadKeaSubnets() {
+        try {
+            const res = await fetch('/api/dhcp/kea-config');
+            const data = await res.json();
+            const tbody = document.getElementById('keaSubnetTableBody');
+            tbody.innerHTML = '';
 
-        data.forEach(lease => {
-            const now = Math.floor(Date.now() / 1000);
-            // Lease is active if backend says so AND time hasn't passed
-            const isActive = lease.is_active && (lease.expires_raw > now);
+            // Backenddan kelgan JSON strukturasini tekshiramiz
+            // Siz yuborgan JSON: { "Dhcp4": { "subnet4": [...] } }
+            if (!data || !data.Dhcp4 || !data.Dhcp4.subnet4) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Subnetlar topilmadi</td></tr>';
+                return;
+            }
 
-            const statusBadge = isActive ? 
-                '<span class="badge bg-success-soft text-success"><i class="bi bi-check-circle me-1"></i>Active</span>' : 
-                '<span class="badge bg-light text-muted">Released/Expired</span>';
+            const subnets = data.Dhcp4.subnet4;
 
-            tbody.insertAdjacentHTML('beforeend', `
+            subnets.forEach(s => {
+                // Relay IP-ni olish (JSONda u "relay": {"ip-addresses": ["..."]} ko'rinishida)
+                let relayIP = 'N/A';
+                if (s.relay) {
+                    if (s.relay['ip-addresses'] && s.relay['ip-addresses'].length > 0) {
+                        relayIP = s.relay['ip-addresses'][0];
+                    } else if (s.relay['ip-address']) {
+                        relayIP = s.relay['ip-address'];
+                    }
+                }
+
+                // Pool-ni olish
+                const poolRange = (s.pools && s.pools.length > 0) ? s.pools[0].pool : 'N/A';
+
+                tbody.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td><strong class="text-primary">${lease.ip_address}</strong></td>
-                    <td><code>${lease.mac_address}</code></td>
-                    <td>${lease.hostname || '<em>unknown</em>'}</td>
-                    <td><small class="text-muted">${lease.expires}</small></td>
-                    <td>${statusBadge}</td>
+                    <td><span class="badge bg-secondary">${s.id}</span></td>
+                    <td><strong>${s.subnet}</strong></td>
+                    <td><code>${relayIP}</code></td>
+                    <td><small>${poolRange}</small></td>
+                    <td class="text-end px-4">
+                        <button class="btn btn-sm btn-outline-primary me-1" 
+                                onclick="fillKeaForm(${s.id}, '${s.subnet}', '${relayIP}', '${poolRange}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteKeaSubnet(${s.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
                 </tr>
             `);
-        });
-    } catch (e) {
-        console.error("Failed to load leases", e);
-    }
-}
-
-function formatVppAddr(addr) {
-    if (!addr) return "N/A";
-    if (typeof addr === 'string') return addr;
-    if (addr.un) return addr.un.ip4 || addr.un.ip6 || "N/A";
-    return "N/A";
-}
-
-async function loadProxies() {
-    try {
-        const response = await fetch('/api/dhcp/proxies');
-        const data = await response.json();
-        const tbody = document.getElementById('proxyTableBody');
-        tbody.innerHTML = '';
-        
-        if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No proxies configured</td></tr>';
-            document.getElementById('relayCount').innerText = '0';
-            return;
+            });
+        } catch (e) {
+            console.error("Kea yuklashda xato:", e);
+            document.getElementById('keaSubnetTableBody').innerHTML =
+                '<tr><td colspan="5" class="text-center text-danger">Ma\'lumotni yuklab bo\'lmadi</td></tr>';
         }
+    }
 
-        document.getElementById('relayCount').innerText = data.length;
+    // Tahrirlash tugmasi bosilganda formani to'ldirish uchun yordamchi funksiya
+    function fillKeaForm(id, subnet, relay, pool) {
+        // Formadagi inputlarni topib qiymatlarini o'rnatamiz
+        document.getElementsByName('kea_subnet')[0].value = subnet;
+        document.getElementsByName('kea_relay')[0].value = relay;
+        document.getElementsByName('kea_pool')[0].value = pool;
 
-        data.forEach(proxy => {
-            const rxVrf = (typeof proxy.rx_vrf_id !== 'undefined') ? proxy.rx_vrf_id : 0;
-            const srcAddr = formatVppAddr(proxy.dhcp_src_address);
-            const serverList = (proxy.servers) ? proxy.servers.map(s => formatVppAddr(s.dhcp_server)).join(', ') : "N/A";
-            
-            tbody.insertAdjacentHTML('beforeend', `
+        // Foydalanuvchiga tahrirlash rejimida ekanligini bildirish uchun
+        const saveBtn = document.querySelector('#keaConfigForm button');
+        saveBtn.innerHTML = '<i class="bi bi-check-all me-1"></i> Update Subnet';
+        saveBtn.className = 'btn btn-warning w-100';
+
+        // Sahifani tepaga, formaga qarab aylantiramiz
+        document.getElementById('keaConfigForm').scrollIntoView({
+            behavior: 'smooth'
+        });
+    }
+    async function deleteKeaSubnet(id) {
+        if (!confirm("Ushbu subnetni o'chirmoqchimisiz?")) return;
+
+        // O'chirish mantig'i: 
+        // 1. Hamma subnetlarni olamiz
+        // 2. Berilgan ID'li subnetni massivdan olib tashlaymiz
+        // 3. Yangi massivni config-set bilan qayta yuboramiz
+        alert("O'chirish uchun backendda DeleteSubnet funksiyasi kerak (Hozir yozamiz)");
+    }
+
+
+    async function saveKeaConfig() {
+        const form = document.getElementById('keaConfigForm');
+        const formData = new FormData(form);
+
+        const payload = {
+            subnet: formData.get('kea_subnet'),
+            relay_ip: formData.get('kea_relay'),
+            pool: formData.get('kea_pool')
+        };
+
+        try {
+            const res = await fetch('/api/dhcp/kea-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+                alert("Muvaffaqiyatli: " + result.message);
+            } else {
+                alert("Xatolik: " + (result.error || "Kea yangilanmadi"));
+            }
+        } catch (e) {
+            console.error("Kea Config Error:", e);
+            alert("Serverga bog'lanishda xatolik");
+        }
+    }
+
+    async function loadProxies() {
+        try {
+            const response = await fetch('/api/dhcp/proxies');
+            const data = await response.json();
+            const tbody = document.getElementById('proxyTableBody');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No proxies configured</td></tr>';
+                document.getElementById('relayCount').innerText = '0';
+                return;
+            }
+
+            document.getElementById('relayCount').innerText = data.length;
+
+            data.forEach(proxy => {
+                const rxVrf = (typeof proxy.rx_vrf_id !== 'undefined') ? proxy.rx_vrf_id : 0;
+                const srcAddr = formatVppAddr(proxy.dhcp_src_address);
+
+                // 1. Serverlar ro'yxatini har biri uchun alohida o'chirish tugmasi bilan yaratamiz
+                let serversHtml = '';
+                if (proxy.servers && proxy.servers.length > 0) {
+                    serversHtml = proxy.servers.map(s => {
+                        const sIp = formatVppAddr(s.dhcp_server);
+                        return `
+                        <div class="d-flex justify-content-between align-items-center mb-1 p-1 border-bottom">
+                            <span class="fw-bold text-primary small">${sIp}</span>
+                            <button class="btn btn-sm p-0 text-danger" title="O'chirish" 
+                                    onclick="deleteProxy('${sIp}', '${srcAddr}', ${rxVrf})">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </div>`;
+                    }).join('');
+                } else {
+                    serversHtml = '<span class="text-muted small">N/A</span>';
+                }
+
+                // 2. VSS (Option 82) holati
+                const vssContent = proxy.vss_vpn_ascii_id ?
+                    `<span class="badge bg-info-soft text-info border border-info" onclick="openVssModal(${rxVrf})" style="cursor:pointer;">
+                    <i class="bi bi-shield-lock me-1"></i>${proxy.vss_vpn_ascii_id}
+                </span>` :
+                    `<button class="btn btn-sm btn-link text-muted p-0 shadow-none" onclick="openVssModal(${rxVrf})">
+                    <i class="bi bi-plus-square me-1"></i>Set VPN ID
+                </button>`;
+
+                tbody.insertAdjacentHTML('beforeend', `
                 <tr>
                     <td><span class="badge bg-secondary rounded-pill px-3">VRF ${rxVrf}</span></td>
                     <td><code class="text-pink">${srcAddr}</code></td>
-                    <td><span class="fw-bold text-primary">${serverList}</span></td>
+                    <td><div style="min-width: 150px;">${serversHtml}</div></td>
                     <td><span class="badge ${proxy.is_ipv6 ? 'bg-info' : 'bg-primary'}">${proxy.is_ipv6 ? 'IPv6' : 'IPv4'}</span></td>
-                    <td><small class="text-muted">${proxy.vss_vpn_ascii_id || 'None'}</small></td>
+                    <td>${vssContent}</td>
                     <td class="text-end px-4">
-                        <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteProxy('${serverList}', '${srcAddr}', ${rxVrf}, ${proxy.is_ipv6 || false})">
-                            <i class="bi bi-trash3"></i>
-                        </button>
+                        <small class="text-muted">Individual delete per server</small>
                     </td>
                 </tr>`);
-        });
-    } catch (err) { console.error(err); }
-}
-
-async function submitProxy() {
-    const form = document.getElementById('proxyForm');
-    const formData = new FormData(form);
-    const payload = {
-        rx_vrf: parseInt(formData.get('rx_vrf')),
-        server_vrf: parseInt(formData.get('server_vrf')),
-        server_ip: formData.get('server_ip'),
-        src_ip: formData.get('src_ip'),
-        is_add: true
-    };
-    const res = await fetch('/api/dhcp/proxy', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-        bootstrap.Modal.getInstance(document.getElementById('addProxyModal')).hide();
-        loadProxies();
-        form.reset();
+            });
+        } catch (err) {
+            console.error("Proxies yuklashda xatolik:", err);
+        }
     }
-}
 
-async function deleteProxy(serverIP, srcIP, vrf, isIPv6) {
-    if (!confirm('Remove this DHCP relay?')) return;
-    const res = await fetch('/api/dhcp/proxy', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({server_ip: serverIP, src_ip: srcIP, rx_vrf: vrf, server_vrf: vrf, is_add: false, is_ipv6: isIPv6})
-    });
-    if (res.ok) loadProxies();
-}
+    // O'chirish funksiyasi - faqat bitta server IP-sini yuboradi
+    async function deleteProxy(serverIP, srcIP, vrf) {
+        if (!confirm(`Relay serverni o'chirish: ${serverIP}?`)) return;
+
+        const payload = {
+            server_ip: serverIP,
+            src_ip: srcIP,
+            rx_vrf: parseInt(vrf),
+            server_vrf: 0, // FIB 0 sizda default ekan
+            is_add: false
+        };
+
+        try {
+            const res = await fetch('/api/dhcp/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                loadProxies();
+            } else {
+                const errData = await res.json();
+                alert("Xatolik: " + (errData.error || "O'chirib bo'lmadi"));
+            }
+        } catch (e) {
+            console.error("Delete xatosi:", e);
+        }
+    }
+
+    function openVssModal(vrfId) {
+        document.getElementById('vssVrfId').value = vrfId;
+        new bootstrap.Modal(document.getElementById('vssModal')).show();
+    }
+
+    async function submitVSS(isAdd) {
+        const form = document.getElementById('vssForm');
+        const formData = new FormData(form);
+        const payload = {
+            vrf_id: parseInt(formData.get('vrf_id')),
+            vss_type: parseInt(formData.get('vss_type')),
+            vpn_id: formData.get('vpn_id'),
+            oui: parseInt(formData.get('oui')),
+            vpn_index: parseInt(formData.get('vpn_index')),
+            is_ipv6: false,
+            is_add: isAdd
+        };
+        const res = await fetch('/api/dhcp/vss', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('vssModal')).hide();
+            loadProxies();
+        }
+    }
+
+    async function submitProxy() {
+        const form = document.getElementById('proxyForm');
+        const formData = new FormData(form);
+        const payload = {
+            rx_vrf: parseInt(formData.get('rx_vrf')),
+            server_vrf: parseInt(formData.get('server_vrf')),
+            server_ip: formData.get('server_ip'),
+            src_ip: formData.get('src_ip'),
+            is_add: true
+        };
+        const res = await fetch('/api/dhcp/proxy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addProxyModal')).hide();
+            loadProxies();
+            form.reset();
+        }
+    }
+
+
+
+    function formatVppAddr(addr) {
+        if (!addr) return "N/A";
+        if (typeof addr === 'string') return addr;
+        if (addr.un && addr.un.ip4) return addr.un.ip4;
+        return JSON.stringify(addr);
+    }
 </script>
 
 <style>
-    .text-pink { color: #d63384; font-weight: 500; }
-    .bg-success-soft { background-color: #e8f5e9; }
-    .table thead th { font-size: 0.75rem; letter-spacing: 0.05em; }
+    .text-pink {
+        color: #d63384;
+        font-weight: 500;
+    }
+
+    .bg-success-soft {
+        background-color: #e8f5e9;
+    }
+
+    .bg-info-soft {
+        background-color: #e0f2f1;
+    }
+
+    .table thead th {
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
 </style>
 {{ end }}

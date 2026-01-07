@@ -99,17 +99,27 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 		{
 			api.POST("/admin/change-password", auth.ChangePassword)
 			api.GET("/logs", logHandler.GetLogs) // Loglarni olish uchun endpoint
+			// INTERFACES
 			api.GET("/interfaces", iface.ListInterfaces)
 			api.POST("/interfaces/state", iface.SetState)
+			api.POST("/interfaces/tag", iface.SetTag) // Yangi: Nom berish
+			api.POST("/interfaces/mac", iface.SetMAC) // Yangi: MAC o'zgartirish
 			api.POST("/interfaces/add-ip", iface.AddIP)
-			api.POST("/interfaces/dhcp", iface.SetDHCP)
-			api.POST("/interfaces/create", iface.CreateInterface)
-			api.POST("/interfaces/delete", iface.DeleteInterface)
 			api.POST("/interfaces/remove-ip", iface.RemoveIP)
+			api.POST("/interfaces/dhcp", iface.SetDHCP)
+
+			// VIRTUAL INTERFACES
+			api.POST("/interfaces/create-loopback", iface.CreateLoopback)
+			api.POST("/interfaces/create-vhost", iface.CreateVhostUser) // Yangi: Vhost yaratish
+			api.POST("/interfaces/delete", iface.DeleteInterface)
+			api.POST("/interfaces/create-tap", iface.CreateTap)
+			api.POST("/create/vlan", iface.CreateVlan)
+
 			api.GET("/stats", iface.GetStats)
 			api.GET("/routes", routing.GetRoutes) // To'g'irlandi
 			api.POST("/routes", routing.CreateRoute)
 			api.DELETE("/routes", routing.DeleteRoute)
+			
 
 			// ACL endpoints
 			aclApi := api.Group("/acl")
@@ -201,6 +211,8 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				dhcpApi.POST("/proxy", dhcpHandler.HandleConfigureProxy)
 				dhcpApi.POST("/vss", dhcpHandler.HandleSetVSS)
 				dhcpApi.GET("/leases", dhcpHandler.HandleGetLeases)
+				dhcpApi.GET("/kea-config", dhcpHandler.HandleGetKeaConfig)
+				dhcpApi.POST("/kea-config", dhcpHandler.HandleUpdateKeaConfig)
 			}
 		}
 	}

@@ -78,3 +78,40 @@ func (h *DhcpHandler) HandleGetLeases(c *gin.Context) {
     }
     c.JSON(http.StatusOK, leases)
 }	
+
+// HandleUpdateKeaConfig - POST /api/dhcp/kea-config
+func (h *DhcpHandler) HandleUpdateKeaConfig(c *gin.Context) {
+    var req struct {
+        Subnet  string `json:"subnet"`
+        RelayIP string `json:"relay_ip"`
+        Pool    string `json:"pool"`
+    }
+
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Noto'g'ri ma'lumot"})
+        return
+    }
+
+    // Siz yozgan SetKeaConfig funksiyasini chaqiramiz
+    err := dhcp.SetKeaConfig(req.Subnet, req.RelayIP, req.Pool)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Kea-ni sozlashda xatolik: " + err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Kea konfiguratsiyasi muvaffaqiyatli yangilandi"})
+}
+func (h *DhcpHandler) HandleGetKeaConfig(c *gin.Context) {
+    conf, err := dhcp.GetKeaConfig()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Kea dan ma'lumot olishda xato: " + err.Error()})
+        return
+    }
+    
+    if conf == nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Konfiguratsiya topilmadi"})
+        return
+    }
+
+    c.JSON(http.StatusOK, conf)
+}

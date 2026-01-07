@@ -46,3 +46,12 @@
 {"timestamp":"2026-01-05 14:36:41","user":"Administrator","type":"auth","action":"Login Attempt","target":"Admin","status":"FAILED"}
 {"timestamp":"2026-01-05 14:37:17","user":"Administrator","type":"auth","action":"Login Attempt","target":"Admin","status":"FAILED"}
 {"timestamp":"2026-01-05 14:37:29","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-05 20:29:44","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-05 20:29:46","user":"Administrator","type":"auth","action":"Login Attempt","target":"Admin","status":"FAILED"}
+{"timestamp":"2026-01-05 20:29:50","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-05 20:30:35","user":"Administrator","type":"web","action":"Password Change","target":"Admin","status":"WRONG_CURRENT_PASSWORD"}
+{"timestamp":"2026-01-06 09:21:22","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-06 15:32:48","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-06 15:38:27","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-06 15:40:58","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-07 09:48:49","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}

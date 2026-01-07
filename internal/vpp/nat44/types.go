@@ -45,3 +45,15 @@ type SessionDisplay struct {
     TimeSinceLastHeard uint64 `json:"time_since_last_heard"`
 }
 
+type UserTraffic struct {
+    IP           string  `json:"ip"`
+    SessionCount int     `json:"session_count"`
+    TotalBytes   uint64  `json:"total_bytes"`
+    TotalPkts    uint64  `json:"total_pkts"`
+    Percentage   float64 `json:"percentage"`
+}
+
+type NATSessionResponse struct {
+    Sessions    []SessionDisplay `json:"sessions"`
+    UserSummary []UserTraffic    `json:"user_summary"`
+}

@@ -2,14 +2,14 @@ package nat44
 
 import (
 	"context"
-	"io"
 	"fmt"
+	"go.fd.io/govpp/api"
+	"io"
 	"log"
+	"vpp-go-test/binapi/interface_types"
+	"vpp-go-test/binapi/ip_types"
 	"vpp-go-test/binapi/nat44_ed"
 	"vpp-go-test/binapi/nat_types"
-	"vpp-go-test/binapi/ip_types"
-	"vpp-go-test/binapi/interface_types"
-	"go.fd.io/govpp/api"
 )
 
 // NatManager VPP NAT44 xizmati bilan ishlash uchun mas'ul
@@ -23,9 +23,10 @@ func NewNatManager(conn api.Connection) *NatManager {
 		client: nat44_ed.NewServiceClient(conn),
 	}
 }
+
 // EnableNat44 - NAT44 pluginini global faollashtirish
 func (m *NatManager) EnableNat44(ctx context.Context) error {
-	// Diqqat: VPP versiyasiga qarab Nat44PluginEnableDisable yoki 
+	// Diqqat: VPP versiyasiga qarab Nat44PluginEnableDisable yoki
 	// Nat44EdPluginEnableDisable ishlatiladi.
 	req := &nat44_ed.Nat44EdPluginEnableDisable{
 		Sessions: 32768, // Bir vaqtdagi sessiyalar soni
@@ -38,23 +39,24 @@ func (m *NatManager) EnableNat44(ctx context.Context) error {
 	}
 	return nil
 }
+
 // --- INFRASTRUCTURE (Tab 1) ---
 // SetInterfaceNAT interfeysni inside/outside rejimiga o'tkazadi
 func (m *NatManager) SetInterfaceNAT(ctx context.Context, swIfIndex uint32, isInside, isAdd bool) error {
-    req := &nat44_ed.Nat44InterfaceAddDelFeature{
-        SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
-        IsAdd:     isAdd,
-    }
-    
-    // Flaglarni to'g'ri berish
-    if isInside {
-        req.Flags = nat_types.NAT_IS_INSIDE
-    } else {
-        req.Flags = nat_types.NAT_IS_OUTSIDE
-    }
+	req := &nat44_ed.Nat44InterfaceAddDelFeature{
+		SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
+		IsAdd:     isAdd,
+	}
 
-    _, err := m.client.Nat44InterfaceAddDelFeature(ctx, req)
-    return err
+	// Flaglarni to'g'ri berish
+	if isInside {
+		req.Flags = nat_types.NAT_IS_INSIDE
+	} else {
+		req.Flags = nat_types.NAT_IS_OUTSIDE
+	}
+
+	_, err := m.client.Nat44InterfaceAddDelFeature(ctx, req)
+	return err
 }
 
 // AddAddressPool tashqi IP hovuziga manzil qo'shadi (Multi-WAN uchun)
@@ -76,91 +78,90 @@ func (m *NatManager) AddAddressPool(ctx context.Context, ipAddr string, isAdd bo
 // --- INBOUND / DNAT (Tab 2) ---
 // nat44/nat.go ichida
 func (m *NatManager) AddStaticMapping(ctx context.Context, sm StaticMapping, isAdd bool) error {
-    localIP, _ := IPToVppIP4Address(sm.LocalIP)
-    var externalIP ip_types.IP4Address
-    // VPP-da interfeys ishlatilmasa 0xffffffff (4294967295) bo'lishi shart
-    var swIfIndex interface_types.InterfaceIndex = 0xffffffff 
+	localIP, _ := IPToVppIP4Address(sm.LocalIP)
+	var externalIP ip_types.IP4Address
+	// VPP-da interfeys ishlatilmasa 0xffffffff (4294967295) bo'lishi shart
+	var swIfIndex interface_types.InterfaceIndex = 0xffffffff
 
-    // 1. Mapping turini aniqlash
-    isInterfaceBased := (sm.ExternalIP == "" || sm.ExternalIP == "0.0.0.0") && sm.ExternalIf != 0 && sm.ExternalIf != 4294967295
+	// 1. Mapping turini aniqlash
+	isInterfaceBased := (sm.ExternalIP == "" || sm.ExternalIP == "0.0.0.0") && sm.ExternalIf != 0 && sm.ExternalIf != 4294967295
 
-    if isInterfaceBased {
-        // Interface-based: IP 0.0.0.0 bo'lishi shart
-        externalIP = ip_types.IP4Address{0, 0, 0, 0}
-        swIfIndex = interface_types.InterfaceIndex(sm.ExternalIf)
-    } else {
-        // IP-based: Interfeys index 0xffffffff bo'lishi shart
-        externalIP, _ = IPToVppIP4Address(sm.ExternalIP)
-        swIfIndex = 0xffffffff
-    }
+	if isInterfaceBased {
+		// Interface-based: IP 0.0.0.0 bo'lishi shart
+		externalIP = ip_types.IP4Address{0, 0, 0, 0}
+		swIfIndex = interface_types.InterfaceIndex(sm.ExternalIf)
+	} else {
+		// IP-based: Interfeys index 0xffffffff bo'lishi shart
+		externalIP, _ = IPToVppIP4Address(sm.ExternalIP)
+		swIfIndex = 0xffffffff
+	}
 
-    // VPP-ga yuboriladigan request
-    req := &nat44_ed.Nat44AddDelStaticMapping{
-        IsAdd:             isAdd,
-        LocalIPAddress:    localIP,
-        ExternalIPAddress: externalIP,
-        LocalPort:         sm.LocalPort,
-        ExternalPort:      sm.ExternalPort,
-        Protocol:          ProtoToUint(sm.Protocol),
-        ExternalSwIfIndex: swIfIndex,
-        VrfID:             0,
-        Flags:             nat_types.NAT_IS_ADDR_ONLY, // Agar portlar 0 bo'lsa kerak bo'ladi
-    }
+	// VPP-ga yuboriladigan request
+	req := &nat44_ed.Nat44AddDelStaticMapping{
+		IsAdd:             isAdd,
+		LocalIPAddress:    localIP,
+		ExternalIPAddress: externalIP,
+		LocalPort:         sm.LocalPort,
+		ExternalPort:      sm.ExternalPort,
+		Protocol:          ProtoToUint(sm.Protocol),
+		ExternalSwIfIndex: swIfIndex,
+		VrfID:             0,
+		Flags:             nat_types.NAT_IS_ADDR_ONLY, // Agar portlar 0 bo'lsa kerak bo'ladi
+	}
 
-    // Agar portlar ko'rsatilgan bo'sa, ADDR_ONLY flagni olib tashlaymiz
-    if sm.LocalPort > 0 || sm.ExternalPort > 0 {
-        req.Flags = nat_types.NAT_IS_EXT_HOST_VALID // yoki 0
-    }
+	// Agar portlar ko'rsatilgan bo'sa, ADDR_ONLY flagni olib tashlaymiz
+	if sm.LocalPort > 0 || sm.ExternalPort > 0 {
+		req.Flags = nat_types.NAT_IS_EXT_HOST_VALID // yoki 0
+	}
 
-    _, err := m.client.Nat44AddDelStaticMapping(ctx, req)
-    if err != nil {
-        log.Printf("NAT Static Mapping Error (isAdd=%v): %v | Req: %+v", isAdd, err, req)
-    }
-    return err
+	_, err := m.client.Nat44AddDelStaticMapping(ctx, req)
+	if err != nil {
+		log.Printf("NAT Static Mapping Error (isAdd=%v): %v | Req: %+v", isAdd, err, req)
+	}
+	return err
 }
-
 
 // GetStaticMappings mavjud DNAT qoidalarini qaytaradi
 func (m *NatManager) GetStaticMappings(ctx context.Context) ([]StaticMapping, error) {
-    stream, err := m.client.Nat44StaticMappingDump(ctx, &nat44_ed.Nat44StaticMappingDump{})
-    if err != nil {
-        return nil, fmt.Errorf("mapping dump error: %v", err)
-    }
+	stream, err := m.client.Nat44StaticMappingDump(ctx, &nat44_ed.Nat44StaticMappingDump{})
+	if err != nil {
+		return nil, fmt.Errorf("mapping dump error: %v", err)
+	}
 
-    var results []StaticMapping
-    for {
-        details, err := stream.Recv()
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            return nil, err
-        }
+	var results []StaticMapping
+	for {
+		details, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
 
-        // VPP dan kelayotgan ma'lumotlarni tekshirish uchun log (Debug uchun juda muhim)
-        // fmt.Printf("DEBUG: Found Mapping - ExtIP: %v, ExtIdx: %v, Local: %v\n", 
-        //    details.ExternalIPAddress, details.ExternalSwIfIndex, details.LocalIPAddress)
+		// VPP dan kelayotgan ma'lumotlarni tekshirish uchun log (Debug uchun juda muhim)
+		// fmt.Printf("DEBUG: Found Mapping - ExtIP: %v, ExtIdx: %v, Local: %v\n",
+		//    details.ExternalIPAddress, details.ExternalSwIfIndex, details.LocalIPAddress)
 
-        mapping := StaticMapping{
-            LocalIP:      VppIP4AddressToString(details.LocalIPAddress),
-            LocalPort:    details.LocalPort,
-            ExternalPort: details.ExternalPort,
-            Protocol:     fmt.Sprintf("%d", details.Protocol),
-            // Interfeys indexini uint32 ko'rinishida saqlaymiz
-            ExternalIf:   uint32(details.ExternalSwIfIndex),
-        }
+		mapping := StaticMapping{
+			LocalIP:      VppIP4AddressToString(details.LocalIPAddress),
+			LocalPort:    details.LocalPort,
+			ExternalPort: details.ExternalPort,
+			Protocol:     fmt.Sprintf("%d", details.Protocol),
+			// Interfeys indexini uint32 ko'rinishida saqlaymiz
+			ExternalIf: uint32(details.ExternalSwIfIndex),
+		}
 
-        // Agar mapping interfeysga bog'langan bo'lsa (index != 4294967295)
-        // Tashqi IPni "0.0.0.0" deb belgilaymiz, aks holda IPni o'zini yozamiz
-        if uint32(details.ExternalSwIfIndex) != 4294967295 {
-            mapping.ExternalIP = "0.0.0.0"
-        } else {
-            mapping.ExternalIP = VppIP4AddressToString(details.ExternalIPAddress)
-        }
+		// Agar mapping interfeysga bog'langan bo'lsa (index != 4294967295)
+		// Tashqi IPni "0.0.0.0" deb belgilaymiz, aks holda IPni o'zini yozamiz
+		if uint32(details.ExternalSwIfIndex) != 4294967295 {
+			mapping.ExternalIP = "0.0.0.0"
+		} else {
+			mapping.ExternalIP = VppIP4AddressToString(details.ExternalIPAddress)
+		}
 
-        results = append(results, mapping)
-    }
-    return results, nil
+		results = append(results, mapping)
+	}
+	return results, nil
 }
 
 // SetNatTimeouts NAT sessiyalari uchun timeoutlarni o'rnatadi
@@ -179,10 +180,10 @@ func (m *NatManager) SetNatTimeouts(ctx context.Context, timeouts nat_types.NatT
 
 // ClearAllSessions barcha faol NAT sessiyalarini tozalaydi
 func (m *NatManager) ClearAllSessions(ctx context.Context) error {
-	// VPP-da "Clear all" degan bitta API yo'q, odatda foydalanuvchilar bo'yicha yoki 
-    // plaginni o'chirib-yoqish orqali qilinadi. 
-    // Lekin eng to'g'ri yo'li - foydalanuvchilar bo'yicha aylanib chiqish.
-    
+	// VPP-da "Clear all" degan bitta API yo'q, odatda foydalanuvchilar bo'yicha yoki
+	// plaginni o'chirib-yoqish orqali qilinadi.
+	// Lekin eng to'g'ri yo'li - foydalanuvchilar bo'yicha aylanib chiqish.
+
 	stream, err := m.client.Nat44UserDump(ctx, &nat44_ed.Nat44UserDump{})
 	if err != nil {
 		return err
@@ -199,85 +200,110 @@ func (m *NatManager) ClearAllSessions(ctx context.Context) error {
 
 		// Har bir foydalanuvchining sessiyalarini o'chirish
 		_, _ = m.client.Nat44DelSession(ctx, &nat44_ed.Nat44DelSession{
-			Address:        user.IPAddress,
-			Protocol:       0, // 0 - barcha protokollar
-			VrfID:          user.VrfID,
-			Flags:          nat_types.NAT_IS_INSIDE,
+			Address:  user.IPAddress,
+			Protocol: 0, // 0 - barcha protokollar
+			VrfID:    user.VrfID,
+			Flags:    nat_types.NAT_IS_INSIDE,
 		})
 	}
 	return nil
 }
 
-
 // GetActiveSessions faol sessiyalar ro'yxatini qaytaradi (V3 versiya eng to'liq ma'lumot beradi)
-func (m *NatManager) GetActiveSessions(ctx context.Context) ([]SessionDisplay, error) {
-    // 1. Avval barcha faol foydalanuvchilarni (IPlarni) aniqlaymiz
-    userStream, err := m.client.Nat44UserDump(ctx, &nat44_ed.Nat44UserDump{})
-    if err != nil {
-        return nil, fmt.Errorf("users dump failed: %v", err)
-    }
 
-    var allSessions []SessionDisplay
+func (m *NatManager) GetActiveSessions(ctx context.Context) (*NATSessionResponse, error) {
+	userStream, err := m.client.Nat44UserDump(ctx, &nat44_ed.Nat44UserDump{})
+	if err != nil {
+		return nil, err
+	}
 
-    for {
-        user, err := userStream.Recv()
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            return nil, err
-        }
+	var allSessions []SessionDisplay
+	userMap := make(map[string]*UserTraffic)
+	var grandTotalBytes uint64
 
-        // 2. Har bir foydalanuvchi uchun uning sessiyalarini so'raymiz
-        // Siz ko'rsatgan Nat44UserSessionV3Dump aynan shu yerda ishlatiladi
-        sessionReq := &nat44_ed.Nat44UserSessionV3Dump{
-            IPAddress: user.IPAddress, // Foydalanuvchining ichki IP manzili
-            VrfID:     user.VrfID,     // Foydalanuvchi joylashgan VRF (odatda 0)
-        }
+	for {
+		user, err := userStream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
 
-        sessionStream, err := m.client.Nat44UserSessionV3Dump(ctx, sessionReq)
-        if err != nil {
-            // Agar bitta foydalanuvchida xato bo'lsa, to'xtab qolmaymiz
-            continue 
-        }
+		sessionReq := &nat44_ed.Nat44UserSessionV3Dump{
+			IPAddress: user.IPAddress,
+			VrfID:     user.VrfID,
+		}
 
-        for {
-            s, err := sessionStream.Recv()
-            if err == io.EOF {
-                break
-            }
-            if err != nil {
-                break
-            }
+		sessionStream, err := m.client.Nat44UserSessionV3Dump(ctx, sessionReq)
+		if err != nil {
+			continue
+		}
 
-            // 3. Olingan V3Details ma'lumotlarini qulay formatga o'tkazamiz
-            allSessions = append(allSessions, SessionDisplay{
-                InsideIP:          fmt.Sprintf("%d.%d.%d.%d", s.InsideIPAddress[0], s.InsideIPAddress[1], s.InsideIPAddress[2], s.InsideIPAddress[3]),
-                InsidePort:        s.InsidePort,
-                OutsideIP:         fmt.Sprintf("%d.%d.%d.%d", s.OutsideIPAddress[0], s.OutsideIPAddress[1], s.OutsideIPAddress[2], s.OutsideIPAddress[3]),
-                OutsidePort:       s.OutsidePort,
-                ExtHostIP:         fmt.Sprintf("%d.%d.%d.%d", s.ExtHostAddress[0], s.ExtHostAddress[1], s.ExtHostAddress[2], s.ExtHostAddress[3]),
-                ExtHostPort:       s.ExtHostPort,
-                Protocol:          getProtoName(s.Protocol),
-                TotalBytes:        s.TotalBytes,
-                TotalPkts:         s.TotalPkts,
-                IsTimedOut:        s.IsTimedOut,
-                TimeSinceLastHeard: s.TimeSinceLastHeard,
-            })
-        }
-    }
+		for {
+			s, err := sessionStream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				break
+			}
 
-    return allSessions, nil
+			insideIP := VppIP4AddressToString(s.InsideIPAddress)
+
+			display := SessionDisplay{
+				InsideIP:           insideIP,
+				InsidePort:         s.InsidePort,
+				OutsideIP:          VppIP4AddressToString(s.OutsideIPAddress),
+				OutsidePort:        s.OutsidePort,
+				ExtHostIP:          VppIP4AddressToString(s.ExtHostAddress),
+				ExtHostPort:        s.ExtHostPort,
+				Protocol:           getProtoName(s.Protocol),
+				TotalBytes:         s.TotalBytes,
+				TotalPkts:          s.TotalPkts,
+				IsTimedOut:         s.IsTimedOut,
+				TimeSinceLastHeard: s.TimeSinceLastHeard,
+			}
+			allSessions = append(allSessions, display)
+
+			// User Summary Aggregation
+			if _, ok := userMap[insideIP]; !ok {
+				userMap[insideIP] = &UserTraffic{IP: insideIP}
+			}
+			userMap[insideIP].SessionCount++
+			userMap[insideIP].TotalBytes += s.TotalBytes
+			userMap[insideIP].TotalPkts += uint64(s.TotalPkts)
+			grandTotalBytes += s.TotalBytes
+		}
+	}
+
+	// Statistika foizlarini hisoblash
+	var userSummary []UserTraffic
+	for _, ut := range userMap {
+		if grandTotalBytes > 0 {
+			ut.Percentage = (float64(ut.TotalBytes) / float64(grandTotalBytes)) * 100
+		}
+		userSummary = append(userSummary, *ut)
+	}
+
+	return &NATSessionResponse{
+		Sessions:    allSessions,
+		UserSummary: userSummary,
+	}, nil
 }
 
 // Protokol raqamini nomga o'girish
 func getProtoName(p uint16) string {
-    switch p {
-    case 6: return "TCP"
-    case 17: return "UDP"
-    case 1: return "ICMP"
-    default: return fmt.Sprintf("PROTO-%d", p)
-    }
+	switch p {
+	case 6:
+		return "TCP"
+	case 17:
+		return "UDP"
+	case 1:
+		return "ICMP"
+	default:
+		return fmt.Sprintf("PROTO-%d", p)
+	}
 }
 
 // GetAddressPool NAT address pool'ni dump qilib oladi
@@ -332,23 +358,22 @@ func (m *NatManager) GetNatInterfaces(ctx context.Context) ([]NatInterface, erro
 
 // Nat44DelSession muayyan sessiyani o'chiradi
 func (m *NatManager) DelSpecificSession(ctx context.Context, session nat44_ed.Nat44UserSessionV3Details) error {
-    _, err := m.client.Nat44DelSession(ctx, &nat44_ed.Nat44DelSession{
-        Address:        session.InsideIPAddress, // InsideAddress emas
-        Protocol:       uint8(session.Protocol),
-        Port:           session.InsidePort,
-        VrfID:          0,
-        Flags:          nat_types.NAT_IS_INSIDE,
-        ExtHostAddress: session.ExtHostAddress,  // ExternalHostAddress emas
-        ExtHostPort:    session.ExtHostPort,     // ExternalHostPort emas
-    })
-    return err
+	_, err := m.client.Nat44DelSession(ctx, &nat44_ed.Nat44DelSession{
+		Address:        session.InsideIPAddress, // InsideAddress emas
+		Protocol:       uint8(session.Protocol),
+		Port:           session.InsidePort,
+		VrfID:          0,
+		Flags:          nat_types.NAT_IS_INSIDE,
+		ExtHostAddress: session.ExtHostAddress, // ExternalHostAddress emas
+		ExtHostPort:    session.ExtHostPort,    // ExternalHostPort emas
+	})
+	return err
 }
-
 
 // SetIpfixLogging - NAT sessiyalari haqidagi loglarni IPFIX orqali yuborishni boshqaradi
 func (m *NatManager) SetIpfixLogging(ctx context.Context, enable bool) error {
 	req := &nat44_ed.NatIpfixEnableDisable{
-		Enable: enable,
+		Enable:   enable,
 		DomainID: 1,    // Ixtiyoriy ID, odatda 1 qoldiriladi
 		SrcPort:  4739, // IPFIX standart porti
 	}
@@ -357,7 +382,7 @@ func (m *NatManager) SetIpfixLogging(ctx context.Context, enable bool) error {
 	if err != nil {
 		return fmt.Errorf("NAT IPFIX loggingni o'zgartirib bo'lmadi (enable=%v): %v", enable, err)
 	}
-	
+
 	log.Printf("NAT IPFIX Logging holati: %v", enable)
 	return nil
 }
@@ -369,7 +394,7 @@ func (m *NatManager) GetRunningConfig(ctx context.Context) (*nat44_ed.Nat44ShowR
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Reply struct'ga o'tkazish (siz yuqorida ko'rsatgan struct)
 	return (*nat44_ed.Nat44ShowRunningConfigReply)(resp), nil
 }
