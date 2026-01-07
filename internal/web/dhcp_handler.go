@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"vpp-go-test/internal/vpp/dhcp"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 type DhcpHandler struct {
@@ -79,39 +80,69 @@ func (h *DhcpHandler) HandleGetLeases(c *gin.Context) {
     c.JSON(http.StatusOK, leases)
 }	
 
-// HandleUpdateKeaConfig - POST /api/dhcp/kea-config
-func (h *DhcpHandler) HandleUpdateKeaConfig(c *gin.Context) {
-    var req struct {
-        Subnet  string `json:"subnet"`
-        RelayIP string `json:"relay_ip"`
-        Pool    string `json:"pool"`
-    }
+// // HandleGetLeases - GET /api/dhcp/leases
+// func (h *DhcpHandler) HandleGetLeases(c *gin.Context) {
+// 	leases, err := dhcp.GetKeaLeases()
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Leaselarni o'qib bo'lmadi: " + err.Error()})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, leases)
+// }
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Noto'g'ri ma'lumot"})
-        return
-    }
-
-    // Siz yozgan SetKeaConfig funksiyasini chaqiramiz
-    err := dhcp.SetKeaConfig(req.Subnet, req.RelayIP, req.Pool)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Kea-ni sozlashda xatolik: " + err.Error()})
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{"message": "Kea konfiguratsiyasi muvaffaqiyatli yangilandi"})
-}
+// HandleGetKeaConfig - GET /api/dhcp/kea-config
 func (h *DhcpHandler) HandleGetKeaConfig(c *gin.Context) {
-    conf, err := dhcp.GetKeaConfig()
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Kea dan ma'lumot olishda xato: " + err.Error()})
-        return
-    }
-    
-    if conf == nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Konfiguratsiya topilmadi"})
-        return
-    }
+	conf, err := dhcp.GetKeaConfig()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Kea dan ma'lumot olishda xato: " + err.Error()})
+		return
+	}
+	if conf == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Konfiguratsiya topilmadi"})
+		return
+	}
+	c.JSON(http.StatusOK, conf)
+}
 
-    c.JSON(http.StatusOK, conf)
+// HandleSaveKeaSubnet - POST /api/dhcp/kea-config
+// Bu handler ham yangi qo'shish (Append), ham tahrirlash (Edit) uchun ishlaydi
+func (h *DhcpHandler) HandleSaveKeaSubnet(c *gin.Context) {
+	var req struct {
+		ID      int    `json:"id"` // Agar 0 bo'lsa yangi qo'shadi, >0 bo'lsa tahrirlaydi
+		Subnet  string `json:"subnet"`
+		RelayIP string `json:"relay_ip"`
+		Pool    string `json:"pool"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ma'lumotlar formati noto'g'ri"})
+		return
+	}
+
+	// Yangi aqlli SaveKeaSubnet funksiyasini chaqiramiz
+	err := dhcp.SaveKeaSubnet(req.ID, req.Subnet, req.RelayIP, req.Pool)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Kea-ni saqlashda xatolik: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Kea konfiguratsiyasi muvaffaqiyatli saqlandi"})
+}
+
+// HandleDeleteKeaSubnet - DELETE /api/dhcp/kea-subnet/:id
+func (h *DhcpHandler) HandleDeleteKeaSubnet(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Noto'g'ri ID formati"})
+		return
+	}
+
+	err = dhcp.DeleteKeaSubnet(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Subnetni o'chirishda xatolik: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Subnet muvaffaqiyatli o'chirildi"})
 }

@@ -119,7 +119,6 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			api.GET("/routes", routing.GetRoutes) // To'g'irlandi
 			api.POST("/routes", routing.CreateRoute)
 			api.DELETE("/routes", routing.DeleteRoute)
-			
 
 			// ACL endpoints
 			aclApi := api.Group("/acl")
@@ -211,8 +210,10 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				dhcpApi.POST("/proxy", dhcpHandler.HandleConfigureProxy)
 				dhcpApi.POST("/vss", dhcpHandler.HandleSetVSS)
 				dhcpApi.GET("/leases", dhcpHandler.HandleGetLeases)
-				dhcpApi.GET("/kea-config", dhcpHandler.HandleGetKeaConfig)
-				dhcpApi.POST("/kea-config", dhcpHandler.HandleUpdateKeaConfig)
+
+				dhcpApi.GET("/kea-config", dhcpHandler.HandleGetKeaConfig)   // GET
+				dhcpApi.POST("/kea-config", dhcpHandler.HandleSaveKeaSubnet) // ADD/UPDATE (Append ishlaydi)
+				dhcpApi.DELETE("/kea-subnet/:id", dhcpHandler.HandleDeleteKeaSubnet)
 			}
 		}
 	}

@@ -1,95 +1,131 @@
 package dhcp
 
 import (
-    "bytes"
-    "encoding/json"
-    "net/http"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
 )
 
-// KeaConfig structure to avoid losing global settings
-func SetKeaConfig(subnet string, relayIP string, pool string) error {
-    url := "http://127.0.0.1:8001" // Kea Control Agent URL
+const keaURL = "http://127.0.0.1:8001"
 
-    // To'liq konfiguratsiyani shakllantiramiz
-    keaConfig := map[string]interface{}{
-        "command": "config-set",
-        "service": []string{"dhcp4"},
-        "arguments": map[string]interface{}{
-            "Dhcp4": map[string]interface{}{
-                "interfaces-config": map[string]interface{}{
-                    "interfaces": []string{"*"}, // Barcha interfeyslarda tinglash
-                },
-                "lease-database": map[string]interface{}{
-                    "type":    "memfile",
-                    "persist": true,
-                    "name":    "/var/lib/kea/kea-leases4.csv",
-                },
-                "control-socket": map[string]interface{}{
-                    "socket-type": "unix",
-                    "socket-name": "/run/kea/kea-dhcp4-ctrl.sock",
-                },
-                "subnet4": []map[string]interface{}{
-                    {
-                        "id":     1,
-                        "subnet": subnet,
-                        "relay": map[string]interface{}{
-                            "ip-address": relayIP,
-                        },
-                        "pools": []map[string]interface{}{
-                            {"pool": pool},
-                        },
-                        "option-data": []map[string]interface{}{
-                            {"name": "routers", "data": relayIP},
-                            {"name": "domain-name-servers", "data": "8.8.8.8, 1.1.1.1"},
-                        },
-                    },
-                },
-            },
-        },
-    }
+// 1. GET: Kea-dan joriy konfiguratsiyani olish
+func GetKeaConfig() (map[string]interface{}, error) {
+	cmd := map[string]interface{}{
+		"command": "config-get",
+		"service": []string{"dhcp4"},
+	}
 
-    b, err := json.Marshal(keaConfig)
-    if err != nil {
-        return err
-    }
+	b, _ := json.Marshal(cmd)
+	resp, err := http.Post(keaURL, "application/json", bytes.NewBuffer(b))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-    resp, err := http.Post(url, "application/json", bytes.NewBuffer(b))
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
+	var raw []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return nil, err
+	}
 
-    return nil
+	if len(raw) > 0 && raw[0]["result"].(float64) == 0 {
+		return raw[0]["arguments"].(map[string]interface{}), nil
+	}
+	return nil, fmt.Errorf("Kea configuration not found or error")
 }
 
+// 2. INTERNAL: Konfiguratsiyani Kea-ga yozish (config-set)
+func PushKeaConfig(args map[string]interface{}) error {
+	payload := map[string]interface{}{
+		"command":   "config-set",
+		"service":   []string{"dhcp4"},
+		"arguments": args,
+	}
 
-func GetKeaConfig() (map[string]interface{}, error) {
-    url := "http://127.0.0.1:8001"
-    
-    cmd := map[string]interface{}{
-        "command": "config-get",
-        "service": []string{"dhcp4"},
-    }
-    
-    b, _ := json.Marshal(cmd)
-    resp, err := http.Post(url, "application/json", bytes.NewBuffer(b))
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
+	b, _ := json.Marshal(payload)
+	resp, err := http.Post(keaURL, "application/json", bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
 
-    // DIQQAT: Kea javobi massiv ko'rinishida keladi []map...
-    var rawResponse []map[string]interface{} 
-    if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-        return nil, err
-    }
+// 3. ADD/APPEND & EDIT: Subnet qo'shish yoki borini tahrirlash
+func SaveKeaSubnet(id int, subnet, relay, pool string) error {
+	// Avval mavjud hamma konfni olamiz (global sozlamalar o'chib ketmasligi uchun)
+	fullConf, err := GetKeaConfig()
+	if err != nil {
+		return err
+	}
 
-    // Massiv bo'sh emasligini va birinchi elementda arguments borligini tekshiramiz
-    if len(rawResponse) > 0 {
-        if args, ok := rawResponse[0]["arguments"].(map[string]interface{}); ok {
-            return args, nil
-        }
-    }
+	dhcp4 := fullConf["Dhcp4"].(map[string]interface{})
+	subnets, _ := dhcp4["subnet4"].([]interface{})
 
-    return nil, nil
+	newSubnet := map[string]interface{}{
+		"id":     id,
+		"subnet": subnet,
+		"relay":  map[string]interface{}{"ip-addresses": []string{relay}},
+		"pools":  []map[string]interface{}{{"pool": pool}},
+		"option-data": []map[string]interface{}{
+			{"name": "routers", "data": relay},
+			{"name": "domain-name-servers", "data": "8.8.8.8, 1.1.1.1"},
+		},
+	}
+
+	found := false
+	// Tahrirlash rejimini tekshiramiz
+	if id > 0 {
+		for i, s := range subnets {
+			sMap := s.(map[string]interface{})
+			if int(sMap["id"].(float64)) == id {
+				subnets[i] = newSubnet // Borini yangilaymiz
+				found = true
+				break
+			}
+		}
+	}
+
+	// Agar ID topilmasa yoki id = 0 bo'lsa - YANGI QO'SHISH (APPEND)
+	if !found {
+		// Yangi ID generatsiya qilish (eng kattasini topib +1)
+		maxID := 0
+		for _, s := range subnets {
+			sID := int(s.(map[string]interface{})["id"].(float64))
+			if sID > maxID {
+				maxID = sID
+			}
+		}
+		newSubnet["id"] = maxID + 1
+		subnets = append(subnets, newSubnet) // Ro'yxat oxiriga qo'shish
+	}
+
+	dhcp4["subnet4"] = subnets
+	fullConf["Dhcp4"] = dhcp4
+
+	return PushKeaConfig(fullConf)
+}
+
+// 4. DELETE: Subnetni ID bo'yicha o'chirish
+func DeleteKeaSubnet(id int) error {
+	fullConf, err := GetKeaConfig()
+	if err != nil {
+		return err
+	}
+
+	dhcp4 := fullConf["Dhcp4"].(map[string]interface{})
+	subnets, _ := dhcp4["subnet4"].([]interface{})
+
+	var updatedSubnets []interface{}
+	for _, s := range subnets {
+		sMap := s.(map[string]interface{})
+		if int(sMap["id"].(float64)) != id {
+			updatedSubnets = append(updatedSubnets, s)
+		}
+	}
+
+	dhcp4["subnet4"] = updatedSubnets
+	fullConf["Dhcp4"] = dhcp4
+
+	return PushKeaConfig(fullConf)
 }
