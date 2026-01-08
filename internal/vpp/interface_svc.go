@@ -227,7 +227,7 @@ func (v *VPPClient) SetInterfaceDHCP(swIfIndex uint32, enable bool) error {
 		return err
 	}
 	if reply.Retval != 0 && !(enable == false && reply.Retval == -1) {
-		return fmt.Errorf("VPP error: %d", reply.Retval)
+		return fmt.Errorf("Error: %d", reply.Retval)
 	}
 	return nil
 }

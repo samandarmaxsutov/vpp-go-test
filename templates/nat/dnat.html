@@ -104,7 +104,7 @@
 
 <script>
     async function enableNatGlobal() {
-    if(!confirm("VPP NAT engine-ni yoqmoqchimisiz?")) return;
+    if(!confirm("NAT engine-ni yoqmoqchimisiz?")) return;
     
     const res = await fetch('/api/nat/enable', { method: 'POST' });
     if(res.ok) {

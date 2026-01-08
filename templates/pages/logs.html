@@ -16,7 +16,6 @@
             
             <div class="btn-group shadow-sm bg-white p-1 rounded border">
                 <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('system', this)">System</button>
-                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('vpp', this)">VPP</button>
                 <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('auth', this)">Auth</button>
                 <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('web', this)">Web</button>
             </div>
@@ -156,7 +155,6 @@ function resetAndRender() {
 
 function getBadgeClass(type) {
     switch(type.toLowerCase()) {
-        case 'vpp': return 'bg-info-subtle text-info border border-info';
         case 'auth': return 'bg-warning-subtle text-warning border border-warning';
         case 'web': return 'bg-purple-subtle text-purple border border-purple';
         default: return 'bg-secondary-subtle text-secondary border border-secondary';

@@ -197,12 +197,12 @@ func (h *InterfaceHandler) CreateTap(c *gin.Context) {
     }
 
     if input.HostName == "" {
-        input.HostName = "vpp-tap0"
+        input.HostName = "tap0"
     }
 
     index, err := h.VPP.CreateTap(input.ID, input.HostName)
     if err != nil {
-        c.JSON(500, gin.H{"error": fmt.Sprintf("VPPda TAP yaratishda xato: %v", err)})
+        c.JSON(500, gin.H{"error": fmt.Sprintf("TAP yaratishda xato: %v", err)})
         return
     }
 

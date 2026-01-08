@@ -33,7 +33,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	// 1. Asosiy VPP API ulanishi
 	conn, err := govpp.Connect(socketPath)
 	if err != nil {
-		return nil, fmt.Errorf("VPP socketiga ulanib bo'lmadi: %v", err)
+		return nil, fmt.Errorf("Socketiga ulanib bo'lmadi: %v", err)
 	}
 
 	ch, err := conn.NewAPIChannel()
@@ -52,7 +52,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 		return nil, fmt.Errorf("Stats segmentiga ulanib bo'lmadi: %v", err)
 	}
 
-	log.Println("VPP API va Stats segmentiga ulanish muvaffaqiyatli!")
+	log.Println("API va Stats segmentiga ulanish muvaffaqiyatli!")
 	client := &VPPClient{
 		Conn:    conn,
 		Stats:   sConn,

@@ -57,7 +57,7 @@ func (h *NatHandler) HandleGetSessions(c *gin.Context) {
     // Bu metod nat44.NATSessionResponse qaytaradi
     data, err := h.NatMgr.GetActiveSessions(context.Background())
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "VPP dump xatosi: " + err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Dump xatosi: " + err.Error()})
         return
     }
 

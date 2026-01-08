@@ -10,18 +10,18 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collector*/) {
-	store := cookie.NewStore([]byte("vppgate_secret_123"))
+	store := cookie.NewStore([]byte("sarhad_secret_123"))
 
 	// Sessiya parametrlarini sozlash
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   3600 * 8, // 8 soat amal qiladi
-		HttpOnly: true,     // JS orqali o'g'irlashni oldini oladi
-		Secure:   false,    // AGAR HTTPS BO'LMASA, buni false qiling!
+		MaxAge:   120, 	   // 2 daqiqa
+		HttpOnly: true,     
+		Secure:   false,    // Ishlab chiqish uchun false, productionda true qilish kerak -> https uchun
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	r.Use(sessions.Sessions("vppgate_session", store))
+	r.Use(sessions.Sessions("sarhad_session", store))
 
 	auth := &AuthHandler{}
 	iface := &InterfaceHandler{VPP: client}
