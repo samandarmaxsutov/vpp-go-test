@@ -15,7 +15,7 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	// Sessiya parametrlarini sozlash
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   120, 	   // 2 daqiqa
+		MaxAge:   3600*8, // 8 soat
 		HttpOnly: true,     
 		Secure:   false,    // Ishlab chiqish uchun false, productionda true qilish kerak -> https uchun
 		SameSite: http.SameSiteLaxMode,
@@ -122,6 +122,14 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			api.POST("/interfaces/delete", iface.DeleteInterface)
 			api.POST("/interfaces/create-tap", iface.CreateTap)
 			api.POST("/create/vlan", iface.CreateVlan)
+
+			// --- VMXNET3 SPECIFIC ---
+            api.GET("/interfaces/vmxnet3", iface.ListVmxnet3)          // Ro'yxatni olish
+            api.POST("/interfaces/vmxnet3/create", iface.CreateVmxnet3) // Yaratish
+            api.POST("/interfaces/vmxnet3/delete", iface.DeleteVmxnet3) // O'chirish
+
+			api.GET("/pci",iface.ScanAvailableInterfaces) // PCI qurilmalarni skanerlash
+
 
 			api.GET("/stats", iface.GetStats)
 			api.GET("/routes", routing.GetRoutes) // To'g'irlandi
