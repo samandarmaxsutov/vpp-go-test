@@ -21,10 +21,10 @@ func main() {
 	}
 	defer client.Close()
 
-	_ = client.PrintErrorStats("")      // hammasi
-	_ = client.PrintErrorStats("nat44") // faqat nat44
-	_ = client.PrintErrorStats("arp")   // faqat arp
-	_ = client.PrintErrorStats("acl")   // faqat arp
+	// _ = client.PrintErrorStats("")      // hammasi
+	// _ = client.PrintErrorStats("nat44") // faqat nat44
+	// _ = client.PrintErrorStats("arp")   // faqat arp
+	// _ = client.PrintErrorStats("acl")   // faqat arp
 
 	// // 2. Flow Collector-ni yaratish
 	// flowColl := flow.NewCollector(4739, 1000)
