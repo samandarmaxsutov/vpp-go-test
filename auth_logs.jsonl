@@ -30,3 +30,5 @@
 {"timestamp":"2026-01-09 20:03:41","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-12 11:42:54","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-12 14:58:56","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-14 09:15:18","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-14 09:20:59","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}

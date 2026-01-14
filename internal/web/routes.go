@@ -15,9 +15,9 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	// Sessiya parametrlarini sozlash
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   3600*8, // 8 soat
-		HttpOnly: true,     
-		Secure:   false,    // Ishlab chiqish uchun false, productionda true qilish kerak -> https uchun
+		MaxAge:   3600 * 8, // 8 soat
+		HttpOnly: true,
+		Secure:   false, // Ishlab chiqish uchun false, productionda true qilish kerak -> https uchun
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -26,8 +26,8 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	auth := &AuthHandler{}
 	iface := &InterfaceHandler{VPP: client}
 	routing := &RoutingHandler{VPP: client}
+	policerHandler := &PolicerHandler{PolicerMgr: client.PolicerManager}
 	aclHandler := NewACLHandler(client.ACLManager)
-	// NAT handlerni to'g'ri initialize qilish (Pointer orqali)
 	natHandler := NewNatHandler(client.NatManager)
 	logHandler := &LogHandler{}
 	ipfixHandler := NewIpfixHandler(client)
@@ -77,6 +77,12 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				"active": "dhcp",
 			})
 		})
+		protected.GET("/policer", func(c *gin.Context) {
+			c.HTML(200, "policer_page_manager.html", gin.H{
+				"title":  "Policer ",
+				"active": "policer_page_manager",
+			})
+		})
 		protected.GET("/acl", func(c *gin.Context) {
 			c.HTML(200, "acl_page_manager.html", gin.H{
 				"title":  "Firewall ACL",
@@ -124,12 +130,11 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			api.POST("/create/vlan", iface.CreateVlan)
 
 			// --- VMXNET3 SPECIFIC ---
-            api.GET("/interfaces/vmxnet3", iface.ListVmxnet3)          // Ro'yxatni olish
-            api.POST("/interfaces/vmxnet3/create", iface.CreateVmxnet3) // Yaratish
-            api.POST("/interfaces/vmxnet3/delete", iface.DeleteVmxnet3) // O'chirish
+			api.GET("/interfaces/vmxnet3", iface.ListVmxnet3)           // Ro'yxatni olish
+			api.POST("/interfaces/vmxnet3/create", iface.CreateVmxnet3) // Yaratish
+			api.POST("/interfaces/vmxnet3/delete", iface.DeleteVmxnet3) // O'chirish
 
-			api.GET("/pci",iface.ScanAvailableInterfaces) // PCI qurilmalarni skanerlash
-
+			api.GET("/pci", iface.ScanAvailableInterfaces) // PCI qurilmalarni skanerlash
 
 			api.GET("/stats", iface.GetStats)
 			api.GET("/routes", routing.GetRoutes) // To'g'irlandi
@@ -191,6 +196,13 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				natApi.POST("/enable", natHandler.HandleEnableNAT)
 			}
 
+			policerApi := api.Group("/policer")
+			{
+				policerApi.GET("/policies", policerHandler.HandleListPolicers)          // Ro'yxatni olish
+				policerApi.POST("/policy", policerHandler.HandleCreatePolicer)          // Yaratish
+				policerApi.DELETE("/policy/:index", policerHandler.HandleDeletePolicer) // Indeks bo'yicha o'chirish
+				policerApi.POST("/bind", policerHandler.HandleBindInterface)            // Interfeysga bog'lash
+			}
 			// ---------------- FLOW / IPFIX ----------------
 
 			flowApi := api.Group("/flow")

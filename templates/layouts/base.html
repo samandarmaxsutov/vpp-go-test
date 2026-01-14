@@ -80,6 +80,8 @@
             {{ template "nat_page_manager" . }}
             {{ else if eq .active "dhcp" }}
             {{ template "dhcp_server_page" . }}
+            {{ else if eq .active "policer_page_manager" }}
+            {{ template "policer_page_manager" . }}
             {{ else if eq .active "acl_page_manager" }}
             {{ template "acl_page_manager" . }}
             {{ else if eq .active "abf_page" }}

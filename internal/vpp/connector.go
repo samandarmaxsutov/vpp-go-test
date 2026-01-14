@@ -14,6 +14,7 @@ import (
 	"vpp-go-test/internal/vpp/ipfix"
 	"vpp-go-test/internal/vpp/dhcp"
 	"vpp-go-test/internal/vpp/abf_mgr"
+	"vpp-go-test/internal/vpp/policer"
 )
 
 type VPPClient struct {
@@ -25,6 +26,7 @@ type VPPClient struct {
 	IpfixManager *ipfix.IpfixManager
 	DhcpManager *dhcp.DhcpManager
 	AbfManager  *abf_mgr.AbfManager
+	PolicerManager *policer.Manager
 	StartTime time.Time
 	IfNames map[uint32]string
 }
@@ -63,6 +65,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	client.IpfixManager = ipfix.NewIpfixManager(conn)
 	client.DhcpManager = dhcp.NewDhcpManager(conn)
 	client.AbfManager = abf_mgr.NewAbfManager(conn)
+	client.PolicerManager = policer.NewManager(conn)
 
 	return client, nil	
 }
