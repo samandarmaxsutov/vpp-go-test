@@ -13,7 +13,6 @@ import (
 	"vpp-go-test/internal/web"
 )
 
-
 func main() {
 	// 1. VPP ulanish
 	client, err := vpp.ConnectVPP("/run/vpp/api.sock", "/dev/shm/vpp/stats.sock")
@@ -22,6 +21,10 @@ func main() {
 	}
 	defer client.Close()
 
+	_ = client.PrintErrorStats("")      // hammasi
+	_ = client.PrintErrorStats("nat44") // faqat nat44
+	_ = client.PrintErrorStats("arp")   // faqat arp
+	_ = client.PrintErrorStats("acl")   // faqat arp
 
 	// // 2. Flow Collector-ni yaratish
 	// flowColl := flow.NewCollector(4739, 1000)
@@ -39,12 +42,10 @@ func main() {
 	client.StartTime = time.Now()
 	r := gin.Default()
 
-
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("templates/**/*.html")
 
-
-	web.SetupRoutes(r, client, /*flowColl*/)
+	web.SetupRoutes(r, client /*flowColl*/)
 
 	log.Println("VPP Management Web server http://localhost:8080 da ishlamoqda")
 	r.Run(":8000")
