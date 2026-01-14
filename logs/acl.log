@@ -3293,3 +3293,373 @@
 [2026-01-14 14:45:04] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
 [2026-01-14 14:45:05] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
 [2026-01-14 14:45:05] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:06] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:06] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:07] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:07] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:08] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:08] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:09] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:09] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:10] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:10] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:11] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:11] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:12] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:12] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:13] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:13] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:14] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:14] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:15] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:15] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:16] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:16] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:17] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:17] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:18] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:18] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:19] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:19] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:20] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:20] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:21] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:21] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:22] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:22] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:23] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:23] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:24] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:24] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:25] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:25] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:26] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:26] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:28] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:28] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:29] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:29] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:30] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:30] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:31] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:31] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:32] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:32] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:33] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:33] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:34] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:34] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:35] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:35] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:36] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:36] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:37] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:37] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:38] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:38] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:39] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:39] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:40] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:40] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:41] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:41] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:42] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:42] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:43] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:43] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:44] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:44] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:45] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:45] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:46] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:46] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:47] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:47] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:48] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:48] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:49] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:49] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:50] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:50] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:51] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:51] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:52] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:52] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:53] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:53] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:54] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:54] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:55] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:55] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:56] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:56] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:57] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:57] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:58] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:58] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:45:59] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:45:59] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:00] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:00] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:01] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:01] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:02] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:02] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:03] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:03] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:04] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:04] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:05] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:05] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:06] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:06] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:07] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:07] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:08] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:08] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:09] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:09] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:11] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:11] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:12] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:12] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:13] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:13] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:14] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:14] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:15] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:15] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:16] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:16] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:17] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:17] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:18] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:18] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:19] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:19] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:20] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:20] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:21] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:21] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:22] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:22] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:23] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:23] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:24] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:24] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:25] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:25] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:26] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:26] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:27] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:27] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:28] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:28] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:29] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:29] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:30] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:30] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:31] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:31] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:32] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:32] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:33] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:33] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:34] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:34] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:35] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:35] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:36] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:36] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:37] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:37] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:38] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:38] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:39] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:39] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:40] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:40] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:41] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:41] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:42] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:42] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:43] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:43] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:44] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:44] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:45] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:45] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:46] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:46] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:47] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:47] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:48] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:48] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:49] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:49] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:50] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:50] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:51] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:51] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:52] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:52] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:54] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:54] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:55] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:55] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:56] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:56] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:57] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:57] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:58] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:58] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:46:59] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:46:59] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:00] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:00] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:01] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:01] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:02] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:02] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:03] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:03] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:04] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:04] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:05] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:05] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:06] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:06] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:07] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:07] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:08] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:08] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:09] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:09] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:10] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:10] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:11] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:11] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:12] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:12] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:13] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:13] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:14] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:14] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:15] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:15] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:16] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:16] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:17] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:17] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:18] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:18] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:19] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:19] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:20] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:20] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:21] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:21] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:22] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:22] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:23] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:23] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:24] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:24] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:25] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:25] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:26] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:26] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:27] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:27] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:28] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:28] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:29] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:29] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:30] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:30] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:31] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:31] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:32] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:32] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:33] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:33] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:34] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:34] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:36] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:36] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:37] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:37] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:38] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:38] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:39] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:39] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:40] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:40] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:41] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:41] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:42] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:42] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:43] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:43] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:44] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:44] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:45] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:45] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:46] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:46] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:47] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:47] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:48] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:48] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:49] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:49] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:50] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:50] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:51] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:51] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:52] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:52] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:53] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:53] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:54] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:54] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:55] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:55] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:56] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:56] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:57] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:57] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:58] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:58] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:47:59] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:47:59] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:00] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:00] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:01] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:01] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:02] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:02] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:03] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:03] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:04] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:04] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:05] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:05] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:06] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:06] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:07] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:07] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:08] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:08] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:09] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:09] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:10] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:10] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:11] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:11] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:12] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:12] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:13] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:13] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
+[2026-01-14 14:48:14] vpp[174896]: acl_plugin: ACL_DROP: interface:1, action:0, match: acl_idx:0 rule_idx:3
+[2026-01-14 14:48:14] vpp[174896]: acl_plugin: Dropped Pkt Details: lc_index 0 l3 ip4 192.168.10.10 -> 12.12.12.13 l4 lsb_of_sw_if_index 1 proto 1 l4_is_input 1 l4_slow_path 1 l4_flags 0x03 port 8 -> 0 tcp flags (invalid) 00 rsvd 0
