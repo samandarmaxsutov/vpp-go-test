@@ -137,7 +137,7 @@ func (v *VPPClient) GetGlobalStats() (*GlobalStats, error) {
 	select {
 	case <-done:
 	case <-time.After(500 * time.Millisecond):
-		return nil, fmt.Errorf("vpp stats timeout")
+		return nil, fmt.Errorf(" Stats timeout")
 	}
 
 	// 3. CPU va Memory hisoblash

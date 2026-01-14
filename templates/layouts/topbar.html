@@ -1,35 +1,39 @@
 {{ define "topbar" }}
-<nav class="navbar navbar-expand navbar-white bg-white border-bottom p-2 shadow-sm">
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom p-2 shadow-sm">
     <div class="container-fluid">
         <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary me-3 border-0">
             <i class="bi bi-list fs-4"></i>
         </button>
-        <span class="navbar-text fw-bold text-uppercase text-secondary">
-            System > {{ .title }}
+        <span class="navbar-text fw-bold text-uppercase text-secondary small">
+            System <i class="bi bi-chevron-right mx-1" style="font-size: 0.7rem;"></i> {{ .title }}
         </span>
         <div class="ms-auto d-flex align-items-center">
-            <div class="me-3 text-end">
-                <div class="small fw-bold">Administrator</div>
-                <div class="text-success small" style="font-size: 0.7rem;">● Online</div>
+            <div class="me-3 text-end d-none d-md-block">
+                <div class="small fw-bold text-dark">Administrator</div>
+                <div class="text-success small d-flex align-items-center justify-content-end" style="font-size: 0.7rem;">
+                    <span class="me-1">●</span> Online
+                </div>
             </div>
-            
+
             <div class="dropdown">
-                <div class="rounded-circle bg-info text-white p-2 d-flex justify-content-center align-items-center cursor-pointer" 
-                     id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" 
-                     style="width: 35px; height: 35px; cursor: pointer;">
+                <div class="rounded-circle bg-success text-white p-2 d-flex justify-content-center align-items-center cursor-pointer" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" style="width: 35px; height: 35px; cursor: pointer;">
                     A
                 </div>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userMenu">
-                    <li><h6 class="dropdown-header">Admin Sozlamalari</h6></li>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 mt-2" aria-labelledby="userMenu" style="min-width: 200px;">
                     <li>
-                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
-                            ⚙️ Profil
+                        <h6 class="dropdown-header text-uppercase opacity-50 small">Admin sozlamalari</h6>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">
+                            <i class="bi bi-person-gear me-2 text-primary"></i> Profil va Xavfsizlik
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item text-danger fw-bold" href="/logout">
-                            🚪 Tizimdan chiqish
+                        <hr class="dropdown-divider opacity-25">
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2 text-danger" href="/logout">
+                            <i class="bi bi-box-arrow-right me-2"></i> Tizimdan chiqish
                         </a>
                     </li>
                 </ul>
@@ -40,72 +44,83 @@
 
 <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-bottom-0">
-                <h5 class="modal-title fw-bold">⚙️ Profil Sozlamalari</h5>
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom bg-light">
+                <h6 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2"></i>Admin Xavfsizlik Sozlamalari</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="changePasswordForm">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Joriy parol</label>
-                        <input type="password" name="current_password" class="form-control" required>
+                        <label class="form-label small fw-bold text-muted">JORIY PAROL</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-key"></i></span>
+                            <input type="password" name="current_password" class="form-control border-start-0 shadow-none" placeholder="Amaldagi parolni kiriting" required>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Yangi parol</label>
-                        <input type="password" id="new_password" name="new_password" class="form-control" required>
+                        <label class="form-label small fw-bold text-muted">YANGI PAROL</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock"></i></span>
+                            <input type="password" id="new_password" name="new_password" class="form-control border-start-0 shadow-none" placeholder="Kamida 8 ta belgi" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Yangi parolni tasdiqlang</label>
-                        <input type="password" id="confirm_password" class="form-control" required>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">TASDIQLASH</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-check-circle"></i></span>
+                            <input type="password" id="confirm_password" class="form-control border-start-0 shadow-none" placeholder="Yangi parolni qayta kiriting" required>
+                        </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer border-top-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
-                <button type="button" class="btn btn-primary" onclick="updatePassword()">Saqlash</button>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="updatePassword()">O'zgarishlarni saqlash</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-async function updatePassword() {
-    const newPass = document.getElementById('new_password').value;
-    const confirmPass = document.getElementById('confirm_password').value;
+    async function updatePassword() {
+        const newPass = document.getElementById('new_password').value;
+        const confirmPass = document.getElementById('confirm_password').value;
 
-    if (newPass === "" || confirmPass === "") {
-        alert("Iltimos, yangi parolni kiriting!");
-        return;
-    }
-
-    if (newPass !== confirmPass) {
-        alert("Yangi parollar mos kelmadi!");
-        return;
-    }
-
-    const form = document.getElementById('changePasswordForm');
-    const formData = new FormData(form);
-    const payload = Object.fromEntries(formData.entries());
-
-    try {
-        const res = await fetch('/api/admin/change-password', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-
-        if (res.ok) {
-            alert("Parol muvaffaqiyatli yangilandi!");
-            bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
-            form.reset();
-        } else {
-            const err = await res.json();
-            alert("Xato: " + err.error);
+        if (newPass === "" || confirmPass === "") {
+            alert("Iltimos, yangi parolni kiriting!");
+            return;
         }
-    } catch (e) {
-        alert("Server bilan aloqa uzildi!");
+
+        if (newPass !== confirmPass) {
+            alert("Yangi parollar mos kelmadi!");
+            return;
+        }
+
+        const form = document.getElementById('changePasswordForm');
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/api/admin/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert("Parol muvaffaqiyatli yangilandi!");
+                bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
+                form.reset();
+            } else {
+                const err = await res.json();
+                alert("Xato: " + err.error);
+            }
+        } catch (e) {
+            alert("Server bilan aloqa uzildi!");
+        }
     }
-}
 </script>
 {{ end }}

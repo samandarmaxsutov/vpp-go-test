@@ -14,8 +14,7 @@ import (
 	"vpp-go-test/internal/vpp/ipfix"
 	"vpp-go-test/internal/vpp/dhcp"
 	"vpp-go-test/internal/vpp/abf_mgr"
-	"sort"
-	"strings"
+	"vpp-go-test/internal/vpp/policer"
 )
 
 type VPPClient struct {
@@ -27,56 +26,16 @@ type VPPClient struct {
 	IpfixManager *ipfix.IpfixManager
 	DhcpManager *dhcp.DhcpManager
 	AbfManager  *abf_mgr.AbfManager
+	PolicerManager *policer.Manager
 	StartTime time.Time
 	IfNames map[uint32]string
-}
-
-// Error counterlarni (show errors) o‘xshatib chiqarish.
-// filter bo‘sh bo‘lsa hammasi, aks holda CounterName ichidan qidiradi (mas: "nat44", "arp", "dhcp").
-func (v *VPPClient) PrintErrorStats(filter string) error {
-	if v.Stats == nil {
-		return fmt.Errorf("Stats connection nil (v.Stats)")
-	}
-
-	var es api.ErrorStats
-	if err := v.Stats.GetErrorStats(&es); err != nil {
-		return fmt.Errorf("GetErrorStats failed: %w", err)
-	}
-
-	type row struct {
-		name  string
-		total uint64
-	}
-
-	rows := make([]row, 0, len(es.Errors))
-	for _, e := range es.Errors {
-		if filter != "" && !strings.Contains(strings.ToLower(e.CounterName), strings.ToLower(filter)) {
-			continue
-		}
-		var sum uint64
-		for _, v := range e.Values {
-			sum += v
-		}
-		if sum == 0 {
-			continue
-		}
-		rows = append(rows, row{name: e.CounterName, total: sum})
-	}
-
-	sort.Slice(rows, func(i, j int) bool { return rows[i].total > rows[j].total })
-
-	fmt.Printf("VPP error counters (filter=%q), non-zero only:\n", filter)
-	for _, r := range rows {
-		fmt.Printf("%10d  %s\n", r.total, r.name)
-	}
-	return nil
 }
 
 func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	// 1. Asosiy VPP API ulanishi
 	conn, err := govpp.Connect(socketPath)
 	if err != nil {
-		return nil, fmt.Errorf("VPP socketiga ulanib bo'lmadi: %v", err)
+		return nil, fmt.Errorf("Socketiga ulanib bo'lmadi: %v", err)
 	}
 
 	ch, err := conn.NewAPIChannel()
@@ -95,7 +54,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 		return nil, fmt.Errorf("Stats segmentiga ulanib bo'lmadi: %v", err)
 	}
 
-	log.Println("VPP API va Stats segmentiga ulanish muvaffaqiyatli!")
+	log.Println("API va Stats segmentiga ulanish muvaffaqiyatli!")
 	client := &VPPClient{
 		Conn:    conn,
 		Stats:   sConn,
@@ -106,6 +65,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	client.IpfixManager = ipfix.NewIpfixManager(conn)
 	client.DhcpManager = dhcp.NewDhcpManager(conn)
 	client.AbfManager = abf_mgr.NewAbfManager(conn)
+	client.PolicerManager = policer.NewManager(conn)
 
 	return client, nil	
 }

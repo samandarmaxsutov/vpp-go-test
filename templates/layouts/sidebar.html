@@ -1,7 +1,7 @@
 {{ define "sidebar" }}
 <div id="sidebar" class="sidebar d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="width: 250px; min-height: 100vh; transition: margin-left 0.3s ease-in-out;">
     <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        <span class="fs-4 fw-bold text-info">Secure</span><span class="fs-4">Gate</span>
+        <span class="fs-4 fw-bold text-info" style="letter-spacing: 1px;">Sarhad</span><span class="fs-4">Guard</span>
     </a>
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">
@@ -28,6 +28,11 @@
         <li>
             <a href="/dhcp-server" class="nav-link text-white {{if eq .active "dhcp"}}active bg-success{{end}}">
                 <i class="bi bi-server me-2"></i> DHCP Server
+            </a>
+        </li>
+        <li>
+            <a href="/policer" class="nav-link text-white {{if eq .active "policer_page_manager"}}active bg-success{{end}}">
+                <i class="bi bi-speedometer me-2"></i> Policer
             </a>
         </li>
         <li>

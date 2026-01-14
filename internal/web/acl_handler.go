@@ -42,7 +42,7 @@ func (h *ACLHandler) CreateACL(c *gin.Context) {
 
 	index, err := h.manager.CreateACL(c.Request.Context(), req.Tag, vppRules)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "VPP xatosi: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Xato: " + err.Error()})
 		return
 	}
 
@@ -84,7 +84,7 @@ func (h *ACLHandler) UpdateACL(c *gin.Context) {
 
 	err = h.manager.UpdateACL(c.Request.Context(), uint32(index), req.Tag, vppRules)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "VPP Update xatosi: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update xatosi: " + err.Error()})
 		return
 	}
 
@@ -219,7 +219,7 @@ func (h *ACLHandler) CreateMacACL(c *gin.Context) {
 	// 0xffffffff yangi ACL yaratishni bildiradi
 	index, err := h.manager.CreateMacACL(c.Request.Context(), 0xffffffff, req.Tag, vppRules)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "VPP MAC xatosi: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MAC xatosi: " + err.Error()})
 		return
 	}
 
@@ -295,7 +295,7 @@ func (h *ACLHandler) UpdateMacACL(c *gin.Context) {
 	// 4. Menejer orqali VPP ga yuborish (mavjud index bilan)
 	_, err = h.manager.CreateMacACL(c.Request.Context(), uint32(index), req.Tag, vppRules)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "VPP yangilashda xato: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Yangilashda xato: " + err.Error()})
 		return
 	}
 

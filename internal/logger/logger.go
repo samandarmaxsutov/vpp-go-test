@@ -9,7 +9,6 @@ import (
 
 // Log turlari uchun konstantalar (xato qilmaslik uchun)
 const (
-	TypeVPP  = "vpp"
 	TypeWeb  = "web"
 	TypeACL  = "acl"
 	TypeAuth = "auth"

@@ -54,7 +54,7 @@ func (m *DhcpManager) ConfigureProxy(ctx context.Context, serverIP, srcIP string
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("VPP error: %d", reply.Retval)
+		return fmt.Errorf("Error: %d", reply.Retval)
 	}
 	return nil
 }
@@ -100,7 +100,7 @@ func (m *DhcpManager) SetVSS(ctx context.Context, vrfID uint32, vssType uint8, v
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("VPP VSS error: %d", reply.Retval)
+		return fmt.Errorf("VSS error: %d", reply.Retval)
 	}
 	return nil
 }

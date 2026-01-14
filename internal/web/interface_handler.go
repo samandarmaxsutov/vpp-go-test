@@ -197,12 +197,12 @@ func (h *InterfaceHandler) CreateTap(c *gin.Context) {
     }
 
     if input.HostName == "" {
-        input.HostName = "vpp-tap0"
+        input.HostName = "tap0"
     }
 
     index, err := h.VPP.CreateTap(input.ID, input.HostName)
     if err != nil {
-        c.JSON(500, gin.H{"error": fmt.Sprintf("VPPda TAP yaratishda xato: %v", err)})
+        c.JSON(500, gin.H{"error": fmt.Sprintf("TAP yaratishda xato: %v", err)})
         return
     }
 
@@ -238,4 +238,88 @@ func (h *InterfaceHandler) CreateVlan(c *gin.Context) {
         "type":   "vlan_subif",
         "vlan":   input.VlanID,
     })
+}
+
+
+// CreateVmxnet3 - Yangi Vmxnet3 interfeysini PCI manzil orqali yaratish
+func (h *InterfaceHandler) CreateVmxnet3(c *gin.Context) {
+    var input struct {
+        PciAddr string `json:"pci_addr" binding:"required"` // Masalan: "0000:0b:00.0"
+        RxSize  uint16 `json:"rx_size"`                  // Default: 1024
+        TxSize  uint16 `json:"tx_size"`                  // Default: 1024
+    }
+
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "PCI manzilini ko'rsatish shart"})
+        return
+    }
+
+    // Default qiymatlar
+    if input.RxSize == 0 { input.RxSize = 1024 }
+    if input.TxSize == 0 { input.TxSize = 1024 }
+
+    // String PCI ni uint32 ga o'tkazamiz
+    pciUint := vpp.ParsePciAddress(input.PciAddr)
+    
+    index, err := h.VPP.CreateVmxnet3(pciUint, input.RxSize, input.TxSize)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status": "created",
+        "index":  index,
+        "pci":    input.PciAddr,
+    })
+}
+
+// DeleteVmxnet3 - Vmxnet3 interfeysini o'chirish
+func (h *InterfaceHandler) DeleteVmxnet3(c *gin.Context) {
+    var input struct {
+        Index uint32 `json:"index" binding:"required"`
+    }
+
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Index (sw_if_index) majburiy"})
+        return
+    }
+
+    if err := h.VPP.DeleteVmxnet3(input.Index); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Vmxnet3 o'chirishda xato: " + err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status": "deleted",
+        "index":  input.Index,
+    })
+}
+
+// ListVmxnet3 - Faqat Vmxnet3 texnik detallarini ko'rish
+func (h *InterfaceHandler) ListVmxnet3(c *gin.Context) {
+    details, err := h.VPP.GetVmxnet3Details()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, details)
+}
+
+func (h *InterfaceHandler) ScanAvailableInterfaces(c *gin.Context) {
+    // Middleware-dan qidirib o'tirmaymiz, 
+    // chunki h.VPP allaqachon strukturada bor!
+    if h.VPP == nil {
+        c.JSON(500, gin.H{"error": "Client handler ichida initsializatsiya qilinmagan"})
+        return
+    }
+
+    // Linuxdan barcha Vmxnet3 qurilmalarni skanerlash
+    devices, err := h.VPP.GetLinuxPciDevices()
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Skanerlashda xato: " + err.Error()})
+        return
+    }
+
+    c.JSON(200, devices)
 }

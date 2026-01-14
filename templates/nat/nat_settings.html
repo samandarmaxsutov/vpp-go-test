@@ -47,7 +47,7 @@
                 <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0">
                     <div>
                         <label class="form-check-label fw-bold d-block" for="ipfixSwitch">IPFIX Logging (Local IP Tracking)</label>
-                        <small class="text-muted">Kibana-da lokal IP-larni ko'rish uchun buni yoqing</small>
+                        <small class="text-muted">Lokal IP-larni ko'rish uchun buni yoqing</small>
                     </div>
                     <input class="form-check-input ms-2" type="checkbox" role="switch" id="ipfixSwitch" style="width: 3em; height: 1.5em;" onchange="toggleIpfix(this)">
                 </div>
@@ -60,16 +60,13 @@
                     </div>
                 </div>
                 <div class="ms-3">
-                    <div class="fw-bold">VPP NAT44-ED Service</div>
+                    <div class="fw-bold">NAT44-ED Service</div>
                     <div id="natStatusBadge" class="badge bg-success">Active</div>
                     <button class="btn btn-link btn-sm p-0 d-block text-decoration-none" onclick="enableNatPlugin()">Re-initialize Plugin</button>
                 </div>
             </div>
 
-            <div class="alert alert-info border-0 small mt-2">
-                <h6 class="alert-heading fw-bold small"><i class="bi bi-info-circle me-2"></i>IPFIX haqida</h6>
-                Agar Kibana'da faqat gateway IP ko'rinsa, yuqoridagi <b>IPFIX Logging</b> tugmasini yoqing. Bu VPP-ga har bir NAT sessiyasi uchun lokal IP manzilini yuborishni buyuradi.
-            </div>
+         
 
             <div class="mt-auto pt-3 border-top">
                 <button class="btn btn-outline-danger w-100 btn-sm" onclick="clearAllSessions()">

@@ -1,0 +1,258 @@
+{{ template "base" . }}
+{{ define "policer_page_manager" }}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-speedometer2 me-2"></i> Traffic Policing (QoS)</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPolicerModal">
+            <i class="bi bi-plus-lg"></i> Yangi Policer yaratish
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">Mavjud Policerlar</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Index</th>
+                            <th>Nomi</th>
+                            <th>CIR (kbps)</th>
+                            <th>CB (bytes)</th>
+                            <th>Turi</th>
+                            <th class="text-end">Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="policerTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4">Yuklanmoqda...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">Policerni interfeysga bog'lash (Apply to Interface)</h6>
+        </div>
+        <div class="card-body">
+            <form id="bindPolicerForm" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Policer tanlang</label>
+                    <select id="bindPolicerSelect" class="form-select" required></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Interfeys</label>
+                    <select id="bindInterfaceSelect" class="form-select" required></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Yo'nalish (Direction)</label>
+                    <select id="bindDirectionSelect" class="form-select">
+                        <option value="input">Kiruvchi (Input)</option>
+                        <option value="output">Chiquvchi (Output)</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-link-45deg"></i> Bog'lash (Apply)
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createPolicerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yangi Policer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createPolicerForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Profil nomi</label>
+                        <input type="text" class="form-control" name="name" placeholder="Masalan: 100Mbps_Limit" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">CIR (Committed Information Rate) - kbps</label>
+                        <input type="number" class="form-control" name="cir" placeholder="100000" required>
+                        <div class="form-text">Mijozga ruxsat berilgan o'rtacha tezlik (kbps)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">CB (Committed Burst) - bytes</label>
+                        <input type="number" class="form-control" name="cb" placeholder="125000" required>
+                        <div class="form-text">Bir vaqtning o'zida o'tishi mumkin bo'lgan maksimal trafik.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPolicers();
+        loadInterfaces();
+
+        // 1. Policer yaratish (O'zgarishsiz qoladi)
+        document.getElementById('createPolicerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = {
+                name: formData.get('name'),
+                cir: parseInt(formData.get('cir')),
+                cb: parseInt(formData.get('cb'))
+            };
+
+            fetch('/api/policer/policy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.error) {
+                        alert("Xatolik: " + res.error);
+                    } else {
+                        alert(res.message);
+                        location.reload();
+                    }
+                });
+        });
+
+        // 2. Policerlarni yuklash (Siz yuborgan JSON formatiga moslandi)
+        function loadPolicers() {
+            fetch('/api/policer/policies')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('policerTableBody');
+                    const select = document.getElementById('bindPolicerSelect');
+                    tbody.innerHTML = '';
+                    select.innerHTML = '<option value="">-- Tanlang --</option>';
+
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Policerlar topilmadi</td></tr>';
+                        return;
+                    }
+
+                    data.forEach((p, idx) => {
+                        // Jadvalga qo'shish
+                        // Eslatma: Agar JSONda policer_index bo'lmasa, massiv indeksidan foydalanamiz
+                        const pIndex = p.policer_index !== undefined ? p.policer_index : idx;
+
+                        const row = `<tr>
+                        <td><span class="badge bg-secondary">${pIndex}</span></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.cir} kbps</td>
+                        <td>${p.cb} bytes</td>
+                        <td><span class="badge bg-info text-dark">1R2C</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePolicer(${pIndex})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                        tbody.innerHTML += row;
+
+                        // Bog'lash selectiga qo'shish
+                        const opt = document.createElement('option');
+                        opt.value = p.name;
+                        opt.textContent = p.name;
+                        select.appendChild(opt);
+                    });
+                });
+        }
+
+        // 3. Interfeyslarni yuklash (Siz yuborgan Interfeys JSON-ga moslandi)
+        function loadInterfaces() {
+            fetch('/api/interfaces')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('bindInterfaceSelect');
+                    select.innerHTML = '<option value="">-- Interfeysni tanlang --</option>';
+
+                    data.forEach(iface => {
+                        // Sizning JSONda 'index' va 'name' ishlatilgan
+                        const opt = document.createElement('option');
+                        opt.value = iface.index;
+                        opt.textContent = `${iface.name} (${iface.ip_addresses ? iface.ip_addresses[0] : 'IP yo\'q'})`;
+                        select.appendChild(opt);
+                    });
+                });
+        }
+
+        // 4. Policer o'chirish
+        window.deletePolicer = function(index) {
+            if (!confirm('Haqiqatan ham ushbu policerni o\'chirmoqchimisiz?')) return;
+
+            fetch(`/api/policer/policy/${index}`, {
+                    method: 'DELETE'
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.error) alert(res.error);
+                    else {
+                        alert("O'chirildi");
+                        loadPolicers();
+                    }
+                });
+        };
+
+        // 5. Interfeysga bog'lash
+        document.getElementById('bindPolicerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // bindPolicerForm submit qismida datani shunday yuboring:
+            const data = {
+                policer_name: document.getElementById('bindPolicerSelect').value,
+                sw_if_index: parseInt(document.getElementById('bindInterfaceSelect').value),
+                direction: document.getElementById('bindDirectionSelect').value,
+                apply: true
+            };
+
+            fetch('/api/policer/bind', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.error) alert("Xato: " + res.error);
+                    else alert("Policer interfeysga muvaffaqiyatli ulandi!");
+                });
+        });
+    });
+</script>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn {
+        border-radius: 8px;
+    }
+</style>
+{{ end }}
