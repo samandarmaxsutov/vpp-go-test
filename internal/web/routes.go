@@ -135,7 +135,7 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			api.POST("/interfaces/vmxnet3/create", iface.CreateVmxnet3) // Yaratish
 			api.POST("/interfaces/vmxnet3/delete", iface.DeleteVmxnet3) // O'chirish
 
-			backup := api.Group("/interfaces/backup")
+			backup := api.Group("/backup")
 			{
 				backup.POST("/save", backupHandler.SaveBackup)       // Manual save
 				backup.POST("/restore", backupHandler.RestoreBackup) // Manual restore

@@ -2,33 +2,32 @@ package vpp
 
 import (
 	"fmt"
-	"log"
-	"time"
-
 	"go.fd.io/govpp"
 	"go.fd.io/govpp/adapter/statsclient" // Yangi qo'shildi
 	"go.fd.io/govpp/api"
 	"go.fd.io/govpp/core"
-	"vpp-go-test/internal/vpp/acl"
-	"vpp-go-test/internal/vpp/nat44"
-	"vpp-go-test/internal/vpp/ipfix"
-	"vpp-go-test/internal/vpp/dhcp"
+	"log"
+	"time"
 	"vpp-go-test/internal/vpp/abf_mgr"
+	"vpp-go-test/internal/vpp/acl"
+	"vpp-go-test/internal/vpp/dhcp"
+	"vpp-go-test/internal/vpp/ipfix"
+	"vpp-go-test/internal/vpp/nat44"
 	"vpp-go-test/internal/vpp/policer"
 )
 
 type VPPClient struct {
-	Conn    *core.Connection
-	Stats   *core.StatsConnection // Global stats ulanishi
-	Channel api.Channel
-	ACLManager *acl.ACLManager //Acl 
-	NatManager  *nat44.NatManager
-	IpfixManager *ipfix.IpfixManager
-	DhcpManager *dhcp.DhcpManager
-	AbfManager  *abf_mgr.AbfManager
+	Conn           *core.Connection
+	Stats          *core.StatsConnection // Global stats ulanishi
+	Channel        api.Channel
+	ACLManager     *acl.ACLManager //Acl
+	NatManager     *nat44.NatManager
+	IpfixManager   *ipfix.IpfixManager
+	DhcpManager    *dhcp.DhcpManager
+	AbfManager     *abf_mgr.AbfManager
 	PolicerManager *policer.Manager
-	StartTime time.Time
-	IfNames map[uint32]string
+	StartTime      time.Time
+	IfNames        map[uint32]string
 }
 
 func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
@@ -67,7 +66,7 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	client.AbfManager = abf_mgr.NewAbfManager(conn)
 	client.PolicerManager = policer.NewManager(conn)
 
-	return client, nil	
+	return client, nil
 }
 
 func (v *VPPClient) Close() {
@@ -80,4 +79,15 @@ func (v *VPPClient) Close() {
 	if v.Conn != nil {
 		v.Conn.Disconnect()
 	}
+}
+
+func (v *VPPClient) IsConnected() bool {
+    if v.Conn == nil {
+        return false
+    }
+
+    // We use GetInterfaces as a "Ping". 
+    // If VPP is down, this call will fail immediately.
+    _, err := v.GetInterfaces()
+    return err == nil
 }
