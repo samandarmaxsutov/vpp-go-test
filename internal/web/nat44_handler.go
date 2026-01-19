@@ -7,6 +7,7 @@ import (
     "vpp-go-test/binapi/nat_types"
     "vpp-go-test/binapi/nat44_ed"
 
+    "vpp-go-test/internal/vpp"
     "github.com/gin-gonic/gin"
     "sync"
     "time"
@@ -22,11 +23,11 @@ var (
 const CacheTTL = 10 * time.Second // Kesh muddati: 10 soniya
 
 type NatHandler struct {
-    NatMgr *nat44.NatManager
+   VPP *vpp.VPPClient
 }
 
-func NewNatHandler(mgr *nat44.NatManager) *NatHandler {
-    return &NatHandler{NatMgr: mgr}
+func NewNatHandler(vppClient *vpp.VPPClient) *NatHandler {
+    return &NatHandler{VPP: vppClient}
 }
 
 // --- TAB 4: Session Management (Optimallashtirilgan) ---
@@ -55,7 +56,7 @@ func (h *NatHandler) HandleGetSessions(c *gin.Context) {
 
     // VPP dan yangi formatdagi ma'lumotni olamiz (Sessions + UserSummary)
     // Bu metod nat44.NATSessionResponse qaytaradi
-    data, err := h.NatMgr.GetActiveSessions(context.Background())
+    data, err := h.VPP.NatManager.GetActiveSessions(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Dump xatosi: " + err.Error()})
         return
@@ -70,7 +71,7 @@ func (h *NatHandler) HandleGetSessions(c *gin.Context) {
 
 // HandleClearSessions - Sessiyalarni tozalash (Keshni ham o'chiramiz)
 func (h *NatHandler) HandleClearSessions(c *gin.Context) {
-    err := h.NatMgr.ClearAllSessions(context.Background())
+    err := h.VPP.NatManager.ClearAllSessions(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -93,7 +94,7 @@ func (h *NatHandler) HandleDelSpecificSession(c *gin.Context) {
         return
     }
 
-    err := h.NatMgr.DelSpecificSession(context.Background(), session)
+    err := h.VPP.NatManager.DelSpecificSession(context.Background(), session)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -119,7 +120,7 @@ func (h *NatHandler) HandleSetInterfaceNAT(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Xato ma'lumot"})
         return
     }
-    err := h.NatMgr.SetInterfaceNAT(context.Background(), req.SwIfIndex, req.IsInside, req.IsAdd)
+    err := h.VPP.NatManager.SetInterfaceNAT(context.Background(), req.SwIfIndex, req.IsInside, req.IsAdd)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -136,7 +137,7 @@ func (h *NatHandler) HandleAddAddressPool(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "IP format xato"})
         return
     }
-    err := h.NatMgr.AddAddressPool(context.Background(), req.IPAddress, req.IsAdd)
+    err := h.VPP.NatManager.AddAddressPool(context.Background(), req.IPAddress, req.IsAdd)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -163,7 +164,7 @@ func (h *NatHandler) HandleStaticMapping(c *gin.Context) {
         ExternalIP: req.ExternalIP, ExternalPort: req.ExternalPort,
         ExternalIf: req.ExternalIf, Protocol: req.Protocol,
     }
-    err := h.NatMgr.AddStaticMapping(context.Background(), sm, req.IsAdd)
+    err := h.VPP.NatManager.AddStaticMapping(context.Background(), sm, req.IsAdd)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -172,7 +173,7 @@ func (h *NatHandler) HandleStaticMapping(c *gin.Context) {
 }
 
 func (h *NatHandler) HandleGetInterfaces(c *gin.Context) {
-    ifaces, err := h.NatMgr.GetNatInterfaces(context.Background())
+    ifaces, err := h.VPP.NatManager.GetNatInterfaces(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -181,7 +182,7 @@ func (h *NatHandler) HandleGetInterfaces(c *gin.Context) {
 }
 
 func (h *NatHandler) HandleGetPool(c *gin.Context) {
-    pool, err := h.NatMgr.GetAddressPool(context.Background())
+    pool, err := h.VPP.NatManager.GetAddressPool(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -190,7 +191,7 @@ func (h *NatHandler) HandleGetPool(c *gin.Context) {
 }
 
 func (h *NatHandler) HandleGetStaticMappings(c *gin.Context) {
-    mappings, err := h.NatMgr.GetStaticMappings(context.Background())
+    mappings, err := h.VPP.NatManager.GetStaticMappings(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -204,7 +205,7 @@ func (h *NatHandler) HandleSetTimeouts(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Xato qiymat"})
         return
     }
-    err := h.NatMgr.SetNatTimeouts(context.Background(), req)
+    err := h.VPP.NatManager.SetNatTimeouts(context.Background(), req)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -213,7 +214,7 @@ func (h *NatHandler) HandleSetTimeouts(c *gin.Context) {
 }
 
 func (h *NatHandler) HandleEnableNAT(c *gin.Context) {
-    err := h.NatMgr.EnableNat44(context.Background())
+    err := h.VPP.NatManager.EnableNat44(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -227,7 +228,7 @@ func (h *NatHandler) HandleSetIpfixLogging(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Xato"})
         return
     }
-    err := h.NatMgr.SetIpfixLogging(context.Background(), req.Enable)
+    err := h.VPP.NatManager.SetIpfixLogging(context.Background(), req.Enable)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -236,7 +237,7 @@ func (h *NatHandler) HandleSetIpfixLogging(c *gin.Context) {
 }
 
 func (h *NatHandler) HandleGetNatConfig(c *gin.Context) {
-    config, err := h.NatMgr.GetRunningConfig(context.Background())
+    config, err := h.VPP.NatManager.GetRunningConfig(context.Background())
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return

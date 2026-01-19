@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"vpp-go-test/binapi/fib_types"
 	"vpp-go-test/binapi/ip_types"
-	"vpp-go-test/internal/vpp/abf_mgr"
+	"vpp-go-test/internal/vpp"
 	"github.com/gin-gonic/gin"
 	"fmt"
 )
 
 type AbfHandler struct {
-	AbfMgr *abf_mgr.AbfManager
+	VPP	*vpp.VPPClient
 }
 
 // HandleCreatePolicy - POST /api/abf/policy
@@ -53,7 +53,7 @@ func (h *AbfHandler) HandleCreatePolicy(c *gin.Context) {
 		paths[0].Proto = fib_types.FIB_API_PATH_NH_PROTO_IP6
 	}
 
-	err = h.AbfMgr.ConfigurePolicy(c.Request.Context(), req.PolicyID, req.ACLIndex, paths, req.IsAdd)
+	err = h.VPP.AbfManager.ConfigurePolicy(c.Request.Context(), req.PolicyID, req.ACLIndex, paths, req.IsAdd)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -77,7 +77,7 @@ func (h *AbfHandler) HandleAttachInterface(c *gin.Context) {
 		return
 	}
 
-	err := h.AbfMgr.AttachToInterface(c.Request.Context(), req.PolicyID, req.SwIfIndex, req.Priority, req.IsIPv6, req.IsAdd)
+	err := h.VPP.AbfManager.AttachToInterface(c.Request.Context(), req.PolicyID, req.SwIfIndex, req.Priority, req.IsIPv6, req.IsAdd)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -88,7 +88,7 @@ func (h *AbfHandler) HandleAttachInterface(c *gin.Context) {
 
 // HandleGetPolicies - GET /api/abf/policies
 func (h *AbfHandler) HandleGetPolicies(c *gin.Context) {
-	policies, err := h.AbfMgr.ListPolicies(c.Request.Context())
+	policies, err := h.VPP.AbfManager.ListPolicies(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -98,7 +98,7 @@ func (h *AbfHandler) HandleGetPolicies(c *gin.Context) {
 
 // HandleGetAttachments - GET /api/abf/attachments
 func (h *AbfHandler) HandleGetAttachments(c *gin.Context) {
-	attachments, err := h.AbfMgr.ListInterfaceAttachments(c.Request.Context())
+	attachments, err := h.VPP.AbfManager.ListInterfaceAttachments(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

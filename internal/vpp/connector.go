@@ -91,3 +91,28 @@ func (v *VPPClient) IsConnected() bool {
     _, err := v.GetInterfaces()
     return err == nil
 }
+
+func (v *VPPClient) RefreshManagers() {
+    // 1. Close the old main channel
+    if v.Channel != nil {
+        v.Channel.Close()
+    }
+
+    // 2. Open a new main channel for the client itself
+    ch, err := v.Conn.NewAPIChannel()
+    if err == nil {
+        v.Channel = ch
+    }
+
+    // 3. IMPORTANT: Re-link the managers. 
+    // If your web routes use client.ACLManager, they point to a specific 
+    // place in memory. We must ensure these are fresh.
+    v.ACLManager = acl.NewACLManager(v.Conn)
+    v.NatManager = nat44.NewNatManager(v.Conn)
+    v.IpfixManager = ipfix.NewIpfixManager(v.Conn)
+    v.DhcpManager = dhcp.NewDhcpManager(v.Conn)
+    v.AbfManager = abf_mgr.NewAbfManager(v.Conn)
+    v.PolicerManager = policer.NewManager(v.Conn)
+
+    log.Println("🔄 All Managers memory-swapped with fresh API channels.")
+}

@@ -26,15 +26,15 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	auth := &AuthHandler{}
 	iface := &InterfaceHandler{VPP: client}
 	routing := &RoutingHandler{VPP: client}
-	policerHandler := &PolicerHandler{PolicerMgr: client.PolicerManager}
-	aclHandler := NewACLHandler(client.ACLManager)
-	natHandler := NewNatHandler(client.NatManager)
+	aclHandler := &ACLHandler{VPP: client}
+	natHandler := &NatHandler{VPP: client}
+	policerHandler := &PolicerHandler{VPP: client}
+	dhcpHandler := &DhcpHandler{VPP: client}
+	abfHandler := &AbfHandler{VPP: client}
 	logHandler := &LogHandler{}
 	ipfixHandler := NewIpfixHandler(client)
-	dhcpHandler := &DhcpHandler{DhcpMgr: client.DhcpManager}
 	// === BACKUP & RESTORE ENDPOINTS ===
 	backupHandler := NewBackupHandler(client)
-	abfHandler := &AbfHandler{AbfMgr: client.AbfManager}
 
 	r.GET("/login", auth.LoginGet)
 	r.POST("/login", auth.LoginPost)

@@ -1,20 +1,20 @@
 package web
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"vpp-go-test/binapi/acl_types"
+	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/vpp/acl"
-
-	"github.com/gin-gonic/gin"
 )
 
 type ACLHandler struct {
-	manager *acl.ACLManager
+	VPP *vpp.VPPClient
 }
 
-func NewACLHandler(m *acl.ACLManager) *ACLHandler {
-	return &ACLHandler{manager: m}
+func NewACLHandler(vppClient *vpp.VPPClient) *ACLHandler {
+	return &ACLHandler{VPP: vppClient}
 }
 
 // 1. CreateACL - Yangi ACL yaratish (POST /api/acl)
@@ -40,7 +40,7 @@ func (h *ACLHandler) CreateACL(c *gin.Context) {
 		vppRules = append(vppRules, rule)
 	}
 
-	index, err := h.manager.CreateACL(c.Request.Context(), req.Tag, vppRules)
+	index, err := h.VPP.ACLManager.CreateACL(c.Request.Context(), req.Tag, vppRules)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Xato: " + err.Error()})
 		return
@@ -82,7 +82,7 @@ func (h *ACLHandler) UpdateACL(c *gin.Context) {
 		vppRules = append(vppRules, rule)
 	}
 
-	err = h.manager.UpdateACL(c.Request.Context(), uint32(index), req.Tag, vppRules)
+	err = h.VPP.ACLManager.UpdateACL(c.Request.Context(), uint32(index), req.Tag, vppRules)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update xatosi: " + err.Error()})
 		return
@@ -93,7 +93,7 @@ func (h *ACLHandler) UpdateACL(c *gin.Context) {
 
 // 3. ListACLs - (GET /api/acl)
 func (h *ACLHandler) ListACLs(c *gin.Context) {
-	details, err := h.manager.GetAllACLs(c.Request.Context())
+	details, err := h.VPP.ACLManager.GetAllACLs(c.Request.Context())
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -116,15 +116,13 @@ func (h *ACLHandler) ApplyToInterface(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := h.manager.ApplyACLToInterface(c.Request.Context(), req.SwIfIndex, req.InputACLs, req.OutputACLs)
+	err := h.VPP.ACLManager.ApplyACLToInterface(c.Request.Context(), req.SwIfIndex, req.InputACLs, req.OutputACLs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Interfeys ACLlari bog'landi"})
 }
-
-
 
 // 5. DeleteACL - (DELETE /api/acl/:index)
 func (h *ACLHandler) DeleteACL(c *gin.Context) {
@@ -134,7 +132,7 @@ func (h *ACLHandler) DeleteACL(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Index xato"})
 		return
 	}
-	err = h.manager.DeleteACL(c.Request.Context(), uint32(index))
+	err = h.VPP.ACLManager.DeleteACL(c.Request.Context(), uint32(index))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -144,7 +142,7 @@ func (h *ACLHandler) DeleteACL(c *gin.Context) {
 
 // 6. ListInterfaceMaps - (GET /api/acl/interface/all)
 func (h *ACLHandler) ListInterfaceMaps(c *gin.Context) {
-	maps, err := h.manager.GetAllInterfaceACLs(c.Request.Context())
+	maps, err := h.VPP.ACLManager.GetAllInterfaceACLs(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -156,25 +154,25 @@ func (h *ACLHandler) ListInterfaceMaps(c *gin.Context) {
 }
 
 type InterfaceACLStatus struct {
-	SwIfIndex  uint32   `json:"sw_if_index"`
-	Name       string   `json:"name"`
-	InputIP    []uint32 `json:"input_ip"`
-	OutputIP   []uint32 `json:"output_ip"`
-	AttachedMAC *uint32 `json:"attached_mac"` // MAC ACL bitta bo'ladi
+	SwIfIndex   uint32   `json:"sw_if_index"`
+	Name        string   `json:"name"`
+	InputIP     []uint32 `json:"input_ip"`
+	OutputIP    []uint32 `json:"output_ip"`
+	AttachedMAC *uint32  `json:"attached_mac"` // MAC ACL bitta bo'ladi
 }
 
 func (h *ACLHandler) GetFullInterfaceACLMap(c *gin.Context) {
 	ctx := c.Request.Context()
-	
+
 	// 1. IP ACL bog'lamalarini olish
-	ipMaps, err := h.manager.GetAllInterfaceACLs(ctx)
+	ipMaps, err := h.VPP.ACLManager.GetAllInterfaceACLs(ctx)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	// 2. MAC ACL bog'lamalarini olish
-	macMaps, err := h.manager.GetMacACLInterfaceList(ctx)
+	macMaps, err := h.VPP.ACLManager.GetMacACLInterfaceList(ctx)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -183,7 +181,7 @@ func (h *ACLHandler) GetFullInterfaceACLMap(c *gin.Context) {
 	// 3. Natijalarni yig'ish (Soddalashtirish uchun xarita ko'rinishida)
 	// Bu yerda interfeys nomlarini InterfaceHandler'dan olishingiz mumkin
 	// Hozircha faqat indekslar bilan qaytaramiz
-	
+
 	c.JSON(200, gin.H{
 		"ip_assignments":  ipMaps,
 		"mac_assignments": macMaps,
@@ -195,7 +193,7 @@ func (h *ACLHandler) GetFullInterfaceACLMap(c *gin.Context) {
 // CreateMacACL - Yangi MAC ACL yaratish (POST /api/mac-acl)
 func (h *ACLHandler) CreateMacACL(c *gin.Context) {
 	var req struct {
-		Tag   string           `json:"tag" binding:"required"`
+		Tag   string            `json:"tag" binding:"required"`
 		Rules []acl.MacWebInput `json:"rules" binding:"required"`
 	}
 
@@ -208,7 +206,7 @@ func (h *ACLHandler) CreateMacACL(c *gin.Context) {
 	for _, r := range req.Rules {
 		// helper.go dagi metoddan foydalanamiz
 		rule, err := acl.CreateMacipRuleFromWebInput(r)
-	
+
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "MAC qoida xatosi: " + err.Error()})
 			return
@@ -217,7 +215,7 @@ func (h *ACLHandler) CreateMacACL(c *gin.Context) {
 	}
 
 	// 0xffffffff yangi ACL yaratishni bildiradi
-	index, err := h.manager.CreateMacACL(c.Request.Context(), 0xffffffff, req.Tag, vppRules)
+	index, err := h.VPP.ACLManager.CreateMacACL(c.Request.Context(), 0xffffffff, req.Tag, vppRules)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "MAC xatosi: " + err.Error()})
 		return
@@ -231,7 +229,7 @@ func (h *ACLHandler) CreateMacACL(c *gin.Context) {
 
 // ListMacACLs - Barcha MAC ACLlarni ko'rish (GET /api/mac-acl)
 func (h *ACLHandler) ListMacACLs(c *gin.Context) {
-	details, err := h.manager.GetAllMacACLs(c.Request.Context())
+	details, err := h.VPP.ACLManager.GetAllMacACLs(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -252,7 +250,7 @@ func (h *ACLHandler) DeleteMacACL(c *gin.Context) {
 		return
 	}
 
-	err = h.manager.DeleteMacACL(c.Request.Context(), uint32(index))
+	err = h.VPP.ACLManager.DeleteMacACL(c.Request.Context(), uint32(index))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -272,7 +270,7 @@ func (h *ACLHandler) UpdateMacACL(c *gin.Context) {
 
 	// 2. Requestni bind qilish
 	var req struct {
-		Tag   string           `json:"tag" binding:"required"`
+		Tag   string            `json:"tag" binding:"required"`
 		Rules []acl.MacWebInput `json:"rules" binding:"required"`
 	}
 
@@ -293,7 +291,7 @@ func (h *ACLHandler) UpdateMacACL(c *gin.Context) {
 	}
 
 	// 4. Menejer orqali VPP ga yuborish (mavjud index bilan)
-	_, err = h.manager.CreateMacACL(c.Request.Context(), uint32(index), req.Tag, vppRules)
+	_, err = h.VPP.ACLManager.CreateMacACL(c.Request.Context(), uint32(index), req.Tag, vppRules)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Yangilashda xato: " + err.Error()})
 		return
@@ -310,7 +308,7 @@ func (h *ACLHandler) UpdateMacACL(c *gin.Context) {
 // GetMacInterfaceMaps - (GET /api/mac-acl/interface/all)
 // Interfeyslarga biriktirilgan barcha MAC ACLlarni ko'rish
 func (h *ACLHandler) GetMacInterfaceMaps(c *gin.Context) {
-	maps, err := h.manager.GetMacACLInterfaceList(c.Request.Context())
+	maps, err := h.VPP.ACLManager.GetMacACLInterfaceList(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "MAC bog'lamalarini olishda xatolik: " + err.Error()})
 		return
@@ -323,6 +321,7 @@ func (h *ACLHandler) GetMacInterfaceMaps(c *gin.Context) {
 
 	c.JSON(http.StatusOK, maps)
 }
+
 // ApplyMacToInterface - MAC ACL bog'lash
 func (h *ACLHandler) ApplyMacToInterface(c *gin.Context) {
 	var req struct {
@@ -333,7 +332,7 @@ func (h *ACLHandler) ApplyMacToInterface(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := h.manager.ApplyMacACLToInterface(c.Request.Context(), req.SwIfIndex, req.ACLIndex, true)
+	err := h.VPP.ACLManager.ApplyMacACLToInterface(c.Request.Context(), req.SwIfIndex, req.ACLIndex, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -351,7 +350,7 @@ func (h *ACLHandler) UnbindMacFromInterface(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := h.manager.ApplyMacACLToInterface(c.Request.Context(), req.SwIfIndex, req.ACLIndex, false)
+	err := h.VPP.ACLManager.ApplyMacACLToInterface(c.Request.Context(), req.SwIfIndex, req.ACLIndex, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

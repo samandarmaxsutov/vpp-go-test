@@ -3,18 +3,19 @@ package web
 import (
 	"net/http"
 	"vpp-go-test/internal/vpp/dhcp"
+	"vpp-go-test/internal/vpp"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
 
 type DhcpHandler struct {
-	DhcpMgr *dhcp.DhcpManager
+	VPP *vpp.VPPClient
 }
 
 // HandleGetProxies - GET /api/dhcp/proxies?ipv6=false
 func (h *DhcpHandler) HandleGetProxies(c *gin.Context) {
 	isIPv6 := c.Query("ipv6") == "true"
-	proxies, err := h.DhcpMgr.ListProxies(c.Request.Context(), isIPv6)
+	proxies, err := h.VPP.DhcpManager.ListProxies(c.Request.Context(), isIPv6)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -37,7 +38,7 @@ func (h *DhcpHandler) HandleConfigureProxy(c *gin.Context) {
 		return
 	}
 
-	err := h.DhcpMgr.ConfigureProxy(c.Request.Context(), req.ServerIP, req.SrcIP, req.RxVrf, req.ServerVrf, req.IsAdd)
+	err := h.VPP.DhcpManager.ConfigureProxy(c.Request.Context(), req.ServerIP, req.SrcIP, req.RxVrf, req.ServerVrf, req.IsAdd)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -62,7 +63,7 @@ func (h *DhcpHandler) HandleSetVSS(c *gin.Context) {
         return
     }
 
-    err := h.DhcpMgr.SetVSS(c.Request.Context(), req.VrfID, req.VssType, req.VpnID, req.Oui, req.VpnIndex, req.IsIPv6, req.IsAdd)
+    err := h.VPP.DhcpManager.SetVSS(c.Request.Context(), req.VrfID, req.VssType, req.VpnID, req.Oui, req.VpnIndex, req.IsIPv6, req.IsAdd)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return

@@ -11,10 +11,11 @@ import (
 	"vpp-go-test/binapi/ip_types"
     "vpp-go-test/binapi/acl_types"
     "vpp-go-test/internal/vpp/acl"
+
 )
 
-// BackupConfig - Enhanced backup structure with DHCP and ACL info
-type BackupConfig struct {
+// InterfaceConfig - Enhanced backup structure with DHCP and ACL info
+type InterfaceConfig struct {
     SwIfIndex       uint32   `json:"sw_if_index"`
     InterfaceName   string   `json:"interface_name"`
     InterfaceType   string   `json:"interface_dev_type"`
@@ -46,12 +47,12 @@ type ACLBackupConfig struct {
     MACACLs []acl.MacACLDetail `json:"mac_acls"`
 }
 
-// FullBackupConfig - Complete system backup
 type FullBackupConfig struct {
-    Timestamp   string             `json:"timestamp"`
-    Interfaces  []BackupConfig     `json:"interfaces"`
-    ACLs        ACLBackupConfig    `json:"acls"`
+    Timestamp  string                `json:"timestamp"`
+    Interfaces []InterfaceConfig     `json:"interfaces"`
+    ACLs       ACLBackupConfig       `json:"acls"`
 }
+
 
 const (
     backupDir  = "/etc/sarhad-guard/backup"
@@ -100,7 +101,7 @@ func (v *VPPClient) SaveConfiguration() error {
         macACLBindings = make(map[uint32]uint32)
     }
 
-    var configs []BackupConfig
+    var configs []InterfaceConfig
     
     for _, iface := range interfaces {
         // Skip local0 (always exists)
@@ -108,7 +109,7 @@ func (v *VPPClient) SaveConfiguration() error {
             continue
         }
 
-        config := BackupConfig{
+        config := InterfaceConfig{
             SwIfIndex:     iface.Index,
             InterfaceName: iface.Name,
             InterfaceType: v.detectInterfaceType(iface.Name),
@@ -364,7 +365,7 @@ func (v *VPPClient) RestoreConfiguration() error {
 
     // Phase 1: Create missing interfaces (non-VLAN first)
     fmt.Println("\n📝 Phase 1: Creating missing interfaces...")
-    var vlanConfigs []BackupConfig
+    var vlanConfigs []InterfaceConfig
     
     for i, config := range fullBackup.Interfaces {
         if config.IsSubInterface {
@@ -521,7 +522,7 @@ func (v *VPPClient) RestoreConfiguration() error {
 }
 
 // Helper functions (unchanged)
-func (v *VPPClient) createInterface(config BackupConfig) (uint32, error) {
+func (v *VPPClient) createInterface(config InterfaceConfig) (uint32, error) {
     switch {
     case strings.HasPrefix(config.InterfaceName, "loop"):
         return v.CreateLoopback()
@@ -550,7 +551,7 @@ func (v *VPPClient) createInterface(config BackupConfig) (uint32, error) {
     }
 }
 
-func (v *VPPClient) configureInterface(swIfIndex uint32, config BackupConfig) error {
+func (v *VPPClient) configureInterface(swIfIndex uint32, config InterfaceConfig) error {
     if config.Tag != "" {
         if err := v.SetInterfaceTag(swIfIndex, config.Tag); err != nil {
             return fmt.Errorf("failed to set tag: %v", err)

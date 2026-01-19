@@ -2,19 +2,23 @@ package web
 
 import (
 	"net/http"
-	"vpp-go-test/internal/vpp/policer"
 	"github.com/gin-gonic/gin"
 	"strconv"
 	"fmt"
+	"vpp-go-test/internal/vpp"
 )
 
 type PolicerHandler struct {
-	PolicerMgr *policer.Manager
+	VPP *vpp.VPPClient
+}
+
+func NewPolicerHandler(vppClient *vpp.VPPClient) *PolicerHandler {
+	return &PolicerHandler{VPP: vppClient}
 }
 
 // HandleListPolicers - GET /api/policer/policies
 func (h *PolicerHandler) HandleListPolicers(c *gin.Context) {
-	list, err := h.PolicerMgr.ListPolicers(c.Request.Context())
+	list, err := h.VPP.PolicerManager.ListPolicers(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -36,7 +40,7 @@ func (h *PolicerHandler) HandleCreatePolicer(c *gin.Context) {
     }
 
     // BU YERDA O'ZGARISh: index va err qabul qilinadi
-    index, err := h.PolicerMgr.AddPolicer(c.Request.Context(), req.Name, req.Cir, req.Cb)
+    index, err := h.VPP.PolicerManager.AddPolicer(c.Request.Context(), req.Name, req.Cir, req.Cb)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -58,7 +62,7 @@ func (h *PolicerHandler) HandleDeletePolicer(c *gin.Context) {
 		return
 	}
 
-	err = h.PolicerMgr.DeletePolicer(c.Request.Context(), uint32(index))
+	err = h.VPP.PolicerManager.DeletePolicer(c.Request.Context(), uint32(index))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -83,7 +87,7 @@ func (h *PolicerHandler) HandleBindInterface(c *gin.Context) {
 	// Yo'nalishni tekshirish
 	if req.Direction == "" { req.Direction = "input" }
 
-	err := h.PolicerMgr.BindToInterface(c.Request.Context(), req.PolicerName, req.SwIfIndex, req.Direction, req.Apply)
+	err := h.VPP.PolicerManager.BindToInterface(c.Request.Context(), req.PolicerName, req.SwIfIndex, req.Direction, req.Apply)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
