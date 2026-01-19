@@ -32,7 +32,8 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	logHandler := &LogHandler{}
 	ipfixHandler := NewIpfixHandler(client)
 	dhcpHandler := &DhcpHandler{DhcpMgr: client.DhcpManager}
-
+	// === BACKUP & RESTORE ENDPOINTS ===
+	backupHandler := NewBackupHandler(client)
 	abfHandler := &AbfHandler{AbfMgr: client.AbfManager}
 
 	r.GET("/login", auth.LoginGet)
@@ -134,6 +135,12 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			api.POST("/interfaces/vmxnet3/create", iface.CreateVmxnet3) // Yaratish
 			api.POST("/interfaces/vmxnet3/delete", iface.DeleteVmxnet3) // O'chirish
 
+			backup := api.Group("/interfaces/backup")
+			{
+				backup.POST("/save", backupHandler.SaveBackup)       // Manual save
+				backup.POST("/restore", backupHandler.RestoreBackup) // Manual restore
+				backup.GET("/status", backupHandler.GetBackupStatus) // Check if backup exists
+			}
 			api.GET("/pci", iface.ScanAvailableInterfaces) // PCI qurilmalarni skanerlash
 
 			api.GET("/stats", iface.GetStats)
