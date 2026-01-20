@@ -3,9 +3,13 @@ package web
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"vpp-go-test/internal/logger"
 	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/vpp/ipfix"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 type IpfixHandler struct {
@@ -49,6 +53,10 @@ func (h *IpfixHandler) SaveSettings(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SAVE_IPFIX_SETTINGS", fmt.Sprintf("Collector: %s:%d", cfg.CollectorAddress, cfg.CollectorPort), fmt.Sprintf("Src: %s, MTU: %d", cfg.SourceAddress, cfg.PathMtu))
+
 	c.JSON(http.StatusOK, gin.H{"message": "IPFIX muvaffaqiyatli sozlandi"})
 }
 
@@ -58,6 +66,11 @@ func (h *IpfixHandler) FlushFlows(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "FLUSH_IPFIX_FLOWS", "All Flows", "Flushed")
+
 	c.JSON(http.StatusOK, gin.H{"message": "Flowlar yuborildi"})
 }
 
@@ -93,6 +106,10 @@ func (h *IpfixHandler) UpdateFlowprobe(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "UPDATE_FLOWPROBE", "Params", fmt.Sprintf("ActiveTimeout: %d, L4: %v", cfg.ActiveTimeout, cfg.RecordL4))
+
 	c.JSON(http.StatusOK, gin.H{"message": "Flowprobe yangilandi"})
 }
 
@@ -113,6 +130,10 @@ func (h *IpfixHandler) ToggleInterface(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "TOGGLE_IPFIX_INTERFACE", fmt.Sprintf("SwIfIndex: %d", req.SwIfIndex), fmt.Sprintf("Enable: %v", req.Enable))
 
 	c.JSON(http.StatusOK, gin.H{"message": "Interfeys holati o‘zgartirildi"})
 }

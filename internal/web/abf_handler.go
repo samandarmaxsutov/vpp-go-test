@@ -7,6 +7,8 @@ import (
 	"vpp-go-test/internal/vpp"
 	"github.com/gin-gonic/gin"
 	"fmt"
+	"vpp-go-test/internal/logger"
+	"github.com/gin-contrib/sessions"
 )
 
 type AbfHandler struct {
@@ -59,6 +61,10 @@ func (h *AbfHandler) HandleCreatePolicy(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE_ABF_POLICY", fmt.Sprintf("ID: %d", req.PolicyID), fmt.Sprintf("ACL: %d, NextHop: %s, Add: %v", req.ACLIndex, req.NextHop, req.IsAdd))
+
 	c.JSON(http.StatusOK, gin.H{"message": "ABF siyosati saqlandi"})
 }
 
@@ -82,6 +88,10 @@ func (h *AbfHandler) HandleAttachInterface(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "ATTACH_ABF_INTERFACE", fmt.Sprintf("Policy: %d -> Iface: %d", req.PolicyID, req.SwIfIndex), fmt.Sprintf("Priority: %d, IPv6: %v, Add: %v", req.Priority, req.IsIPv6, req.IsAdd))
 
 	c.JSON(http.StatusOK, gin.H{"message": "ABF interfeysga ulandi/uzildi"})
 }

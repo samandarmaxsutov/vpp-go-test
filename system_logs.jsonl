@@ -120,3 +120,18 @@
 {"timestamp":"2026-01-20 16:13:13","user":"user1","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
 {"timestamp":"2026-01-20 16:15:52","user":"admin","ip":"192.168.116.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
 {"timestamp":"2026-01-20 16:15:59","user":"user1","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:18:00","user":"user1","ip":"192.168.116.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:18:03","user":"admin","ip":"192.168.116.1","type":"auth","action":"Login Attempt","target":"System","status":"FAILED"}
+{"timestamp":"2026-01-20 16:18:09","user":"admin","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:19:11","user":"admin","ip":"192.168.116.1","type":"config","action":"DELETE","target":"VMXNET3","details":"Index: 3","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:19:43","user":"admin","ip":"192.168.116.1","type":"config","action":"CREATE","target":"VMXNET3","details":"PCI: 0000:0b:00.0","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:20:02","user":"admin","ip":"192.168.116.1","type":"config","action":"ADD_IP","target":"Interface 1","details":"192.168.10.1/24","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:26:02","user":"user1","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:26:04","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:30:00","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 1","details":"Inside: true, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:30:03","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 1","details":"Inside: false, Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:30:52","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_STATE","target":"Interface 1","details":"Up: false","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:30:52","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_STATE","target":"Interface 2","details":"Up: false","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:30:56","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_STATE","target":"Interface 1","details":"Up: true","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:30:56","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_STATE","target":"Interface 2","details":"Up: true","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:36:55","user":"admin","ip":"127.0.0.1","type":"config","action":"SAVE_IPFIX_SETTINGS","target":"Collector: 192.168.10.1:4739","details":"Src: 192.168.10.1, MTU: 1400","status":"SUCCESS"}

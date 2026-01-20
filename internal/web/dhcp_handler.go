@@ -1,11 +1,15 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
-	"vpp-go-test/internal/vpp/dhcp"
-	"vpp-go-test/internal/vpp"
-	"github.com/gin-gonic/gin"
 	"strconv"
+	"vpp-go-test/internal/logger"
+	"vpp-go-test/internal/vpp"
+	"vpp-go-test/internal/vpp/dhcp"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 type DhcpHandler struct {
@@ -43,43 +47,53 @@ func (h *DhcpHandler) HandleConfigureProxy(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CONFIGURE_DHCP_PROXY", fmt.Sprintf("Server: %s", req.ServerIP), fmt.Sprintf("Src: %s, Add: %v", req.SrcIP, req.IsAdd))
+
 	c.JSON(http.StatusOK, gin.H{"message": "Proxy configuration updated"})
 }
 
 // HandleSetVSS - POST /api/dhcp/vss
 func (h *DhcpHandler) HandleSetVSS(c *gin.Context) {
-    var req struct {
-        VrfID    uint32 `json:"vrf_id"`
-        VssType  uint8  `json:"vss_type"`
-        VpnID    string `json:"vpn_id"`
-        Oui      uint32 `json:"oui"`
-        VpnIndex uint32 `json:"vpn_index"`
-        IsIPv6   bool   `json:"is_ipv6"`
-        IsAdd    bool   `json:"is_add"`
-    }
+	var req struct {
+		VrfID    uint32 `json:"vrf_id"`
+		VssType  uint8  `json:"vss_type"`
+		VpnID    string `json:"vpn_id"`
+		Oui      uint32 `json:"oui"`
+		VpnIndex uint32 `json:"vpn_index"`
+		IsIPv6   bool   `json:"is_ipv6"`
+		IsAdd    bool   `json:"is_add"`
+	}
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-    err := h.VPP.DhcpManager.SetVSS(c.Request.Context(), req.VrfID, req.VssType, req.VpnID, req.Oui, req.VpnIndex, req.IsIPv6, req.IsAdd)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, gin.H{"message": "VSS configuration updated"})
+	err := h.VPP.DhcpManager.SetVSS(c.Request.Context(), req.VrfID, req.VssType, req.VpnID, req.Oui, req.VpnIndex, req.IsIPv6, req.IsAdd)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SET_DHCP_VSS", fmt.Sprintf("VPN ID: %s", req.VpnID), fmt.Sprintf("OUI: %d, Add: %v", req.Oui, req.IsAdd))
+
+	c.JSON(http.StatusOK, gin.H{"message": "VSS configuration updated"})
 }
 
 // Add to internal/web/dhcp_handler.go
 func (h *DhcpHandler) HandleGetLeases(c *gin.Context) {
-    leases, err := dhcp.GetKeaLeases()
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not read leases: " + err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, leases)
-}	
+	leases, err := dhcp.GetKeaLeases()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not read leases: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, leases)
+}
 
 // // HandleGetLeases - GET /api/dhcp/leases
 // func (h *DhcpHandler) HandleGetLeases(c *gin.Context) {
@@ -127,6 +141,10 @@ func (h *DhcpHandler) HandleSaveKeaSubnet(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SAVE_KEA_SUBNET", req.Subnet, fmt.Sprintf("ID: %d, Relay: %s", req.ID, req.RelayIP))
+
 	c.JSON(http.StatusOK, gin.H{"message": "Kea konfiguratsiyasi muvaffaqiyatli saqlandi"})
 }
 
@@ -144,6 +162,10 @@ func (h *DhcpHandler) HandleDeleteKeaSubnet(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Subnetni o'chirishda xatolik: " + err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "DELETE_KEA_SUBNET", fmt.Sprintf("ID: %d", id), "Deleted")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Subnet muvaffaqiyatli o'chirildi"})
 }

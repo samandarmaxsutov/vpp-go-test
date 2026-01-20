@@ -2,8 +2,11 @@ package web
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"vpp-go-test/internal/logger"
 	"vpp-go-test/internal/vpp"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 type RoutingHandler struct {
@@ -42,6 +45,10 @@ func (h *RoutingHandler) CreateRoute(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE_ROUTE", input.Destination, fmt.Sprintf("Gateway: %s, Interface: %d", input.Gateway, input.Interface))
+
 	c.JSON(200, gin.H{"status": "Marshrut muvaffaqiyatli qo'shildi"})
 }
 
@@ -57,6 +64,10 @@ func (h *RoutingHandler) DeleteRoute(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "DELETE_ROUTE", prefix, "Deleted")
 
 	c.JSON(200, gin.H{"status": "Marshrut o'chirildi"})
 }
