@@ -13,20 +13,18 @@ import (
 )
 
 type IpfixHandler struct {
-	vppClient *vpp.VPPClient
-	manager   *ipfix.IpfixManager
+	VPP	*vpp.VPPClient
 }
 
 func NewIpfixHandler(client *vpp.VPPClient) *IpfixHandler {
 	return &IpfixHandler{
-		vppClient: client,
-		manager:   ipfix.NewIpfixManager(client.Conn),
+		VPP: client,
 	}
 }
 
 // GET /api/ipfix
 func (h *IpfixHandler) ShowSettings(c *gin.Context) {
-	status, err := h.manager.GetExporterStatus(c.Request.Context())
+	status, err := h.VPP.IpfixManager.GetExporterStatus(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusOK, ipfix.IpfixStatus{IsActive: false})
 		return
@@ -48,7 +46,7 @@ func (h *IpfixHandler) SaveSettings(c *gin.Context) {
 		return
 	}
 
-	if err := h.manager.SetExporter(c.Request.Context(), cfg); err != nil {
+	if err := h.VPP.IpfixManager.SetExporter(c.Request.Context(), cfg); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -62,7 +60,7 @@ func (h *IpfixHandler) SaveSettings(c *gin.Context) {
 
 // POST /api/ipfix/flush
 func (h *IpfixHandler) FlushFlows(c *gin.Context) {
-	if err := h.manager.FlushIPFIX(c.Request.Context()); err != nil {
+	if err := h.VPP.IpfixManager.FlushIPFIX(c.Request.Context()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -76,7 +74,7 @@ func (h *IpfixHandler) FlushFlows(c *gin.Context) {
 
 // GET /api/ipfix/flowprobe
 func (h *IpfixHandler) GetFlowprobe(c *gin.Context) {
-	activeTimeout, recordL4, err := h.manager.GetFlowprobeParams(c.Request.Context())
+	activeTimeout, recordL4, err := h.VPP.IpfixManager.GetFlowprobeParams(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -97,7 +95,7 @@ func (h *IpfixHandler) UpdateFlowprobe(c *gin.Context) {
 		return
 	}
 
-	if err := h.manager.SetFlowprobeParams(
+	if err := h.VPP.IpfixManager.SetFlowprobeParams(
 		c.Request.Context(),
 		cfg.ActiveTimeout,
 		cfg.RecordL4,
@@ -122,7 +120,7 @@ func (h *IpfixHandler) ToggleInterface(c *gin.Context) {
 		return
 	}
 
-	if err := h.manager.InterfaceEnable(
+	if err := h.VPP.IpfixManager.InterfaceEnable(
 		c.Request.Context(),
 		req.SwIfIndex,
 		req.Enable,
@@ -140,7 +138,7 @@ func (h *IpfixHandler) ToggleInterface(c *gin.Context) {
 
 // GET /api/ipfix/interfaces/enabled
 func (h *IpfixHandler) GetEnabledInterfaces(c *gin.Context) {
-	ids, err := h.manager.GetEnabledInterfaces(c.Request.Context())
+	ids, err := h.VPP.IpfixManager.GetEnabledInterfaces(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

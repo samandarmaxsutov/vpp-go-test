@@ -3,13 +3,14 @@ package nat44
 import (
 	"context"
 	"fmt"
-	"go.fd.io/govpp/api"
 	"io"
 	"log"
 	"vpp-go-test/binapi/interface_types"
 	"vpp-go-test/binapi/ip_types"
 	"vpp-go-test/binapi/nat44_ed"
 	"vpp-go-test/binapi/nat_types"
+
+	"go.fd.io/govpp/api"
 )
 
 // NatManager VPP NAT44 xizmati bilan ishlash uchun mas'ul
@@ -351,6 +352,7 @@ func (m *NatManager) GetNatInterfaces(ctx context.Context) ([]NatInterface, erro
 		results = append(results, NatInterface{
 			SwIfIndex: uint32(details.SwIfIndex),
 			IsInside:  (details.Flags & nat_types.NAT_IS_INSIDE) != 0,
+			Name:      "", // Will be populated in backup_restore.go
 		})
 	}
 	return results, nil
@@ -385,6 +387,22 @@ func (m *NatManager) SetIpfixLogging(ctx context.Context, enable bool) error {
 
 	log.Printf("NAT IPFIX Logging holati: %v", enable)
 	return nil
+}
+
+// GetNATStatus - Query current NAT44 enabled/disabled state
+func (m *NatManager) GetNATStatus(ctx context.Context) (bool, error) {
+	// Try to get running config to determine if NAT is enabled
+	resp, err := m.client.Nat44ShowRunningConfig(ctx, &nat44_ed.Nat44ShowRunningConfig{})
+	if err != nil {
+		// If error, assume NAT is not enabled
+		return false, nil
+	}
+
+	// If we got a response without error, NAT is likely enabled
+	if resp != nil {
+		return true, nil
+	}
+	return false, nil
 }
 
 // GetRunningConfig - NAT44 ning joriy sozlamalarini, jumladan IPFIX holatini tekshirish

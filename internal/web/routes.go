@@ -34,7 +34,7 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	dhcpHandler := &DhcpHandler{VPP: client}
 	abfHandler := &AbfHandler{VPP: client}
 	logHandler := &LogHandler{}
-	ipfixHandler := NewIpfixHandler(client)
+	ipfixHandler := &IpfixHandler{VPP: client}
 	// === BACKUP & RESTORE ENDPOINTS ===
 	backupHandler := NewBackupHandler(client)
 

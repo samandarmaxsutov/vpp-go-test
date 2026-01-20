@@ -1,11 +1,8 @@
 package vpp
 
 import (
+	"context"
 	"fmt"
-	"go.fd.io/govpp"
-	"go.fd.io/govpp/adapter/statsclient" // Yangi qo'shildi
-	"go.fd.io/govpp/api"
-	"go.fd.io/govpp/core"
 	"log"
 	"time"
 	"vpp-go-test/internal/vpp/abf_mgr"
@@ -14,6 +11,11 @@ import (
 	"vpp-go-test/internal/vpp/ipfix"
 	"vpp-go-test/internal/vpp/nat44"
 	"vpp-go-test/internal/vpp/policer"
+
+	"go.fd.io/govpp"
+	"go.fd.io/govpp/adapter/statsclient" // Yangi qo'shildi
+	"go.fd.io/govpp/api"
+	"go.fd.io/govpp/core"
 )
 
 type VPPClient struct {
@@ -82,37 +84,46 @@ func (v *VPPClient) Close() {
 }
 
 func (v *VPPClient) IsConnected() bool {
-    if v.Conn == nil {
-        return false
-    }
+	if v.Conn == nil {
+		return false
+	}
 
-    // We use GetInterfaces as a "Ping". 
-    // If VPP is down, this call will fail immediately.
-    _, err := v.GetInterfaces()
-    return err == nil
+	// We use GetInterfaces as a "Ping".
+	// If VPP is down, this call will fail immediately.
+	_, err := v.GetInterfaces()
+	return err == nil
 }
 
 func (v *VPPClient) RefreshManagers() {
-    // 1. Close the old main channel
-    if v.Channel != nil {
-        v.Channel.Close()
-    }
+	// 1. Close the old main channel
+	if v.Channel != nil {
+		v.Channel.Close()
+	}
 
-    // 2. Open a new main channel for the client itself
-    ch, err := v.Conn.NewAPIChannel()
-    if err == nil {
-        v.Channel = ch
-    }
+	// 2. Open a new main channel for the client itself
+	ch, err := v.Conn.NewAPIChannel()
+	if err == nil {
+		v.Channel = ch
+	}
 
-    // 3. IMPORTANT: Re-link the managers. 
-    // If your web routes use client.ACLManager, they point to a specific 
-    // place in memory. We must ensure these are fresh.
-    v.ACLManager = acl.NewACLManager(v.Conn)
-    v.NatManager = nat44.NewNatManager(v.Conn)
-    v.IpfixManager = ipfix.NewIpfixManager(v.Conn)
-    v.DhcpManager = dhcp.NewDhcpManager(v.Conn)
-    v.AbfManager = abf_mgr.NewAbfManager(v.Conn)
-    v.PolicerManager = policer.NewManager(v.Conn)
+	// 3. IMPORTANT: Re-link the managers.
+	// If your web routes use client.ACLManager, they point to a specific
+	// place in memory. We must ensure these are fresh.
+	v.ACLManager = acl.NewACLManager(v.Conn)
+	v.NatManager = nat44.NewNatManager(v.Conn)
+	v.IpfixManager = ipfix.NewIpfixManager(v.Conn)
+	v.DhcpManager = dhcp.NewDhcpManager(v.Conn)
+	v.AbfManager = abf_mgr.NewAbfManager(v.Conn)
+	v.PolicerManager = policer.NewManager(v.Conn)
 
-    log.Println("🔄 All Managers memory-swapped with fresh API channels.")
+	log.Println("🔄 All Managers memory-swapped with fresh API channels.")
+}
+
+// GetIPFIXStatus returns IPFIX exporter configuration status
+func (v *VPPClient) GetIPFIXStatus(ctx context.Context) (*ipfix.IpfixStatus, error) {
+	// Query current IPFIX status from VPP
+	// For now, return default status
+	return &ipfix.IpfixStatus{
+		IsActive: false,
+	}, nil
 }
