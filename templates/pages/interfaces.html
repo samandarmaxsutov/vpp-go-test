@@ -177,13 +177,21 @@
 <script>
 
     /* ----------------- HELPERS ----------------- */
-    const postJSON = (url, data) => fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    });
+    const postJSON = async (url, data) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (res.status === 403) {
+            const err = await res.json();
+            alert(err.error || "Permission denied");
+            throw new Error("Forbidden");
+        }
+        return res;
+    };
 
     const tagColors = {
         WAN: 'danger',

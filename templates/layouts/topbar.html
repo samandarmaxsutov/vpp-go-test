@@ -28,7 +28,8 @@
             </div>
 
             <div class="me-3 text-end d-none d-md-block">
-                <div class="small fw-bold text-dark">Administrator</div>
+                <!-- <div class="small fw-bold text-dark">Administrator</div> -->
+                 <span class="fw-bold">{{ .user }}</span>
                 <div class="text-success small d-flex align-items-center justify-content-end" style="font-size: 0.7rem;">
                     <span class="me-1">●</span> Online
                 </div>
@@ -36,7 +37,7 @@
 
             <div class="dropdown">
                 <div class="rounded-circle bg-success text-white p-2 d-flex justify-content-center align-items-center cursor-pointer shadow-sm" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" style="width: 35px; height: 35px; cursor: pointer;">
-                    A
+                    {{ printf "%.1s" .user  }}
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 mt-2" aria-labelledby="userMenu" style="min-width: 200px;">
                     <li><h6 class="dropdown-header text-uppercase opacity-50 small">Admin sozlamalari</h6></li>

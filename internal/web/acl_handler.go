@@ -1,12 +1,17 @@
 package web
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"vpp-go-test/binapi/acl_types"
+	"vpp-go-test/internal/logger"
 	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/vpp/acl"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 type ACLHandler struct {
@@ -45,6 +50,12 @@ func (h *ACLHandler) CreateACL(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Xato: " + err.Error()})
 		return
 	}
+
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	details, _ := json.Marshal(req)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "ACL", string(details))
 
 	c.JSON(http.StatusCreated, gin.H{
 		"acl_index": index,
@@ -88,6 +99,12 @@ func (h *ACLHandler) UpdateACL(c *gin.Context) {
 		return
 	}
 
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	details, _ := json.Marshal(req)
+	logger.LogConfigChange(user, c.ClientIP(), "UPDATE", fmt.Sprintf("ACL %d", index), string(details))
+
 	c.JSON(http.StatusOK, gin.H{"message": "ACL muvaffaqiyatli yangilandi"})
 }
 
@@ -121,6 +138,12 @@ func (h *ACLHandler) ApplyToInterface(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "APPLY", fmt.Sprintf("Interface %d", req.SwIfIndex), fmt.Sprintf("In:%v Out:%v", req.InputACLs, req.OutputACLs))
+
 	c.JSON(http.StatusOK, gin.H{"message": "Interfeys ACLlari bog'landi"})
 }
 
@@ -137,6 +160,12 @@ func (h *ACLHandler) DeleteACL(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "DELETE", fmt.Sprintf("ACL %d", index), "")
+
 	c.JSON(http.StatusOK, gin.H{"message": "ACL o'chirildi"})
 }
 
@@ -221,6 +250,11 @@ func (h *ACLHandler) CreateMacACL(c *gin.Context) {
 		return
 	}
 
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "MAC ACL", req.Tag)
+
 	c.JSON(http.StatusCreated, gin.H{
 		"acl_index": index,
 		"message":   "MAC ACL yaratildi",
@@ -255,6 +289,12 @@ func (h *ACLHandler) DeleteMacACL(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "DELETE", fmt.Sprintf("MAC ACL %d", index), "")
+
 	c.JSON(http.StatusOK, gin.H{"message": "MAC ACL o'chirildi"})
 }
 
@@ -297,6 +337,11 @@ func (h *ACLHandler) UpdateMacACL(c *gin.Context) {
 		return
 	}
 
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "UPDATE", fmt.Sprintf("MAC ACL %d", index), req.Tag)
+
 	c.JSON(http.StatusOK, gin.H{
 		"acl_index": index,
 		"message":   "MAC ACL muvaffaqiyatli yangilandi",
@@ -337,6 +382,12 @@ func (h *ACLHandler) ApplyMacToInterface(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "BIND", fmt.Sprintf("MAC ACL %d -> Iface %d", req.ACLIndex, req.SwIfIndex), "Applied")
+
 	c.JSON(http.StatusOK, gin.H{"message": "MAC ACL bog'landi"})
 }
 
@@ -355,5 +406,11 @@ func (h *ACLHandler) UnbindMacFromInterface(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Logging
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "UNBIND", fmt.Sprintf("MAC ACL %d <- Iface %d", req.ACLIndex, req.SwIfIndex), "Removed")
+
 	c.JSON(http.StatusOK, gin.H{"message": "MAC ACL bog'lamasi olib tashlandi"})
 }

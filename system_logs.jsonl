@@ -81,3 +81,42 @@
 {"timestamp":"2026-01-20 12:12:00","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-20 12:43:12","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-20 12:43:16","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:49:49","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:49:55","user":"Administrator","type":"auth","action":"Login","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:50:19","user":"Administrator","type":"auth","action":"Logout","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:50:21","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:50:24","user":"admin","ip":"127.0.0.1","type":"config","action":"UPDATE","target":"ACL 0","details":"{\"tag\":\"test\",\"is_stateful\":false,\"rules\":[{\"action\":\"deny\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":5000,\"tcp_mask\":0,\"tcp_value\":0},{\"action\":\"deny\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"icmp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":65535,\"tcp_mask\":0,\"tcp_value\":0},{\"action\":\"permit\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":65535,\"tcp_mask\":0,\"tcp_value\":0},{\"action\":\"permit\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":65535,\"tcp_mask\":0,\"tcp_value\":0}]}","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:50:28","user":"admin","ip":"127.0.0.1","type":"config","action":"UPDATE","target":"ACL 0","details":"{\"tag\":\"test\",\"is_stateful\":false,\"rules\":[{\"action\":\"deny\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":5000,\"tcp_mask\":0,\"tcp_value\":0},{\"action\":\"deny\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"icmp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":65535,\"tcp_mask\":0,\"tcp_value\":0},{\"action\":\"permit\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":65535,\"tcp_mask\":0,\"tcp_value\":0}]}","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:22","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:31","user":"Administrator","type":"auth","action":"Login","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:52","user":"Administrator","type":"auth","action":"Logout","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:53","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:52:43","user":"admin","ip":"127.0.0.1","type":"config","action":"UPDATE","target":"ACL 0","details":"{\"tag\":\"test\",\"is_stateful\":false,\"rules\":[{\"action\":\"deny\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":5000,\"tcp_mask\":0,\"tcp_value\":0},{\"action\":\"permit\",\"source\":\"0.0.0.0/0\",\"destination\":\"0.0.0.0/0\",\"protocol\":\"tcp\",\"src_port_first\":0,\"src_port_last\":65535,\"dst_port_first\":0,\"dst_port_last\":65535,\"tcp_mask\":0,\"tcp_value\":0}]}","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:59:42","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:59:47","user":"Administrator","type":"auth","action":"Login","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:00:03","user":"Administrator","type":"auth","action":"Logout","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:00:04","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:02:41","user":"admin","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:02:42","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:02:57","user":"admin","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:03:08","user":"user1","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:03:46","user":"admin","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:08:48","user":"user1","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:08:49","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:09:01","user":"admin","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:09:08","user":"admin","ip":"192.168.116.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:09:14","user":"user1","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:09:40","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:11:33","user":"admin","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:11:55","user":"user1","ip":"192.168.116.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:11:58","user":"admin","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:12:13","user":"admin","ip":"192.168.116.1","type":"config","action":"UPDATE","target":"Admin Password","details":"Password changed successfully","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:12:17","user":"admin","ip":"192.168.116.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:12:22","user":"admin","ip":"192.168.116.1","type":"auth","action":"Login Attempt","target":"System","status":"FAILED"}
+{"timestamp":"2026-01-20 16:12:26","user":"admin","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:12:38","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login Attempt","target":"System","status":"FAILED"}
+{"timestamp":"2026-01-20 16:12:42","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:13:03","user":"admin","ip":"127.0.0.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:13:13","user":"user1","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:15:52","user":"admin","ip":"192.168.116.1","type":"auth","action":"Logout","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:15:59","user":"user1","ip":"192.168.116.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}

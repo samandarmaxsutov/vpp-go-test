@@ -20,15 +20,13 @@ type LogHandler struct{}
 // Old VPP syslog-like ACL line: [timestamp] vpp[PID]: acl_plugin: ...
 var vppRegex = regexp.MustCompile(`^\[(.*?)\]\s+vpp\[\d+\]:\s+(.*)$`)
 
-
-
 func (h *LogHandler) GetLogs(c *gin.Context) {
 	logType := c.DefaultQuery("type", "system")
 	wd, _ := os.Getwd()
 
 	var filePath string
 
-		if logType == "acl" {
+	if logType == "acl" {
 		// 0) default on-disk ACL csv log location
 		defaultACLPath := "/etc/sarhad-guard/acl_logs/acl_logs.log"
 
@@ -42,10 +40,13 @@ func (h *LogHandler) GetLogs(c *gin.Context) {
 			// 3) new default (your real path)
 			filePath = defaultACLPath
 		}
+	} else if logType == "config" {
+		filePath = "/etc/sarhad-guard/conf_logs/conf_logs.log"
+	} else if logType == "auth" {
+		filePath = "/etc/sarhad-guard/auth_logs/auth_logs.log"
 	} else {
 		filePath = filepath.Join(wd, fmt.Sprintf("%s_logs.jsonl", logType))
 	}
-
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -176,7 +177,6 @@ func parseACLCSV(file *os.File) []interface{} {
 
 	return logs
 }
-
 
 func parseACLVppSyslog(file *os.File) []interface{} {
 	var logs []interface{}

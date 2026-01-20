@@ -3,8 +3,10 @@ package web
 import (
 	"net/http"
 	"vpp-go-test/internal/vpp"
+	"vpp-go-test/internal/logger"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/sessions"
 )
 
 type InterfaceHandler struct {
@@ -35,6 +37,11 @@ func (h *InterfaceHandler) SetState(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SET_STATE", fmt.Sprintf("Interface %d", input.Index), fmt.Sprintf("Up: %v", input.IsUp))
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Interfeys holati o'zgartirildi"})
 }
 
@@ -52,6 +59,11 @@ func (h *InterfaceHandler) SetTag(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SET_TAG", fmt.Sprintf("Interface %d", input.Index), input.Tag)
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "tag": input.Tag})
 }
 
@@ -69,6 +81,11 @@ func (h *InterfaceHandler) SetMAC(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SET_MAC", fmt.Sprintf("Interface %d", input.Index), input.MAC)
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "mac": input.MAC})
 }
 
@@ -86,6 +103,11 @@ func (h *InterfaceHandler) AddIP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "ADD_IP", fmt.Sprintf("Interface %d", input.Index), input.IP)
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
@@ -103,6 +125,11 @@ func (h *InterfaceHandler) RemoveIP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "REMOVE_IP", fmt.Sprintf("Interface %d", input.Index), input.IP)
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
@@ -120,6 +147,11 @@ func (h *InterfaceHandler) SetDHCP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "SET_DHCP", fmt.Sprintf("Interface %d", input.Index), fmt.Sprintf("Enable: %v", input.Enable))
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "dhcp": input.Enable})
 }
 
@@ -130,6 +162,11 @@ func (h *InterfaceHandler) CreateLoopback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Loopback yaratib bo'lmadi"})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "Loopback", fmt.Sprintf("Index: %d", index))
+
 	c.JSON(http.StatusOK, gin.H{"status": "created", "index": index, "type": "loopback"})
 }
 
@@ -148,6 +185,11 @@ func (h *InterfaceHandler) CreateVhostUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "VhostUser", fmt.Sprintf("Socket: %s, Server: %v", input.SocketFile, input.IsServer))
+
 	c.JSON(http.StatusOK, gin.H{"status": "created", "index": index, "type": "vhost-user"})
 }
 
@@ -166,6 +208,10 @@ func (h *InterfaceHandler) DeleteInterface(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "DELETE", input.Name, fmt.Sprintf("Index: %d", input.Index))
 
 	c.JSON(http.StatusOK, gin.H{"status": "deleted", "index": input.Index})
 }
@@ -206,6 +252,10 @@ func (h *InterfaceHandler) CreateTap(c *gin.Context) {
         return
     }
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "TAP", fmt.Sprintf("ID: %d, HostName: %s", input.ID, input.HostName))
+
     c.JSON(200, gin.H{
         "status":      "success",
         "index":       index,
@@ -231,6 +281,10 @@ func (h *InterfaceHandler) CreateVlan(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "VLAN yaratishda xato: " + err.Error()})
         return
     }
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "VLAN", fmt.Sprintf("Parent: %d, VLAN: %d", input.ParentIndex, input.VlanID))
 
     c.JSON(http.StatusOK, gin.H{
         "status": "created",
@@ -267,6 +321,10 @@ func (h *InterfaceHandler) CreateVmxnet3(c *gin.Context) {
         return
     }
 
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "VMXNET3", fmt.Sprintf("PCI: %s", input.PciAddr))
+
     c.JSON(http.StatusOK, gin.H{
         "status": "created",
         "index":  index,
@@ -289,6 +347,10 @@ func (h *InterfaceHandler) DeleteVmxnet3(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Vmxnet3 o'chirishda xato: " + err.Error()})
         return
     }
+
+	session := sessions.Default(c)
+	user := session.Get("user_id").(string)
+	logger.LogConfigChange(user, c.ClientIP(), "DELETE", "VMXNET3", fmt.Sprintf("Index: %d", input.Index))
 
     c.JSON(http.StatusOK, gin.H{
         "status": "deleted",

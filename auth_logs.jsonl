@@ -37,3 +37,15 @@
 {"timestamp":"2026-01-20 12:12:00","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-20 12:43:12","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-20 12:43:16","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:49:49","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:49:55","user":"Administrator","type":"auth","action":"Login","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:50:19","user":"Administrator","type":"auth","action":"Logout","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:50:21","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:22","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:31","user":"Administrator","type":"auth","action":"Login","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:52","user":"Administrator","type":"auth","action":"Logout","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:51:53","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:59:42","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 15:59:47","user":"Administrator","type":"auth","action":"Login","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:00:03","user":"Administrator","type":"auth","action":"Logout","target":"user1","status":"SUCCESS"}
+{"timestamp":"2026-01-20 16:00:04","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}

@@ -1,10 +1,12 @@
 package web
 
 import (
+	"net/http"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"net/http"
+
 	// "vpp-go-test/internal/flow"
 	"vpp-go-test/internal/vpp"
 )
@@ -45,68 +47,88 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	{
 		// Dashboard sahifasi
 		protected.GET("/", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "dashboard.html", gin.H{
 				"title":  "Dashboard",
 				"active": "dashboard",
+				"user":   session.Get("user_id"),
 			})
 		})
 
 		// Interfaces sahifasi
 		protected.GET("/interfaces", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "interfaces.html", gin.H{
 				"title":  "Network Interfaces",
 				"active": "interfaces",
+				"user":   session.Get("user_id"),
 			})
 		})
 
 		protected.GET("/routes", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "routing.html", gin.H{
 				"title":  "Routes",
 				"active": "routing",
+				"user":   session.Get("user_id"),
 			})
 		})
 
 		protected.GET("/nat", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "nat_page_manager.html", gin.H{
 				"title":  "NAT44",
 				"active": "nat_page_manager",
+				"user":   session.Get("user_id"),
 			})
 		})
 		protected.GET("/dhcp-server", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "dhcp_server.html", gin.H{
 				"title":  "DHCP Server",
 				"active": "dhcp",
+				"user":   session.Get("user_id"),
 			})
 		})
 		protected.GET("/policer", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "policer_page_manager.html", gin.H{
 				"title":  "Policer ",
 				"active": "policer_page_manager",
+				"user":   session.Get("user_id"),
 			})
 		})
 		protected.GET("/acl", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "acl_page_manager.html", gin.H{
 				"title":  "Firewall ACL",
 				"active": "acl_page_manager",
+				"user":   session.Get("user_id"),
 			})
 		})
 		protected.GET("/abf", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "access_based_fwd.html", gin.H{
 				"title":  "Access Based Forwarding",
 				"active": "abf_page",
+				"user":   session.Get("user_id"),
 			})
 		})
 		protected.GET("/flow-monitoring", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "flow_page_manager.html", gin.H{
 				"title":  "Flow Monitoring",
 				"active": "flow_page_manager",
+				"user":   session.Get("user_id"),
 			})
 		})
 
 		protected.GET("/logs", func(c *gin.Context) {
+			session := sessions.Default(c)
 			c.HTML(200, "logs.html", gin.H{
 				"title":  "Logs",
 				"active": "logs",
+				"user":   session.Get("user_id"),
 			})
 		})
 

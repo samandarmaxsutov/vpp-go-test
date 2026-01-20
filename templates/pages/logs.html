@@ -16,10 +16,9 @@
             </select>
             
             <div class="btn-group shadow-sm bg-white p-1 rounded border">
-                <!-- <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('system', this)">System</button>
-                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('auth', this)">Auth</button>
-                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('web', this)">Web</button> -->
                 <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('acl', this)">Firewall</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('config', this)">Config</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('auth', this)">Auth</button>
             </div>
         </div>
     </div>
@@ -57,15 +56,8 @@
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-muted small fw-bold text-uppercase">
-                    <tr>
-                        <th class="ps-3" style="width: 160px;">Vaqt</th>
-                        <th style="width: 90px;">Harakat</th>
-                        <th style="width: 80px;">Protokol</th>
-                        <th>Manba</th>
-                        <th>Manzil</th>
-                        <th style="width: 100px;">Packets</th>
-                        <th class="text-center pe-3" style="width: 80px;">Tafsilot</th>
-                    </tr>
+                    <!-- Headers will be injected dynamically -->
+                    <tr id="tableHeaderRow"></tr>
                 </thead>
                 <tbody id="logTableBody"></tbody>
             </table>
@@ -107,6 +99,8 @@ async function loadLogs(type = 'acl', element = null) {
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'text-white'));
         element.classList.add('active', 'btn-primary', 'text-white');
     }
+    
+    updateTableHeader(type);
 
     const tbody = document.getElementById('logTableBody');
     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
@@ -125,6 +119,48 @@ async function loadLogs(type = 'acl', element = null) {
         renderTable();
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Xatolik: Ma\'lumot yuklanmadi.</td></tr>';
+    }
+}
+
+function updateTableHeader(type) {
+    const tr = document.getElementById('tableHeaderRow');
+    if (type === 'acl') {
+        tr.innerHTML = `
+            <th class="ps-3" style="width: 160px;">Vaqt</th>
+            <th style="width: 90px;">Harakat</th>
+            <th style="width: 80px;">Protokol</th>
+            <th>Manba</th>
+            <th>Manzil</th>
+            <th style="width: 100px;">Packets</th>
+            <th class="text-center pe-3" style="width: 80px;">Tafsilot</th>
+        `;
+    } else if (type === 'config') {
+        tr.innerHTML = `
+            <th class="ps-3" style="width: 160px;">Vaqt</th>
+            <th style="width: 120px;">User</th>
+            <th style="width: 120px;">IP</th>
+            <th style="width: 100px;">Action</th>
+            <th>Target</th>
+            <th>Details</th>
+            <th class="text-center pe-3" style="width: 80px;">View</th>
+        `;
+    } else if (type === 'auth') {
+        tr.innerHTML = `
+            <th class="ps-3" style="width: 160px;">Vaqt</th>
+            <th style="width: 120px;">User</th>
+            <th style="width: 120px;">IP</th>
+            <th>Action</th>
+            <th>Status</th>
+            <th class="text-center pe-3" style="width: 80px;">View</th>
+        `;
+    } else {
+        tr.innerHTML = `
+            <th class="ps-3" style="width: 160px;">Vaqt</th>
+            <th style="width: 100px;">Type</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th class="text-center pe-3">Status</th>
+        `;
     }
 }
 
@@ -175,6 +211,10 @@ function renderTable() {
     tbody.innerHTML = items.map(log => {
         if (currentType === 'acl') {
             return renderACLRow(log);
+        } else if (currentType === 'config') {
+            return renderConfigRow(log);
+        } else if (currentType === 'auth') {
+            return renderAuthRow(log);
         } else {
             return renderStandardRow(log);
         }
@@ -221,12 +261,52 @@ function renderACLRow(log) {
     `;
 }
 
+function renderConfigRow(log) {
+    let detailsShort = log.details || '';
+    if (detailsShort.length > 50) detailsShort = detailsShort.substring(0, 50) + '...';
+    
+    return `
+        <tr>
+            <td class="ps-3 small text-muted font-monospace">${formatTimestamp(log.timestamp)}</td>
+            <td><span class="fw-bold text-dark">${log.user || 'System'}</span></td>
+            <td><span class="small text-muted font-monospace">${log.ip || '-'}</span></td>
+            <td>${getActionBadge(log.action)}</td>
+            <td class="fw-semibold text-primary">${log.target}</td>
+            <td class="small text-muted">${detailsShort}</td>
+            <td class="text-center pe-3">
+                <button class="btn btn-sm btn-outline-primary" onclick='showDetails(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
+                    <i class="bi bi-info-circle"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+function renderAuthRow(log) {
+    const statusBadge = log.status === 'SUCCESS' 
+        ? '<span class="badge bg-success-subtle text-success border border-success">SUCCESS</span>'
+        : '<span class="badge bg-danger-subtle text-danger border border-danger">FAILED</span>';
+
+    return `
+        <tr>
+            <td class="ps-3 small text-muted font-monospace">${formatTimestamp(log.timestamp)}</td>
+            <td><span class="fw-bold text-dark">${log.user || 'System'}</span></td>
+            <td><span class="small text-muted font-monospace">${log.ip || '-'}</span></td>
+            <td class="fw-semibold">${log.action}</td>
+            <td>${statusBadge}</td>
+            <td class="text-center pe-3">
+                <button class="btn btn-sm btn-outline-primary" onclick='showDetails(${JSON.stringify(log).replace(/'/g, "&#39;")})'><i class="bi bi-info-circle"></i></button>
+            </td>
+        </tr>
+    `;
+}
+
 function renderStandardRow(log) {
     return `
         <tr>
             <td class="ps-3 small text-muted font-monospace">${formatTimestamp(log.timestamp)}</td>
             <td><span class="badge ${getBadgeClass(log.type || 'system')}">${(log.type || 'system').toUpperCase()}</span></td>
-            <td colspan="3" class="fw-semibold">${log.action}</td>
+            <td class="fw-semibold">${log.action}</td>
             <td><code class="small">${log.target}</code></td>
             <td class="text-center pe-3">
                 <span class="badge ${log.status === 'SUCCESS' ? 'bg-success' : 'bg-danger'}">${log.status}</span>
@@ -252,6 +332,10 @@ function getActionBadge(action) {
         'ACCEPT': '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-check-circle me-1"></i>ACCEPT</span>',
         'REJECT': '<span class="badge bg-warning-subtle text-warning border border-warning"><i class="bi bi-dash-circle me-1"></i>REJECT</span>'
     };
+    // Add generic colors for other actions
+    if (!badges[action]) {
+        return `<span class="badge bg-secondary-subtle text-secondary border border-secondary">${action}</span>`;
+    }
     return badges[action] || `<span class="badge bg-secondary">${action}</span>`;
 }
 
@@ -268,43 +352,108 @@ function showDetails(log) {
     const modal = new bootstrap.Modal(document.getElementById('detailModal'));
     const body = document.getElementById('modalBody');
     
-    body.innerHTML = `
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="border rounded p-3">
-                    <h6 class="text-muted mb-3"><i class="bi bi-arrow-right-circle text-primary me-2"></i>Manba Ma'lumotlari</h6>
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr><td class="text-muted">IP Manzil:</td><td class="fw-semibold">${log.sourceIP}</td></tr>
-                        <tr><td class="text-muted">Port:</td><td class="fw-semibold">${log.sourcePort}</td></tr>
-                        <tr><td class="text-muted">IP Versiya:</td><td>${log.isIPv6 ? 'IPv6' : 'IPv4'}</td></tr>
-                    </table>
+    if (currentType === 'acl') {
+        body.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="border rounded p-3">
+                        <h6 class="text-muted mb-3"><i class="bi bi-arrow-right-circle text-primary me-2"></i>Manba Ma'lumotlari</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">IP Manzil:</td><td class="fw-semibold">${log.sourceIP}</td></tr>
+                            <tr><td class="text-muted">Port:</td><td class="fw-semibold">${log.sourcePort}</td></tr>
+                            <tr><td class="text-muted">IP Versiya:</td><td>${log.isIPv6 ? 'IPv6' : 'IPv4'}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-3">
+                        <h6 class="text-muted mb-3"><i class="bi bi-bullseye text-danger me-2"></i>Manzil Ma'lumotlari</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">IP Manzil:</td><td class="fw-semibold">${log.destIP}</td></tr>
+                            <tr><td class="text-muted">Port:</td><td class="fw-semibold">${log.destPort}</td></tr>
+                            <tr><td class="text-muted">Protokol:</td><td>${getProtoBadge(log.protocol)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="border rounded p-3 bg-light">
+                        <h6 class="text-muted mb-3"><i class="bi bi-gear me-2"></i>Texnik Ma'lumotlar</h6>
+                        <table class="table table-sm mb-0">
+                            <tr><td class="text-muted">Harakat:</td><td>${getActionBadge(log.action)}</td></tr>
+                            <tr><td class="text-muted">Vaqt:</td><td class="font-monospace">${log.timestamp}</td></tr>
+                            <tr><td class="text-muted">Paketlar:</td><td>${log.packetCount}</td></tr>
+                            <tr><td class="text-muted">Interface Index:</td><td>${log.parsedData.sw_if_index || 'N/A'}</td></tr>
+                            <tr><td class="text-muted">ACL Index:</td><td>${log.parsedData.acl_index || 'N/A'}</td></tr>
+                            <tr><td class="text-muted">Qoida Index:</td><td>${log.parsedData.rule_index || 'N/A'}</td></tr>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="border rounded p-3">
-                    <h6 class="text-muted mb-3"><i class="bi bi-bullseye text-danger me-2"></i>Manzil Ma'lumotlari</h6>
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr><td class="text-muted">IP Manzil:</td><td class="fw-semibold">${log.destIP}</td></tr>
-                        <tr><td class="text-muted">Port:</td><td class="fw-semibold">${log.destPort}</td></tr>
-                        <tr><td class="text-muted">Protokol:</td><td>${getProtoBadge(log.protocol)}</td></tr>
-                    </table>
+        `;
+    } else if (currentType === 'config') {
+        let formattedDetails = log.details;
+        try {
+            const json = JSON.parse(log.details);
+            formattedDetails = `<pre class="bg-light p-2 border rounded small mb-0" style="max-height:300px; overflow:auto;">${JSON.stringify(json, null, 2)}</pre>`;
+        } catch(e) {}
+
+        body.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-2"></i>User Info</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">User:</td><td class="fw-bold">${log.user}</td></tr>
+                            <tr><td class="text-muted">IP Address:</td><td class="font-monospace">${log.ip || 'N/A'}</td></tr>
+                            <tr><td class="text-muted">Timestamp:</td><td class="font-monospace">${log.timestamp}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="text-muted mb-3"><i class="bi bi-gear me-2"></i>Action Info</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">Action:</td><td>${getActionBadge(log.action)}</td></tr>
+                            <tr><td class="text-muted">Target:</td><td class="fw-bold text-primary">${log.target}</td></tr>
+                            <tr><td class="text-muted">Status:</td><td><span class="badge bg-success">SUCCESS</span></td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="border rounded p-3">
+                        <h6 class="text-muted mb-2"><i class="bi bi-code-square me-2"></i>Configuration Details</h6>
+                        ${formattedDetails}
+                    </div>
                 </div>
             </div>
-            <div class="col-12">
-                <div class="border rounded p-3 bg-light">
-                    <h6 class="text-muted mb-3"><i class="bi bi-gear me-2"></i>Texnik Ma'lumotlar</h6>
-                    <table class="table table-sm mb-0">
-                        <tr><td class="text-muted">Harakat:</td><td>${getActionBadge(log.action)}</td></tr>
-                        <tr><td class="text-muted">Vaqt:</td><td class="font-monospace">${log.timestamp}</td></tr>
-                        <tr><td class="text-muted">Paketlar:</td><td>${log.packetCount}</td></tr>
-                        <tr><td class="text-muted">Interface Index:</td><td>${log.parsedData.sw_if_index || 'N/A'}</td></tr>
-                        <tr><td class="text-muted">ACL Index:</td><td>${log.parsedData.acl_index || 'N/A'}</td></tr>
-                        <tr><td class="text-muted">Qoida Index:</td><td>${log.parsedData.rule_index || 'N/A'}</td></tr>
-                    </table>
+        `;
+    } else if (currentType === 'auth') {
+        body.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-2"></i>User Info</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">User:</td><td class="fw-bold">${log.user}</td></tr>
+                            <tr><td class="text-muted">IP Address:</td><td class="font-monospace">${log.ip || 'N/A'}</td></tr>
+                            <tr><td class="text-muted">Timestamp:</td><td class="font-monospace">${log.timestamp}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="text-muted mb-3"><i class="bi bi-shield-lock me-2"></i>Auth Details</h6>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">Action:</td><td class="fw-bold">${log.action}</td></tr>
+                            <tr><td class="text-muted">Status:</td><td><span class="badge ${log.status === 'SUCCESS' ? 'bg-success' : 'bg-danger'}">${log.status}</span></td></tr>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        body.innerHTML = `<pre>${JSON.stringify(log, null, 2)}</pre>`;
+    }
     
     modal.show();
 }
