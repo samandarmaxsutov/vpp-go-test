@@ -3,8 +3,8 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-0">System Audit Logs</h4>
-            <p class="text-muted small mb-0">Jami ma'lumotlar asosida filtrlang va boshqaring</p>
+            <h4 class="fw-bold mb-0">Firewall Audit Logs</h4>
+            <p class="text-muted small mb-0">Monitor va tahlil qiling tarmoq faoliyatini</p>
         </div>
 
         <div class="d-flex gap-2">
@@ -12,22 +12,43 @@
                 <option value="10">10 talik</option>
                 <option value="25" selected>25 talik</option>
                 <option value="50">50 talik</option>
+                <option value="100">100 talik</option>
             </select>
             
             <div class="btn-group shadow-sm bg-white p-1 rounded border">
-                <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('system', this)">System</button>
+                <!-- <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('system', this)">System</button>
                 <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('auth', this)">Auth</button>
-                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('web', this)">Web</button>
-                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('acl', this)">acl</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('web', this)">Web</button> -->
+                <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('acl', this)">Firewall</button>
             </div>
         </div>
     </div>
 
     <div class="card shadow-sm border-0 mb-3">
-        <div class="card-body p-2">
-            <div class="input-group">
-                <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
-                <input type="text" id="logSearch" class="form-control border-0 shadow-none" placeholder="Qidiruv (Harakat, Obyekt yoki Holat bo'yicha)..." onkeyup="handleSearch()">
+        <div class="card-body p-3">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="logSearch" class="form-control border-start-0" placeholder="Qidiruv (IP, Port, Harakat)..." onkeyup="handleSearch()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="actionFilter" onchange="handleSearch()">
+                        <option value="">Barcha Harakatlar</option>
+                        <option value="DROP">DROP</option>
+                        <option value="ACCEPT">ACCEPT</option>
+                        <option value="REJECT">REJECT</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="protoFilter" onchange="handleSearch()">
+                        <option value="">Barcha Protokollar</option>
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="ICMP">ICMP</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -37,11 +58,13 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-muted small fw-bold text-uppercase">
                     <tr>
-                        <th class="ps-3" style="width: 200px;">Vaqt</th>
-                        <th>Tur</th>
-                        <th>Harakat</th>
-                        <th>Obyekt</th>
-                        <th class="text-end pe-3">Holat</th>
+                        <th class="ps-3" style="width: 160px;">Vaqt</th>
+                        <th style="width: 90px;">Harakat</th>
+                        <th style="width: 80px;">Protokol</th>
+                        <th>Manba</th>
+                        <th>Manzil</th>
+                        <th style="width: 100px;">Packets</th>
+                        <th class="text-center pe-3" style="width: 80px;">Tafsilot</th>
                     </tr>
                 </thead>
                 <tbody id="logTableBody"></tbody>
@@ -52,39 +75,87 @@
             <div class="d-flex justify-content-between align-items-center">
                 <span class="small text-muted" id="logCounter">Jami: 0 yozuv</span>
                 <nav>
-                    <ul class="pagination pagination-sm mb-0" id="pagination">
-                        </ul>
+                    <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
                 </nav>
             </div>
         </div>
     </div>
 </div>
 
-
+<!-- Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Tafsilotlari</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+</div>
 
 <script>
-let allData = [];      // Serverdan kelgan hamma ma'lumot
-let filteredData = []; // Qidiruvdan keyingi ma'lumot
+let allData = [];
+let filteredData = [];
 let currentPage = 1;
+let currentType = 'acl';
 
-async function loadLogs(type = 'system', element = null) {
+async function loadLogs(type = 'acl', element = null) {
+    currentType = type;
     if (element) {
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'text-white'));
         element.classList.add('active', 'btn-primary', 'text-white');
     }
 
     const tbody = document.getElementById('logTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
 
     try {
         const res = await fetch(`/api/logs?type=${type}`);
         allData = await res.json();
+        
+        // Parse ACL logs
+        if (type === 'acl') {
+            allData = allData.map(log => parseACLLog(log));
+        }
+        
         filteredData = [...allData]; 
         currentPage = 1;
         renderTable();
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger">Xatolik: Ma\'lumot yuklanmadi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Xatolik: Ma\'lumot yuklanmadi.</td></tr>';
     }
+}
+
+function parseACLLog(log) {
+    if (log.type !== 'ACL' && log.type !== 'acl') return log;
+    
+    const data = {};
+    const target = log.target || '';
+    
+    // Parse key-value pairs from target
+    target.split(' ').forEach(pair => {
+        const [key, value] = pair.split('=');
+        if (key && value) data[key] = value;
+    });
+    
+    return {
+        ...log,
+        parsedData: data,
+        protocol: getProtocolName(data.proto),
+        sourceIP: data.src || 'N/A',
+        destIP: data.dst || 'N/A',
+        sourcePort: data.sport || '-',
+        destPort: data.dport || '-',
+        packetCount: data.count || '0',
+        isIPv6: data.is_ip6 === '1'
+    };
+}
+
+function getProtocolName(protoNum) {
+    const protocols = { '6': 'TCP', '17': 'UDP', '1': 'ICMP' };
+    return protocols[protoNum] || `Proto ${protoNum}`;
 }
 
 function renderTable() {
@@ -96,25 +167,146 @@ function renderTable() {
     const items = filteredData.slice(start, end);
 
     if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Ma\'lumot topilmadi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Ma\'lumot topilmadi.</td></tr>';
         renderPagination(0);
         return;
     }
 
-    tbody.innerHTML = items.map(log => `
-        <tr>
-            <td class="ps-3 small text-muted font-monospace">${log.timestamp}</td>
-            <td><span class="badge ${getBadgeClass(log.type || 'system')}">${(log.type || 'system').toUpperCase()}</span></td>
-            <td class="fw-bold">${log.action}</td>
-            <td><code>${log.target}</code></td>
-            <td class="text-end pe-3">
-                <span class="badge ${log.status === 'SUCCESS' ? 'bg-success' : 'bg-danger'}">${log.status}</span>
-            </td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = items.map(log => {
+        if (currentType === 'acl') {
+            return renderACLRow(log);
+        } else {
+            return renderStandardRow(log);
+        }
+    }).join('');
 
     document.getElementById('logCounter').innerText = `Ko'rsatilyapti: ${start + 1}-${Math.min(end, filteredData.length)} / Jami: ${filteredData.length}`;
     renderPagination(filteredData.length);
+}
+
+function renderACLRow(log) {
+    const actionBadge = getActionBadge(log.action);
+    const protoBadge = getProtoBadge(log.protocol);
+    
+    return `
+        <tr>
+            <td class="ps-3 small text-muted font-monospace">${formatTimestamp(log.timestamp)}</td>
+            <td>${actionBadge}</td>
+            <td>${protoBadge}</td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-arrow-right-circle text-primary"></i>
+                    <div>
+                        <div class="fw-semibold small">${log.sourceIP}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Port: ${log.sourcePort}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bullseye text-danger"></i>
+                    <div>
+                        <div class="fw-semibold small">${log.destIP}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Port: ${log.destPort}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge bg-light text-dark border">${log.packetCount}</span></td>
+            <td class="text-center pe-3">
+                <button class="btn btn-sm btn-outline-primary" onclick='showDetails(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
+                    <i class="bi bi-info-circle"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+function renderStandardRow(log) {
+    return `
+        <tr>
+            <td class="ps-3 small text-muted font-monospace">${formatTimestamp(log.timestamp)}</td>
+            <td><span class="badge ${getBadgeClass(log.type || 'system')}">${(log.type || 'system').toUpperCase()}</span></td>
+            <td colspan="3" class="fw-semibold">${log.action}</td>
+            <td><code class="small">${log.target}</code></td>
+            <td class="text-center pe-3">
+                <span class="badge ${log.status === 'SUCCESS' ? 'bg-success' : 'bg-danger'}">${log.status}</span>
+            </td>
+        </tr>
+    `;
+}
+
+function formatTimestamp(ts) {
+    const date = new Date(ts);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    
+    if (isToday) {
+        return date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    return date.toLocaleString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function getActionBadge(action) {
+    const badges = {
+        'DROP': '<span class="badge bg-danger-subtle text-danger border border-danger"><i class="bi bi-x-circle me-1"></i>DROP</span>',
+        'ACCEPT': '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-check-circle me-1"></i>ACCEPT</span>',
+        'REJECT': '<span class="badge bg-warning-subtle text-warning border border-warning"><i class="bi bi-dash-circle me-1"></i>REJECT</span>'
+    };
+    return badges[action] || `<span class="badge bg-secondary">${action}</span>`;
+}
+
+function getProtoBadge(proto) {
+    const badges = {
+        'TCP': '<span class="badge bg-primary-subtle text-primary">TCP</span>',
+        'UDP': '<span class="badge bg-info-subtle text-info">UDP</span>',
+        'ICMP': '<span class="badge bg-warning-subtle text-warning">ICMP</span>'
+    };
+    return badges[proto] || `<span class="badge bg-secondary">${proto}</span>`;
+}
+
+function showDetails(log) {
+    const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+    const body = document.getElementById('modalBody');
+    
+    body.innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="border rounded p-3">
+                    <h6 class="text-muted mb-3"><i class="bi bi-arrow-right-circle text-primary me-2"></i>Manba Ma'lumotlari</h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted">IP Manzil:</td><td class="fw-semibold">${log.sourceIP}</td></tr>
+                        <tr><td class="text-muted">Port:</td><td class="fw-semibold">${log.sourcePort}</td></tr>
+                        <tr><td class="text-muted">IP Versiya:</td><td>${log.isIPv6 ? 'IPv6' : 'IPv4'}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="border rounded p-3">
+                    <h6 class="text-muted mb-3"><i class="bi bi-bullseye text-danger me-2"></i>Manzil Ma'lumotlari</h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted">IP Manzil:</td><td class="fw-semibold">${log.destIP}</td></tr>
+                        <tr><td class="text-muted">Port:</td><td class="fw-semibold">${log.destPort}</td></tr>
+                        <tr><td class="text-muted">Protokol:</td><td>${getProtoBadge(log.protocol)}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="border rounded p-3 bg-light">
+                    <h6 class="text-muted mb-3"><i class="bi bi-gear me-2"></i>Texnik Ma'lumotlar</h6>
+                    <table class="table table-sm mb-0">
+                        <tr><td class="text-muted">Harakat:</td><td>${getActionBadge(log.action)}</td></tr>
+                        <tr><td class="text-muted">Vaqt:</td><td class="font-monospace">${log.timestamp}</td></tr>
+                        <tr><td class="text-muted">Paketlar:</td><td>${log.packetCount}</td></tr>
+                        <tr><td class="text-muted">Interface Index:</td><td>${log.parsedData.sw_if_index || 'N/A'}</td></tr>
+                        <tr><td class="text-muted">ACL Index:</td><td>${log.parsedData.acl_index || 'N/A'}</td></tr>
+                        <tr><td class="text-muted">Qoida Index:</td><td>${log.parsedData.rule_index || 'N/A'}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
 }
 
 function renderPagination(totalItems) {
@@ -125,11 +317,27 @@ function renderPagination(totalItems) {
 
     if (pageCount <= 1) return;
 
-    for (let i = 1; i <= pageCount; i++) {
+    const maxVisible = 7;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(pageCount, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (currentPage > 1) {
+        pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage - 1})">‹</a></li>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
         const li = document.createElement('li');
         li.className = `page-item ${currentPage === i ? 'active' : ''}`;
         li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
         pagination.appendChild(li);
+    }
+
+    if (currentPage < pageCount) {
+        pagination.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage + 1})">›</a></li>`;
     }
 }
 
@@ -140,11 +348,24 @@ function changePage(page) {
 
 function handleSearch() {
     const term = document.getElementById('logSearch').value.toLowerCase();
-    filteredData = allData.filter(log => 
-        log.action.toLowerCase().includes(term) || 
-        log.target.toLowerCase().includes(term) ||
-        (log.type && log.type.toLowerCase().includes(term))
-    );
+    const actionFilter = document.getElementById('actionFilter').value;
+    const protoFilter = document.getElementById('protoFilter').value;
+    
+    filteredData = allData.filter(log => {
+        const matchSearch = !term || 
+            (log.sourceIP && log.sourceIP.toLowerCase().includes(term)) ||
+            (log.destIP && log.destIP.toLowerCase().includes(term)) ||
+            (log.sourcePort && log.sourcePort.includes(term)) ||
+            (log.destPort && log.destPort.includes(term)) ||
+            (log.action && log.action.toLowerCase().includes(term)) ||
+            (log.target && log.target.toLowerCase().includes(term));
+            
+        const matchAction = !actionFilter || log.action === actionFilter;
+        const matchProto = !protoFilter || log.protocol === protoFilter;
+        
+        return matchSearch && matchAction && matchProto;
+    });
+    
     currentPage = 1;
     renderTable();
 }
@@ -156,21 +377,51 @@ function resetAndRender() {
 
 function getBadgeClass(type) {
     switch(type.toLowerCase()) {
-        case 'auth': return 'bg-warning-subtle text-warning border border-warning';
-        case 'web': return 'bg-purple-subtle text-purple border border-purple';
+        case 'acl': return 'bg-danger-subtle text-danger border border-danger';
         default: return 'bg-secondary-subtle text-secondary border border-secondary';
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => loadLogs('system'));
+document.addEventListener('DOMContentLoaded', () => loadLogs('acl'));
 </script>
 
 <style>
     .bg-purple-subtle { background-color: #f3e5f5; }
     .text-purple { color: #8e24aa; }
     .border-purple { border-color: #ce93d8 !important; }
-    .btn-light.active { background-color: #0d6efd !important; border-color: #0d6efd !important; color: white !important; }
-    .pagination .page-link { border: none; margin: 0 2px; border-radius: 4px; color: #666; }
-    .pagination .page-item.active .page-link { background-color: #0d6efd; color: white; }
+    
+    .btn-light.active { 
+        background-color: #0d6efd !important; 
+        border-color: #0d6efd !important; 
+        color: white !important; 
+    }
+    
+    .pagination .page-link { 
+        border: none; 
+        margin: 0 2px; 
+        border-radius: 4px; 
+        color: #666; 
+    }
+    
+    .pagination .page-item.active .page-link { 
+        background-color: #0d6efd; 
+        color: white; 
+    }
+    
+    table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    code {
+        background-color: #f8f9fa;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-size: 0.875em;
+    }
 </style>
 {{ end }}

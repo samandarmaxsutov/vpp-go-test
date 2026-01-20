@@ -78,3 +78,6 @@
 {"timestamp":"2026-01-14 09:20:59","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-14 12:05:33","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
 {"timestamp":"2026-01-19 13:56:36","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 12:12:00","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 12:43:12","user":"Administrator","type":"auth","action":"Logout","target":"admin","status":"SUCCESS"}
+{"timestamp":"2026-01-20 12:43:16","user":"Administrator","type":"auth","action":"Login","target":"admin","status":"SUCCESS"}
