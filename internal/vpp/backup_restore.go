@@ -160,15 +160,32 @@ type ABFAttachmentBackup struct {
 	IsIPv6    bool   `json:"is_ipv6"`
 }
 
+// StaticRouteBackup - Static route configuration
+type StaticRouteBackup struct {
+	Prefix        string `json:"prefix"`
+	NextHop       string `json:"next_hop"`
+	SwIfIndex     uint32 `json:"sw_if_index"`
+	InterfaceName string `json:"interface_name"`
+	Protocol      string `json:"protocol,omitempty"`
+	Distance      uint8  `json:"distance,omitempty"`
+	Metric        uint8  `json:"metric,omitempty"`
+}
+
+// StaticRoutingBackupConfig - Static routes configuration
+type StaticRoutingBackupConfig struct {
+	Routes []StaticRouteBackup `json:"routes"`
+}
+
 type FullBackupConfig struct {
-	Timestamp  string              `json:"timestamp"`
-	Interfaces []InterfaceConfig   `json:"interfaces"`
-	ACLs       ACLBackupConfig     `json:"acls"`
-	NAT44      NAT44BackupConfig   `json:"nat44"`
-	Policers   PolicerBackupConfig `json:"policers"`
-	DHCP       DHCPBackupConfig    `json:"dhcp"`
-	IPFIX      IPFIXBackupConfig   `json:"ipfix"`
-	ABF        ABFBackupConfig     `json:"abf"`
+	Timestamp  string                    `json:"timestamp"`
+	Interfaces []InterfaceConfig         `json:"interfaces"`
+	ACLs       ACLBackupConfig           `json:"acls"`
+	NAT44      NAT44BackupConfig         `json:"nat44"`
+	Policers   PolicerBackupConfig       `json:"policers"`
+	DHCP       DHCPBackupConfig          `json:"dhcp"`
+	IPFIX      IPFIXBackupConfig         `json:"ipfix"`
+	ABF        ABFBackupConfig           `json:"abf"`
+	Routes     StaticRoutingBackupConfig `json:"routes"`
 }
 
 const (
@@ -565,6 +582,55 @@ func (v *VPPClient) SaveConfiguration() error {
 	}
 
 	// ========================================
+	// 8. STATIC ROUTING BACKUP
+	// ========================================
+	fmt.Println("  🛣️  Backing up Static Routes...")
+	routesBackup := StaticRoutingBackupConfig{}
+
+	// Build interface name to index map for lookup
+	interfaceNameToIndex := make(map[string]uint32)
+	for _, iface := range interfaces {
+		interfaceNameToIndex[iface.Name] = iface.Index
+	}
+
+	if routes, err := v.GetRoutingTable(); err == nil {
+		for _, route := range routes {
+			// Only backup static routes
+			if route.Protocol != "static" {
+				continue
+			}
+
+			// Get the first next hop (primary route)
+			nextHopIP := ""
+			if len(route.NextHops) > 0 {
+				nextHopIP = route.NextHops[0]
+			}
+
+			// Get interface index from name map
+			swIfIdx := uint32(0xffffffff)
+			if route.Interface != "" {
+				if idx, exists := interfaceNameToIndex[route.Interface]; exists {
+					swIfIdx = idx
+				}
+			}
+
+			routesBackup.Routes = append(routesBackup.Routes, StaticRouteBackup{
+				Prefix:        route.Prefix,
+				NextHop:       nextHopIP,
+				SwIfIndex:     swIfIdx,
+				InterfaceName: route.Interface,
+				Protocol:      route.Protocol,
+				Distance:      route.Distance,
+				Metric:        route.Metric,
+			})
+			fmt.Printf("  ✅ Static Route: %s via %s (Interface: %s)\n", route.Prefix, nextHopIP, route.Interface)
+		}
+		fmt.Printf("  ✅ Total static routes backed up: %d\n", len(routesBackup.Routes))
+	} else {
+		fmt.Printf("  ⚠️  Failed to get routing table: %v\n", err)
+	}
+
+	// ========================================
 	// COMBINE AND SAVE
 	// ========================================
 	fullBackup := FullBackupConfig{
@@ -576,6 +642,7 @@ func (v *VPPClient) SaveConfiguration() error {
 		DHCP:       dhcpBackup,
 		IPFIX:      ipfixBackup,
 		ABF:        abfBackup,
+		Routes:     routesBackup,
 	}
 
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
@@ -650,6 +717,8 @@ func (v *VPPClient) RestoreConfiguration() error {
 		ABFPoliciesAdded  int
 		ABFAttached       int
 		ABFFailed         int
+		RoutesAdded       int
+		RoutesFailed      int
 	}{}
 
 	// Map for tracking old -> new ACL indices
@@ -1157,6 +1226,40 @@ func (v *VPPClient) RestoreConfiguration() error {
 	}
 
 	// ========================================
+	// PHASE 9: STATIC ROUTES RESTORE
+	// ========================================
+	if len(fullBackup.Routes.Routes) > 0 {
+		fmt.Println("\n📝 PHASE 9: Restoring Static Routes...")
+		for _, route := range fullBackup.Routes.Routes {
+			// Skip if no next hop
+			if route.NextHop == "" {
+				fmt.Printf("  ⚠️  Skipping route %s: no next hop\n", route.Prefix)
+				continue
+			}
+
+			// Get the interface index from name, or use saved SwIfIndex
+			swIfIdx := route.SwIfIndex
+			if route.InterfaceName != "" {
+				if idx, exists := nameToIndex[route.InterfaceName]; exists {
+					swIfIdx = idx
+				}
+			}
+
+			// Add the static route (no context parameter needed)
+			err := v.AddStaticRoute(route.Prefix, route.NextHop, swIfIdx)
+			if err != nil {
+				fmt.Printf("  ❌ Failed to restore route %s via %s: %v\n", route.Prefix, route.NextHop, err)
+				stats.RoutesFailed++
+			} else {
+				fmt.Printf("  ✅ Static route restored: %s via %s (Interface: %s)\n",
+					route.Prefix, route.NextHop, route.InterfaceName)
+				stats.RoutesAdded++
+			}
+		}
+		fmt.Printf("  📊 Static Routes: %d added, %d failed\n", stats.RoutesAdded, stats.RoutesFailed)
+	}
+
+	// ========================================
 	// PRINT COMPREHENSIVE SUMMARY
 	// ========================================
 	fmt.Println("\n" + strings.Repeat("=", 70))
@@ -1195,6 +1298,10 @@ func (v *VPPClient) RestoreConfiguration() error {
 	fmt.Printf("   ├─ Policies:    %d created\n", stats.ABFPoliciesAdded)
 	fmt.Printf("   ├─ Attached:    %d\n", stats.ABFAttached)
 	fmt.Printf("   └─ Failed:      %d\n", stats.ABFFailed)
+
+	fmt.Printf("\n🛣️  STATIC ROUTES:\n")
+	fmt.Printf("   ├─ Added:       %d\n", stats.RoutesAdded)
+	fmt.Printf("   └─ Failed:      %d\n", stats.RoutesFailed)
 
 	fmt.Println("\n" + strings.Repeat("=", 70))
 	fmt.Println("✅ RESTORATION COMPLETE!")

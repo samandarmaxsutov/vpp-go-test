@@ -189,3 +189,7 @@
 {"timestamp":"2026-01-20 18:21:15","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 1","details":"Inside: true, Add: true","status":"SUCCESS"}
 {"timestamp":"2026-01-20 18:21:18","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 2","details":"Inside: false, Add: true","status":"SUCCESS"}
 {"timestamp":"2026-01-20 18:21:25","user":"admin","ip":"127.0.0.1","type":"config","action":"ADD_NAT_POOL","target":"12.23.35.65","details":"Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-21 09:46:49","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
+{"timestamp":"2026-01-21 09:47:14","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ROUTE","target":"10.0.0.2/24","details":"Gateway: 1.1.2.2, Interface: 1","status":"SUCCESS"}
+{"timestamp":"2026-01-21 09:51:36","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE_ROUTE","target":"10.0.0.2/24","details":"Deleted","status":"SUCCESS"}
+{"timestamp":"2026-01-21 09:51:48","user":"admin","ip":"127.0.0.1","type":"config","action":"CONFIGURE_DHCP_PROXY","target":"Server: 10.0.0.1","details":"Src: 12.2.3.3, Add: false","status":"SUCCESS"}
