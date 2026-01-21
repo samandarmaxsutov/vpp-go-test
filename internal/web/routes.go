@@ -37,6 +37,9 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	ipfixHandler := &IpfixHandler{VPP: client}
 	// === BACKUP & RESTORE ENDPOINTS ===
 	backupHandler := NewBackupHandler(client)
+	// === IP GROUPS ENDPOINTS ===
+	ipGroupsService := vpp.NewIPGroupsService()
+	ipGroupsHandler := NewIPGroupsHandler(ipGroupsService)
 
 	r.GET("/login", auth.LoginGet)
 	r.POST("/login", auth.LoginPost)
@@ -123,6 +126,23 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			})
 		})
 
+		protected.GET("/ip-groups", func(c *gin.Context) {
+			session := sessions.Default(c)
+			c.HTML(200, "ip_groups.html", gin.H{
+				"title":  "IP Groups",
+				"active": "ip_groups",
+				"user":   session.Get("user_id"),
+			})
+		})
+
+		protected.GET("/time", func(c *gin.Context) {
+			session := sessions.Default(c)
+			c.HTML(200, "time.html", gin.H{
+				"title":  "Time Settings",
+				"active": "time_manager",
+				"user":   session.Get("user_id"),
+			})
+		})
 		protected.GET("/logs", func(c *gin.Context) {
 			session := sessions.Default(c)
 			c.HTML(200, "logs.html", gin.H{
@@ -279,6 +299,22 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				abfApi.POST("/policy", abfHandler.HandleCreatePolicy)
 				abfApi.POST("/attach", abfHandler.HandleAttachInterface)
 				abfApi.GET("/attachments", abfHandler.HandleGetAttachments)
+			}
+
+			// --- IP GROUPS API endpoints ---
+			ipGroupsApi := api.Group("/ip-groups")
+			{
+				// Specific routes MUST come before /:id routes in Gin
+				ipGroupsApi.POST("/upload", ipGroupsHandler.HandleUploadFile) // POST upload file
+				ipGroupsApi.GET("/stats", ipGroupsHandler.HandleStats)        // GET statistics
+				// Generic routes
+				ipGroupsApi.GET("", ipGroupsHandler.HandleGetGroups)    // GET all groups
+				ipGroupsApi.POST("", ipGroupsHandler.HandleCreateGroup) // POST create group
+				// ID-based routes
+				ipGroupsApi.GET("/:id", ipGroupsHandler.HandleGetGroupByID)           // GET single group
+				ipGroupsApi.GET("/:id/download", ipGroupsHandler.HandleDownloadGroup) // GET download group
+				ipGroupsApi.PUT("/:id", ipGroupsHandler.HandleUpdateGroup)            // PUT update group
+				ipGroupsApi.DELETE("/:id", ipGroupsHandler.HandleDeleteGroup)         // DELETE group
 			}
 		}
 	}
