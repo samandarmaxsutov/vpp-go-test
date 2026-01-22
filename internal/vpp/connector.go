@@ -11,6 +11,7 @@ import (
 	"vpp-go-test/internal/vpp/ipfix"
 	"vpp-go-test/internal/vpp/nat44"
 	"vpp-go-test/internal/vpp/policer"
+	"vpp-go-test/internal/vpp/time_group"
 
 	"go.fd.io/govpp"
 	"go.fd.io/govpp/adapter/statsclient" // Yangi qo'shildi
@@ -19,17 +20,19 @@ import (
 )
 
 type VPPClient struct {
-	Conn           *core.Connection
-	Stats          *core.StatsConnection // Global stats ulanishi
-	Channel        api.Channel
-	ACLManager     *acl.ACLManager //Acl
-	NatManager     *nat44.NatManager
-	IpfixManager   *ipfix.IpfixManager
-	DhcpManager    *dhcp.DhcpManager
-	AbfManager     *abf_mgr.AbfManager
-	PolicerManager *policer.Manager
-	StartTime      time.Time
-	IfNames        map[uint32]string
+	Conn             *core.Connection
+	Stats            *core.StatsConnection // Global stats ulanishi
+	Channel          api.Channel
+	ACLManager       *acl.ACLManager //Acl
+	NatManager       *nat44.NatManager
+	IpfixManager     *ipfix.IpfixManager
+	DhcpManager      *dhcp.DhcpManager
+	AbfManager       *abf_mgr.AbfManager
+	PolicerManager   *policer.Manager
+	TimeGroupManager *time_group.Manager
+	RuleScheduler    *RuleScheduler
+	StartTime        time.Time
+	IfNames          map[uint32]string
 }
 
 func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
@@ -67,6 +70,8 @@ func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
 	client.DhcpManager = dhcp.NewDhcpManager(conn)
 	client.AbfManager = abf_mgr.NewAbfManager(conn)
 	client.PolicerManager = policer.NewManager(conn)
+	client.TimeGroupManager = time_group.NewManager("./time_groups.json")
+	client.RuleScheduler = NewRuleScheduler(client, 1*time.Minute)
 
 	return client, nil
 }
@@ -115,6 +120,7 @@ func (v *VPPClient) RefreshManagers() {
 	v.DhcpManager = dhcp.NewDhcpManager(v.Conn)
 	v.AbfManager = abf_mgr.NewAbfManager(v.Conn)
 	v.PolicerManager = policer.NewManager(v.Conn)
+	// TimeGroupManager va RuleScheduler o'zgarishga muhtoj emas
 
 	log.Println("🔄 All Managers memory-swapped with fresh API channels.")
 }

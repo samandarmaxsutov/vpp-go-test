@@ -35,6 +35,7 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	abfHandler := &AbfHandler{VPP: client}
 	logHandler := &LogHandler{}
 	ipfixHandler := &IpfixHandler{VPP: client}
+	timeGroupHandler := NewTimeGroupHandler(client)
 	// === BACKUP & RESTORE ENDPOINTS ===
 	backupHandler := NewBackupHandler(client)
 	// === IP GROUPS ENDPOINTS ===
@@ -315,6 +316,21 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				ipGroupsApi.GET("/:id/download", ipGroupsHandler.HandleDownloadGroup) // GET download group
 				ipGroupsApi.PUT("/:id", ipGroupsHandler.HandleUpdateGroup)            // PUT update group
 				ipGroupsApi.DELETE("/:id", ipGroupsHandler.HandleDeleteGroup)         // DELETE group
+			}
+
+			// --- TIME GROUPS API endpoints ---
+			timeGroupsApi := api.Group("/time-groups")
+			{
+				timeGroupsApi.GET("", timeGroupHandler.ListTimeGroups)                      // GET all time groups
+				timeGroupsApi.POST("", timeGroupHandler.CreateTimeGroup)                    // POST create time group
+				timeGroupsApi.GET("/:id", timeGroupHandler.GetTimeGroup)                    // GET single time group
+				timeGroupsApi.PUT("/:id", timeGroupHandler.UpdateTimeGroup)                 // PUT update time group
+				timeGroupsApi.DELETE("/:id", timeGroupHandler.DeleteTimeGroup)              // DELETE time group
+				timeGroupsApi.GET("/:id/status", timeGroupHandler.GetTimeGroupStatus)       // GET time group status
+				timeGroupsApi.POST("/:id/assign", timeGroupHandler.AssignToRule)            // POST assign to rule
+				timeGroupsApi.DELETE("/:id/assign", timeGroupHandler.UnassignFromRule)      // DELETE unassign from rule
+				timeGroupsApi.GET("/rule-assignments", timeGroupHandler.GetRuleAssignments) // GET rule assignments
+				timeGroupsApi.GET("/check-rule", timeGroupHandler.CheckRuleActive)          // GET check if rule is active
 			}
 		}
 	}

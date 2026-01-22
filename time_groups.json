@@ -1,0 +1,18 @@
+{
+  "time_group_assignment_map": {},
+  "time_groups": {
+    "9e63baf8-9a5c-44e5-b9ea-6e2453766c1e": {
+      "id": "9e63baf8-9a5c-44e5-b9ea-6e2453766c1e",
+      "name": "sa",
+      "description": "asd",
+      "start_time": "12:12",
+      "end_time": "15:15",
+      "weekdays": [
+        "T"
+      ],
+      "is_active": true,
+      "created_at": "2026-01-22T19:15:19.986187428+05:00",
+      "updated_at": "2026-01-22T19:15:19.986187492+05:00"
+    }
+  }
+}

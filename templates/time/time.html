@@ -1,4 +1,504 @@
 {{ template "base" . }}
 {{ define "time_manager" }}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-fill me-2"></i>Vaqt Guruhlari Boshqaruvi</h5>
+                        <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addTimeGroupModal">
+                            <i class="bi bi-plus-circle me-1"></i> Yangi Guruh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Time Groups List -->
+                    <div id="timeGroupsList" class="list-group">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-hourglass me-2"></i> Vaqt guruhlari yuklanmoqda...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Time Group Modal -->
+<div class="modal fade" id="addTimeGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-gear-fill me-2"></i>Vaqt Guruhi Yaratish</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTimeGroupForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nomi <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control shadow-sm" id="tg_name" placeholder="working_hours, lunch_time va h.k." required>
+                        <small class="text-muted">Masalan: working_hours, lunch_time, off_hours</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tavsifi (ixtiyoriy)</label>
+                        <input type="text" class="form-control shadow-sm" id="tg_description" placeholder="Bu guruhning to'liq tavsifi">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Boshlanish Vaqti <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control shadow-sm" id="tg_start_time" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tugash Vaqti <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control shadow-sm" id="tg_end_time" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Hafta Kunlari <span class="text-danger">*</span></label>
+                        <div class="btn-group-vertical w-100" role="group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_m" value="M" data-weekday="M">
+                                <label class="form-check-label w-100" for="wd_m">
+                                    Dushanba (M)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_t" value="T" data-weekday="T">
+                                <label class="form-check-label w-100" for="wd_t">
+                                    Seshanba (T)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_w" value="W" data-weekday="W">
+                                <label class="form-check-label w-100" for="wd_w">
+                                    Chorshanba (W)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_th" value="TH" data-weekday="TH">
+                                <label class="form-check-label w-100" for="wd_th">
+                                    Payshanba (TH)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_f" value="F" data-weekday="F">
+                                <label class="form-check-label w-100" for="wd_f">
+                                    Juma (F)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_sa" value="SA" data-weekday="SA">
+                                <label class="form-check-label w-100" for="wd_sa">
+                                    Shanba (SA)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wd_su" value="SU" data-weekday="SU">
+                                <label class="form-check-label w-100" for="wd_su">
+                                    Yakshanba (SU)
+                                </label>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i> Almasi-bo'sh bo'lmaydi</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="tg_is_active" checked>
+                            <label class="form-check-label" for="tg_is_active">
+                                Faol
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Misol:</strong> Ish vaqti guruhi 09:00 dan 18:00 gacha, dushanba-juma (M,T,W,TH,F)
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-primary" onclick="TIME_MANAGER.saveTimeGroup()">
+                    <i class="bi bi-check-circle me-1"></i> Saqlash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editTimeGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Vaqt Guruhi Tahrirlash</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTimeGroupForm">
+                    <input type="hidden" id="edit_tg_id">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nomi <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control shadow-sm" id="edit_tg_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tavsifi (ixtiyoriy)</label>
+                        <input type="text" class="form-control shadow-sm" id="edit_tg_description">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Boshlanish Vaqti <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control shadow-sm" id="edit_tg_start_time" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tugash Vaqti <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control shadow-sm" id="edit_tg_end_time" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Hafta Kunlari <span class="text-danger">*</span></label>
+                        <div class="btn-group-vertical w-100" role="group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_m" value="M" data-weekday="M">
+                                <label class="form-check-label w-100" for="edit_wd_m">Dushanba (M)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_t" value="T" data-weekday="T">
+                                <label class="form-check-label w-100" for="edit_wd_t">Seshanba (T)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_w" value="W" data-weekday="W">
+                                <label class="form-check-label w-100" for="edit_wd_w">Chorshanba (W)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_th" value="TH" data-weekday="TH">
+                                <label class="form-check-label w-100" for="edit_wd_th">Payshanba (TH)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_f" value="F" data-weekday="F">
+                                <label class="form-check-label w-100" for="edit_wd_f">Juma (F)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_sa" value="SA" data-weekday="SA">
+                                <label class="form-check-label w-100" for="edit_wd_sa">Shanba (SA)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_wd_su" value="SU" data-weekday="SU">
+                                <label class="form-check-label w-100" for="edit_wd_su">Yakshanba (SU)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="edit_tg_is_active">
+                            <label class="form-check-label" for="edit_tg_is_active">Faol</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-primary" onclick="TIME_MANAGER.updateTimeGroup()">
+                    <i class="bi bi-save me-1"></i> Yangilash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Modal -->
+<div class="modal fade" id="timeGroupStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>Vaqt Guruhi Holati</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="statusContent">
+                    <div class="text-center text-muted">
+                        <i class="bi bi-hourglass me-2"></i> Yuklanmoqda...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Time Manager -->
+<script>
+const TIME_MANAGER = {
+    currentEditId: null,
+
+    init: function() {
+        this.loadTimeGroups();
+        // Reload every 5 minutes
+        setInterval(() => this.loadTimeGroups(), 5 * 60 * 1000);
+    },
+
+    loadTimeGroups: function() {
+        fetch('/api/time-groups')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('timeGroupsList');
+                if (!data || data.length === 0) {
+                    container.innerHTML =
+                        '<div class="text-center text-muted py-4">' +
+                        '<i class="bi bi-inbox me-2"></i> Hech qanday vaqt guruhi yo\'q' +
+                        '</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(tg => {
+                    const isActive = tg.is_active ? 
+                        '<span class="badge bg-success">Faol</span>' : 
+                        '<span class="badge bg-secondary">O\'chirilgan</span>';
+                    
+                    html += `
+                        <div class="list-group-item p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${this.escapeHtml(tg.name)} ${isActive}</h6>
+                                    <small class="text-muted d-block">${this.escapeHtml(tg.description || 'Tavsif yo\'q')}</small>
+                                    <small class="text-muted d-block">
+                                        <strong>Vaqti:</strong> ${tg.start_time} - ${tg.end_time}
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <strong>Kunlar:</strong> ${(tg.weekdays || []).join(', ') || 'Hech qanday'}
+                                    </small>
+                                </div>
+                                <div class="btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="TIME_MANAGER.showStatus('${tg.id}')">
+                                        <i class="bi bi-clock me-1"></i>Holat
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="TIME_MANAGER.editTimeGroup('${tg.id}')">
+                                        <i class="bi bi-pencil me-1"></i>Tahrir
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="TIME_MANAGER.deleteTimeGroup('${tg.id}')">
+                                        <i class="bi bi-trash me-1"></i>O'chirish
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Error loading time groups:', err);
+                document.getElementById('timeGroupsList').innerHTML =
+                    '<div class="alert alert-danger">Yuklashda xato</div>';
+            });
+    },
+
+    saveTimeGroup: function() {
+        const weekdays = [];
+        ['m', 't', 'w', 'th', 'f', 'sa', 'su'].forEach(day => {
+            const checkbox = document.getElementById(`wd_${day}`);
+            if (checkbox && checkbox.checked) {
+                weekdays.push(checkbox.value);
+            }
+        });
+
+        if (weekdays.length === 0) {
+            alert('Kamida bir kun tanlang!');
+            return;
+        }
+
+        const timeGroup = {
+            name: document.getElementById('tg_name').value.trim(),
+            description: document.getElementById('tg_description').value.trim(),
+            start_time: document.getElementById('tg_start_time').value,
+            end_time: document.getElementById('tg_end_time').value,
+            weekdays: weekdays,
+            is_active: document.getElementById('tg_is_active').checked
+        };
+
+        if (!timeGroup.name || !timeGroup.start_time || !timeGroup.end_time) {
+            alert('Barcha majburiy maydonlarni to\'ldiring!');
+            return;
+        }
+
+        console.log('Saving time group:', timeGroup);
+
+        fetch('/api/time-groups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(timeGroup)
+        })
+        .then(r => {
+            console.log('Response status:', r.status);
+            return r.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.error) {
+                alert('Xato: ' + data.error);
+            } else {
+                document.getElementById('addTimeGroupForm').reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addTimeGroupModal'));
+                if (modal) modal.hide();
+                this.loadTimeGroups();
+                this.showNotification('Vaqt guruhi yaratildi', 'success');
+            }
+        })
+        .catch(err => {
+            console.error('Save error:', err);
+            alert('Xato: ' + err.message);
+        });
+    },
+
+    editTimeGroup: function(id) {
+        fetch(`/api/time-groups/${id}`)
+            .then(r => r.json())
+            .then(tg => {
+                document.getElementById('edit_tg_id').value = tg.id;
+                document.getElementById('edit_tg_name').value = tg.name;
+                document.getElementById('edit_tg_description').value = tg.description || '';
+                document.getElementById('edit_tg_start_time').value = tg.start_time;
+                document.getElementById('edit_tg_end_time').value = tg.end_time;
+                document.getElementById('edit_tg_is_active').checked = tg.is_active;
+
+                ['m', 't', 'w', 'th', 'f', 'sa', 'su'].forEach(day => {
+                    const checkbox = document.getElementById(`edit_wd_${day}`);
+                    if (checkbox) {
+                        checkbox.checked = (tg.weekdays || []).includes(checkbox.value);
+                    }
+                });
+
+                this.currentEditId = id;
+                const modal = new bootstrap.Modal(document.getElementById('editTimeGroupModal'));
+                modal.show();
+            })
+            .catch(err => alert('Xato: ' + err.message));
+    },
+
+    updateTimeGroup: function() {
+        const weekdays = [];
+        ['m', 't', 'w', 'th', 'f', 'sa', 'su'].forEach(day => {
+            const checkbox = document.getElementById(`edit_wd_${day}`);
+            if (checkbox && checkbox.checked) {
+                weekdays.push(checkbox.value);
+            }
+        });
+
+        if (weekdays.length === 0) {
+            alert('Kamida bir kun tanlang!');
+            return;
+        }
+
+        const timeGroup = {
+            name: document.getElementById('edit_tg_name').value.trim(),
+            description: document.getElementById('edit_tg_description').value.trim(),
+            start_time: document.getElementById('edit_tg_start_time').value,
+            end_time: document.getElementById('edit_tg_end_time').value,
+            weekdays: weekdays,
+            is_active: document.getElementById('edit_tg_is_active').checked
+        };
+
+        if (!timeGroup.name || !timeGroup.start_time || !timeGroup.end_time) {
+            alert('Barcha majburiy maydonlarni to\'ldiring!');
+            return;
+        }
+
+        fetch(`/api/time-groups/${this.currentEditId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(timeGroup)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                alert('Xato: ' + data.error);
+            } else {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editTimeGroupModal'));
+                if (modal) modal.hide();
+                this.loadTimeGroups();
+                this.showNotification('Vaqt guruhi yangilandi', 'success');
+            }
+        })
+        .catch(err => alert('Xato: ' + err.message));
+    },
+
+    deleteTimeGroup: function(id) {
+        if (!confirm('Ushbu vaqt guruhi o\'chirilinsinmi? Bu olib tashlanadi!')) {
+            return;
+        }
+
+        fetch(`/api/time-groups/${id}`, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Xato: ' + data.error);
+                } else {
+                    this.loadTimeGroups();
+                    this.showNotification('Vaqt guruhi o\'chirildi', 'success');
+                }
+            })
+            .catch(err => alert('Xato: ' + err.message));
+    },
+
+    showStatus: function(id) {
+        fetch(`/api/time-groups/${id}/status`)
+            .then(r => r.json())
+            .then(status => {
+                let badgeClass = status.is_within_time_window ? 'bg-success' : 'bg-warning';
+                let html = `
+                    <div class="alert alert-${status.is_within_time_window ? 'success' : 'warning'}" role="alert">
+                        <h6 class="alert-heading mb-2">${status.message}</h6>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Joriy Vaqt:</strong> ${status.current_time}
+                            </div>
+                            <div class="col-6">
+                                <strong>Kun:</strong> ${status.current_day}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('statusContent').innerHTML = html;
+                const modal = new bootstrap.Modal(document.getElementById('timeGroupStatusModal'));
+                modal.show();
+            })
+            .catch(err => alert('Xato: ' + err.message));
+    },
+
+    showNotification: function(message, type = 'info') {
+        // You can implement a toast notification here
+        console.log(`[${type}] ${message}`);
+    },
+
+    escapeHtml: function(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+};
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', () => TIME_MANAGER.init());
+</script>
 {{ end }}

@@ -90,6 +90,13 @@
                         <input type="number" class="form-control" name="cb" placeholder="125000" required>
                         <div class="form-text">Bir vaqtning o'zida o'tishi mumkin bo'lgan maksimal trafik.</div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vaqt Guruhi (Ixtiyoriy)</label>
+                        <select class="form-select" id="policer_time_group_id" name="time_group_id">
+                            <option value="">-- Vaqt cheklovi yo'q --</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Bu Policer faqatgina tanlangan vaqt oynasida qo'llanadi</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
@@ -104,13 +111,21 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadPolicers();
         loadInterfaces();
+        
+        // Load time groups into dropdown
+        if (typeof TimeGroupUtils !== 'undefined') {
+            TimeGroupUtils.loadTimeGroupsIntoSelect('policer_time_group_id');
+        }
 
         // 1. Policer yaratish (O'zgarishsiz qoladi)
         document.getElementById('createPolicerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
+            const policerName = formData.get('name');
+            const timeGroupId = document.getElementById('policer_time_group_id').value;
+            
             const data = {
-                name: formData.get('name'),
+                name: policerName,
                 cir: parseInt(formData.get('cir')),
                 cb: parseInt(formData.get('cb'))
             };
@@ -127,8 +142,22 @@
                     if (res.error) {
                         alert("Xatolik: " + res.error);
                     } else {
-                        alert(res.message);
-                        location.reload();
+                        // Assign time group if selected
+                        if (timeGroupId && typeof TimeGroupUtils !== 'undefined') {
+                            TimeGroupUtils.assignTimeGroupToRule(timeGroupId, 'POLICER', policerName)
+                                .then(() => {
+                                    alert(res.message);
+                                    location.reload();
+                                })
+                                .catch(err => {
+                                    console.error('Time group assignment failed:', err);
+                                    alert(res.message);
+                                    location.reload();
+                                });
+                        } else {
+                            alert(res.message);
+                            location.reload();
+                        }
                     }
                 });
         });
