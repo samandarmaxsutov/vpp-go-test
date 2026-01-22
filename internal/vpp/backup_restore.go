@@ -1228,36 +1228,36 @@ func (v *VPPClient) RestoreConfiguration() error {
 	// ========================================
 	// PHASE 9: STATIC ROUTES RESTORE
 	// ========================================
-	if len(fullBackup.Routes.Routes) > 0 {
-		fmt.Println("\n📝 PHASE 9: Restoring Static Routes...")
-		for _, route := range fullBackup.Routes.Routes {
-			// Skip if no next hop
-			if route.NextHop == "" {
-				fmt.Printf("  ⚠️  Skipping route %s: no next hop\n", route.Prefix)
-				continue
-			}
+	// if len(fullBackup.Routes.Routes) > 0 {
+	// 	fmt.Println("\n📝 PHASE 9: Restoring Static Routes...")
+	// 	for _, route := range fullBackup.Routes.Routes {
+	// 		// Skip if no next hop
+	// 		if route.NextHop == "" {
+	// 			fmt.Printf("  ⚠️  Skipping route %s: no next hop\n", route.Prefix)
+	// 			continue
+	// 		}
 
-			// Get the interface index from name, or use saved SwIfIndex
-			swIfIdx := route.SwIfIndex
-			if route.InterfaceName != "" {
-				if idx, exists := nameToIndex[route.InterfaceName]; exists {
-					swIfIdx = idx
-				}
-			}
+	// 		// Get the interface index from name, or use saved SwIfIndex
+	// 		swIfIdx := route.SwIfIndex
+	// 		if route.InterfaceName != "" {
+	// 			if idx, exists := nameToIndex[route.InterfaceName]; exists {
+	// 				swIfIdx = idx
+	// 			}
+	// 		}
 
-			// Add the static route (no context parameter needed)
-			err := v.AddStaticRoute(route.Prefix, route.NextHop, swIfIdx)
-			if err != nil {
-				fmt.Printf("  ❌ Failed to restore route %s via %s: %v\n", route.Prefix, route.NextHop, err)
-				stats.RoutesFailed++
-			} else {
-				fmt.Printf("  ✅ Static route restored: %s via %s (Interface: %s)\n",
-					route.Prefix, route.NextHop, route.InterfaceName)
-				stats.RoutesAdded++
-			}
-		}
-		fmt.Printf("  📊 Static Routes: %d added, %d failed\n", stats.RoutesAdded, stats.RoutesFailed)
-	}
+	// 		// Add the static route (no context parameter needed)
+	// 		err := v.AddStaticRoute(route.Prefix, route.NextHop, swIfIdx)
+	// 		if err != nil {
+	// 			fmt.Printf("  ❌ Failed to restore route %s via %s: %v\n", route.Prefix, route.NextHop, err)
+	// 			stats.RoutesFailed++
+	// 		} else {
+	// 			fmt.Printf("  ✅ Static route restored: %s via %s (Interface: %s)\n",
+	// 				route.Prefix, route.NextHop, route.InterfaceName)
+	// 			stats.RoutesAdded++
+	// 		}
+	// 	}
+	// 	fmt.Printf("  📊 Static Routes: %d added, %d failed\n", stats.RoutesAdded, stats.RoutesFailed)
+	// }
 
 	// ========================================
 	// PRINT COMPREHENSIVE SUMMARY

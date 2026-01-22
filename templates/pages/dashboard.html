@@ -81,7 +81,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                    <h6 class="fw-bold mb-0 text-dark">Packet Rate (PPS)</h6>
+                    <h6 class="fw-bold mb-0 text-dark">Packet Rate (PPS) & Drops</h6>
                 </div>
                 <canvas id="ppsChart"></canvas>
             </div>
@@ -103,7 +103,7 @@
     let currentInterface = "all";
     const maxDataPoints = 40;
 
-    // FortiGate Colors (RGBA for Area Fill)
+    // FortiGate Colors
     const fBlue = 'rgba(28, 54, 100, 1)';
     const fBlueFill = 'rgba(28, 54, 100, 0.12)';
     const fGreen = 'rgba(92, 184, 92, 1)';
@@ -118,7 +118,11 @@
         maintainAspectRatio: false,
         elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } },
         scales: { 
-            y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 10 } } }, 
+            y: { 
+                beginAtZero: true, 
+                grid: { color: '#f0f0f0' }, 
+                ticks: { color: '#888', font: { size: 10 } } 
+            }, 
             x: { display: false } 
         },
         animation: false,
@@ -132,8 +136,8 @@
     const bpsChart = new Chart(document.getElementById('bpsChart'), {
         type: 'line',
         data: { labels: [], datasets: [
-            { label: 'Inbound (bps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
-            { label: 'Outbound (bps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 }
+            { label: 'In (bps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
+            { label: 'Out (bps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 }
         ]},
         options: commonOptions
     });
@@ -141,10 +145,24 @@
     const ppsChart = new Chart(document.getElementById('ppsChart'), {
         type: 'line',
         data: { labels: [], datasets: [
-            { label: 'Inbound (pps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
-            { label: 'Outbound (pps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 }
+            { label: 'In (pps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
+            { label: 'Out (pps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 },
+            { label: 'Drops', borderColor: fOrange, backgroundColor: fOrangeFill, data: [], fill: true, tension: 0.3 }
         ]},
-        options: commonOptions
+        options: {
+            ...commonOptions,
+            scales: {
+                ...commonOptions.scales,
+                y: {
+                    ...commonOptions.scales.y,
+                    ticks: {
+                        ...commonOptions.scales.y.ticks,
+                        // Ensure only integers are shown on the Y axis scale
+                        callback: function(value) { if (value % 1 === 0) { return value; } }
+                    }
+                }
+            }
+        }
     });
 
     const resourceChart = new Chart(document.getElementById('resourceChart'), {
@@ -176,7 +194,7 @@
 
             // Populate Interface Selector once
             const select = document.getElementById('interfaceSelect');
-            if (select.options.length === 1) {
+            if (select.options.length === 1 && data.interfaces) {
                 data.interfaces.forEach(iface => {
                     select.add(new Option(iface.name, iface.index));
                 });
@@ -184,7 +202,7 @@
 
             // Calculate Rates
             if (lastData && deltaTime > 0) {
-                let rxB = 0, txB = 0, rxP = 0, txP = 0;
+                let rxB = 0, txB = 0, rxP = 0, txP = 0, drP = 0;
                 
                 if (currentInterface === "all") {
                     data.interfaces.forEach(iface => {
@@ -194,6 +212,7 @@
                             txB += (iface.tx_bytes - prev.tx_bytes) * 8 / deltaTime;
                             rxP += (iface.rx_pkts - prev.rx_pkts) / deltaTime;
                             txP += (iface.tx_pkts - prev.tx_pkts) / deltaTime;
+                            drP += (iface.drops - prev.drops) / deltaTime;
                         }
                     });
                 } else {
@@ -204,13 +223,15 @@
                         txB = (currIf.tx_bytes - prevIf.tx_bytes) * 8 / deltaTime;
                         rxP = (currIf.rx_pkts - prevIf.rx_pkts) / deltaTime;
                         txP = (currIf.tx_pkts - prevIf.tx_pkts) / deltaTime;
+                        drP = (currIf.drops - prevIf.drops) / deltaTime;
                     }
                 }
 
                 const timeLabel = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
                 pushData(bpsChart, timeLabel, [rxB, txB]);
-                pushData(ppsChart, timeLabel, [rxP, txP]);
+                // Round PPS values to integers for the chart
+                pushData(ppsChart, timeLabel, [Math.round(rxP), Math.round(txP), Math.round(drP)]);
                 pushData(resourceChart, timeLabel, [cpuVal, memVal]);
             }
 
@@ -238,7 +259,7 @@
         });
     }
 
-    setInterval(updateDashboard, 2000);
+    setInterval(updateDashboard, 1000);
     updateDashboard();
 </script>
 {{ end }}
