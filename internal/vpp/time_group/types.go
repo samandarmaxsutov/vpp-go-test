@@ -45,6 +45,16 @@ type InterfaceBinding struct {
 	Direction     string `json:"direction"`      // "input" yoki "output"
 }
 
+// PendingACLRule - VPP ga hali push qilinmagan ACL qoidasi (vaqt guruhi tashqarisida yaratilgan)
+type PendingACLRule struct {
+	ID          string                   `json:"id"`            // Unique ID
+	Tag         string                   `json:"tag"`           // ACL tag/name
+	Rules       []map[string]interface{} `json:"rules"`         // ACL rules in JSON format
+	TimeGroupID string                   `json:"time_group_id"` // Assigned time group
+	CreatedAt   string                   `json:"created_at"`    // When rule was created
+	IsStateful  bool                     `json:"is_stateful"`   // Stateful ACL
+}
+
 // TimeCheck - Hozirgi vaqtda qoida faol ekanligini tekshirish natijasi
 type TimeCheck struct {
 	IsWithinTimeWindow bool   `json:"is_within_time_window"`

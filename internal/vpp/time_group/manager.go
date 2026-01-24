@@ -17,6 +17,7 @@ type Manager struct {
 	timeGroupAssignmentMap map[string][]string            // RuleType+RuleID -> []TimeGroupID
 	ruleTimeAssignments    map[string]*RuleTimeAssignment // ID -> RuleTimeAssignment
 	disabledRuleBackups    map[string]*DisabledRuleBackup // RuleType+RuleID -> Backup
+	pendingACLRules        map[string]*PendingACLRule     // ID -> PendingACLRule (VPPga push qilinmagan)
 	persistFilePath        string
 }
 
@@ -27,6 +28,7 @@ func NewManager(persistFilePath string) *Manager {
 		ruleTimeAssignments:    make(map[string]*RuleTimeAssignment),
 		timeGroupAssignmentMap: make(map[string][]string),
 		disabledRuleBackups:    make(map[string]*DisabledRuleBackup),
+		pendingACLRules:        make(map[string]*PendingACLRule),
 		persistFilePath:        persistFilePath,
 	}
 	// Load from disk if exists
@@ -349,6 +351,7 @@ func (m *Manager) saveLocked() error {
 		"time_groups":               m.timeGroups,
 		"time_group_assignment_map": m.timeGroupAssignmentMap,
 		"disabled_rule_backups":     m.disabledRuleBackups,
+		"pending_acl_rules":         m.pendingACLRules,
 	}
 
 	jsonData, err := json.MarshalIndent(data, "", "  ")
@@ -381,6 +384,7 @@ func (m *Manager) Load() error {
 		"time_groups":               map[string]*TimeGroup{},
 		"time_group_assignment_map": map[string][]string{},
 		"disabled_rule_backups":     map[string]*DisabledRuleBackup{},
+		"pending_acl_rules":         map[string]*PendingACLRule{},
 	}
 
 	if err := json.Unmarshal(jsonData, &data); err != nil {
@@ -403,6 +407,12 @@ func (m *Manager) Load() error {
 	if backupData, ok := data["disabled_rule_backups"]; ok {
 		backupBytes, _ := json.Marshal(backupData)
 		_ = json.Unmarshal(backupBytes, &m.disabledRuleBackups)
+	}
+
+	// Parse pending ACL rules
+	if pendingData, ok := data["pending_acl_rules"]; ok {
+		pendingBytes, _ := json.Marshal(pendingData)
+		_ = json.Unmarshal(pendingBytes, &m.pendingACLRules)
 	}
 
 	return nil
@@ -476,6 +486,23 @@ func (m *Manager) RemoveDisabledRuleBackup(ruleType, ruleID string) error {
 	return m.saveLocked()
 }
 
+// UpdateRuleAssignmentID - Rule assignment ID ni yangi qiymat bilan almashtirib yangilaydi
+// Bu ACL qayta yaratilganda yangi index bilan assignment ni yangilash uchun ishlatiladi
+func (m *Manager) UpdateRuleAssignmentID(ruleType, oldRuleID, newRuleID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	oldKey := fmt.Sprintf("%s:%s", ruleType, oldRuleID)
+	newKey := fmt.Sprintf("%s:%s", ruleType, newRuleID)
+
+	// Eski assignment ni o'chirish va yangisiga ko'chirish
+	if timeGroupIDs, exists := m.timeGroupAssignmentMap[oldKey]; exists {
+		m.timeGroupAssignmentMap[newKey] = timeGroupIDs
+		delete(m.timeGroupAssignmentMap, oldKey)
+		m.saveLocked()
+	}
+}
+
 // ListDisabledRuleBackups - Barcha o'chirilgan qoidalarning ro'yxatini qaytaradi
 func (m *Manager) ListDisabledRuleBackups() map[string]*DisabledRuleBackup {
 	m.mu.RLock()
@@ -486,4 +513,86 @@ func (m *Manager) ListDisabledRuleBackups() map[string]*DisabledRuleBackup {
 		result[k] = v
 	}
 	return result
+}
+
+// ==================== PENDING ACL RULES MANAGEMENT ====================
+
+// AddPendingACLRule - Yangi pending ACL qoidasini qo'shadi (vaqt guruhi tashqarisida yaratilgan)
+func (m *Manager) AddPendingACLRule(rule *PendingACLRule) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if rule.ID == "" {
+		rule.ID = uuid.New().String()
+	}
+	rule.CreatedAt = time.Now().Format(time.RFC3339)
+	m.pendingACLRules[rule.ID] = rule
+
+	return m.saveLocked()
+}
+
+// GetPendingACLRule - Pending ACL qoidasini ID bo'yicha oladi
+func (m *Manager) GetPendingACLRule(id string) (*PendingACLRule, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	rule, exists := m.pendingACLRules[id]
+	return rule, exists
+}
+
+// ListPendingACLRules - Barcha pending ACL qoidalarini qaytaradi
+func (m *Manager) ListPendingACLRules() []*PendingACLRule {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	result := make([]*PendingACLRule, 0, len(m.pendingACLRules))
+	for _, rule := range m.pendingACLRules {
+		result = append(result, rule)
+	}
+	return result
+}
+
+// RemovePendingACLRule - Pending ACL qoidasini o'chiradi (VPP ga push qilingandan keyin)
+func (m *Manager) RemovePendingACLRule(id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	delete(m.pendingACLRules, id)
+	return m.saveLocked()
+}
+
+// IsTimeGroupActiveNow - Vaqt guruhi hozir faol ekanligini tekshiradi
+func (m *Manager) IsTimeGroupActiveNow(timeGroupID string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	// Bo'sh yoki "always" bo'lsa - har doim faol
+	if timeGroupID == "" || timeGroupID == "always" {
+		return true
+	}
+
+	tg, exists := m.timeGroups[timeGroupID]
+	if !exists || !tg.IsActive {
+		return false
+	}
+
+	now := time.Now()
+	currentTime := now.Format("15:04")
+	currentDay := WeekdayMap[now.Weekday()]
+
+	// Kun mosligini tekshirish
+	dayMatches := false
+	for _, wd := range tg.Weekdays {
+		if wd == currentDay {
+			dayMatches = true
+			break
+		}
+	}
+
+	if !dayMatches {
+		return false
+	}
+
+	// Vaqt oralig'ini tekshirish
+	return currentTime >= tg.StartTime && currentTime <= tg.EndTime
 }

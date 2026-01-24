@@ -90,7 +90,8 @@
                             <tr>
                                 <th>ID</th>
                                 <th>ACL</th>
-                                <th>Next-Hop</th>
+                                <th>Vaqt Guruhi</th>
+                                <th>Status</th>
                                 <th>Amal</th>
                             </tr>
                         </thead>
@@ -215,23 +216,31 @@
         if(!policies) return;
 
         policies.forEach(p => {
-            const pId = p.policy.policy_id;
-            const aIdx = p.policy.acl_index || 0;
-            let firstIp = "";
-            const paths = p.policy.paths.map((path, idx) => {
-                const bytes = path.nh.address.XXX_UnionData;
-                const ip = `${bytes[0]}.${bytes[1]}.${bytes[2]}.${bytes[3]}`;
-                if (idx === 0) firstIp = ip;
-                return ip;
-            }).join(', ');
+            const pId = p.policy_id;
+            const aIdx = p.acl_index || 0;
+            
+            // Time group badge
+            const timeGroupBadge = p.time_group_name !== '-' 
+                ? `<span class="badge bg-info" title="${p.status_message}">
+                    <i class="bi bi-clock-history me-1"></i>${p.time_group_name}
+                   </span>`
+                : '<span class="text-muted">-</span>';
+            
+            // Status badge
+            const statusBadge = p.is_active 
+                ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Faol</span>'
+                : '<span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>Nofaol</span>';
 
+            const rowClass = p.is_active ? '' : 'table-secondary';
+            
             tbody.innerHTML += `
-                <tr>
+                <tr class="${rowClass}">
                     <td>${pId}</td>
-                    <td>${aIdx}</td>
-                    <td><small>${paths}</small></td>
+                    <td><span class="badge bg-primary">ACL #${aIdx}</span></td>
+                    <td>${timeGroupBadge}</td>
+                    <td>${statusBadge}</td>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="deletePolicy(${pId}, ${aIdx}, '${firstIp}')">
+                        <button class="btn btn-danger btn-sm" onclick="deletePolicy(${pId}, ${aIdx})">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
@@ -255,7 +264,7 @@
                     <td>Idx: ${a.attach.sw_if_index}</td>
                     <td>${a.attach.priority}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm" onclick="detachInterface(${a.attach.policy_id}, ${a.attach.sw_if_index}, ${a.attach.priority})">
+                        <button class="btn btn-warning btn-sm" onclick="detachInterface(${a.attach.policy_id}, ${a.attach.sw_if_index}, ${a.attach.priority}, ${a.attach.is_ipv6})">
                             <i class="bi bi-link-45deg"></i> Uzish
                         </button>
                     </td>
@@ -264,12 +273,13 @@
     }
 
     // 6. Detach (Interfeysdan uzish)
-    async function detachInterface(pId, swIdx, priority) {
+    async function detachInterface(pId, swIdx, priority, isIPv6) {
         if(!confirm("Ushbu interfeysdan siyosatni uzasizmi?")) return;
         const data = {
             policy_id: pId,
             sw_if_index: swIdx,
             priority: priority,
+            is_ipv6: !!isIPv6,
             is_add: false
         };
         const res = await fetch('/api/abf/attach', {
@@ -283,9 +293,9 @@
     }
 
     // 7. Policy o'chirish
-    async function deletePolicy(pId, aIdx, ip) {
+    async function deletePolicy(pId, aIdx) {
         if(!confirm("Policy o'chirilsinmi? (Eslatma: Avval interfeysdan uzing!)")) return;
-        const data = { policy_id: pId, acl_index: aIdx, next_hop: ip, is_add: false };
+        const data = { policy_id: pId, acl_index: aIdx, is_add: false };
         const res = await fetch('/api/abf/policy', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

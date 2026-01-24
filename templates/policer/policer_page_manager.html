@@ -17,11 +17,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Index</th>
                             <th>Nomi</th>
                             <th>CIR (kbps)</th>
                             <th>CB (bytes)</th>
-                            <th>Turi</th>
+                            <th>Interfeyslar</th>
+                            <th>Vaqt Guruhi</th>
+                            <th>Status</th>
                             <th class="text-end">Amallar</th>
                         </tr>
                     </thead>
@@ -173,23 +174,36 @@
                     select.innerHTML = '<option value="">-- Tanlang --</option>';
 
                     if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Policerlar topilmadi</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3">Policerlar topilmadi</td></tr>';
                         return;
                     }
 
                     data.forEach((p, idx) => {
-                        // Jadvalga qo'shish
-                        // Eslatma: Agar JSONda policer_index bo'lmasa, massiv indeksidan foydalanamiz
-                        const pIndex = p.policer_index !== undefined ? p.policer_index : idx;
+                        // Time group badge
+                        const timeGroupBadge = p.time_group_name !== '-' 
+                            ? `<span class="badge bg-info" title="${p.status_message}">
+                                <i class="bi bi-clock-history me-1"></i>${p.time_group_name}
+                               </span>`
+                            : '<span class="text-muted">-</span>';
+                        
+                        // Status badge
+                        const statusBadge = p.is_active 
+                            ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Faol</span>'
+                            : '<span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>Nofaol</span>';
 
-                        const row = `<tr>
-                        <td><span class="badge bg-secondary">${pIndex}</span></td>
+                        const bindingsText = (p.bindings && p.bindings.length)
+                            ? p.bindings.map(b => `#${b.sw_if_index} (${b.direction})`).join(', ')
+                            : '<span class="text-muted">-</span>';
+
+                        const row = `<tr class="${!p.is_active ? 'table-secondary' : ''}">
                         <td><strong>${p.name}</strong></td>
                         <td>${p.cir} kbps</td>
                         <td>${p.cb} bytes</td>
-                        <td><span class="badge bg-info text-dark">1R2C</span></td>
+                        <td class="small">${bindingsText}</td>
+                        <td>${timeGroupBadge}</td>
+                        <td>${statusBadge}</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger" onclick="deletePolicer(${pIndex})">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePolicer('${p.name}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -224,10 +238,10 @@
         }
 
         // 4. Policer o'chirish
-        window.deletePolicer = function(index) {
+        window.deletePolicer = function(name) {
             if (!confirm('Haqiqatan ham ushbu policerni o\'chirmoqchimisiz?')) return;
 
-            fetch(`/api/policer/policy/${index}`, {
+            fetch(`/api/policer/policy/${encodeURIComponent(name)}`, {
                     method: 'DELETE'
                 })
                 .then(res => res.json())

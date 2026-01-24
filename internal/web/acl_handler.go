@@ -9,6 +9,7 @@ import (
 	"vpp-go-test/internal/logger"
 	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/vpp/acl"
+	"vpp-go-test/internal/vpp/time_group"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -25,9 +26,10 @@ func NewACLHandler(vppClient *vpp.VPPClient) *ACLHandler {
 // 1. CreateACL - Yangi ACL yaratish (POST /api/acl)
 func (h *ACLHandler) CreateACL(c *gin.Context) {
 	var req struct {
-		Tag        string         `json:"tag" binding:"required"`
-		IsStateful bool           `json:"is_stateful"`
-		Rules      []acl.WebInput `json:"rules" binding:"required"`
+		Tag         string         `json:"tag" binding:"required"`
+		IsStateful  bool           `json:"is_stateful"`
+		Rules       []acl.WebInput `json:"rules" binding:"required"`
+		TimeGroupID string         `json:"time_group_id"` // Optional time group
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -35,6 +37,51 @@ func (h *ACLHandler) CreateACL(c *gin.Context) {
 		return
 	}
 
+	// Vaqt guruhi tekshiruvi - agar time_group_id berilgan bo'lsa
+	if req.TimeGroupID != "" && req.TimeGroupID != "always" {
+		// Vaqt guruhi hozir faol emasligini tekshirish
+		if !h.VPP.TimeGroupManager.IsTimeGroupActiveNow(req.TimeGroupID) {
+			// Vaqt guruhi faol emas - pending qilish
+			rulesJSON := make([]map[string]interface{}, len(req.Rules))
+			for i, r := range req.Rules {
+				ruleBytes, _ := json.Marshal(r)
+				var ruleMap map[string]interface{}
+				json.Unmarshal(ruleBytes, &ruleMap)
+				rulesJSON[i] = ruleMap
+			}
+
+			pendingRule := &time_group.PendingACLRule{
+				Tag:         req.Tag,
+				Rules:       rulesJSON,
+				TimeGroupID: req.TimeGroupID,
+				IsStateful:  req.IsStateful,
+			}
+
+			if err := h.VPP.TimeGroupManager.AddPendingACLRule(pendingRule); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Pending qilishda xato: " + err.Error()})
+				return
+			}
+
+			// Logging
+			session := sessions.Default(c)
+			user := "system"
+			if userID := session.Get("user_id"); userID != nil {
+				user = userID.(string)
+			}
+			details, _ := json.Marshal(req)
+			logger.LogConfigChange(user, c.ClientIP(), "PENDING", "ACL", string(details))
+
+			c.JSON(http.StatusAccepted, gin.H{
+				"status":        "pending",
+				"pending_id":    pendingRule.ID,
+				"message":       "ACL vaqt guruhi faol emas - pending holatda saqlandi",
+				"time_group_id": req.TimeGroupID,
+			})
+			return
+		}
+	}
+
+	// Vaqt faol yoki time_group yo'q - VPP ga push qilish
 	var vppRules []acl_types.ACLRule
 	for _, r := range req.Rules {
 		rule, err := acl.CreateRuleFromWebInput(r, req.IsStateful)
@@ -51,9 +98,44 @@ func (h *ACLHandler) CreateACL(c *gin.Context) {
 		return
 	}
 
+	// Agar time_group_id berilgan bo'lsa, uni tayinlash
+	if req.TimeGroupID != "" && req.TimeGroupID != "always" {
+		aclID := fmt.Sprintf("%d", index)
+		_ = h.VPP.TimeGroupManager.AssignTimeGroupToRule(c.Request.Context(), "ACL", aclID, req.TimeGroupID)
+
+		// ACL yaratilganda backup yozish (last_active=true) - scheduler tekshiradi
+		// Agar vaqt guruhi hozir faol bo'lmasa, scheduler 1 daqiqa ichida o'chiradi
+		rulesForBackup := make([]map[string]interface{}, len(req.Rules))
+		for i, r := range req.Rules {
+			ruleBytes, _ := json.Marshal(r)
+			var ruleMap map[string]interface{}
+			json.Unmarshal(ruleBytes, &ruleMap)
+			rulesForBackup[i] = ruleMap
+		}
+
+		backupConfig := map[string]interface{}{
+			"acl_index": index,
+			"tag":       req.Tag,
+			"rules":     rulesForBackup,
+		}
+
+		// Backup yaratish - last_active=true bo'lgani uchun scheduler tekshiradi
+		_ = h.VPP.TimeGroupManager.SaveDisabledRuleBackup(&time_group.DisabledRuleBackup{
+			RuleType:      "ACL",
+			RuleID:        aclID,
+			Configuration: backupConfig,
+			Interfaces:    []time_group.InterfaceBinding{}, // hozircha interface yo'q
+			TimeGroupID:   req.TimeGroupID,
+			LastActive:    true, // Yangi yaratilgan - scheduler tekshiradi va kerak bo'lsa o'chiradi
+		})
+	}
+
 	// Logging
 	session := sessions.Default(c)
-	user := session.Get("user_id").(string)
+	user := "system"
+	if userID := session.Get("user_id"); userID != nil {
+		user = userID.(string)
+	}
 	details, _ := json.Marshal(req)
 	logger.LogConfigChange(user, c.ClientIP(), "CREATE", "ACL", string(details))
 
@@ -119,7 +201,43 @@ func (h *ACLHandler) ListACLs(c *gin.Context) {
 	if details == nil {
 		details = []acl.ACLDetail{}
 	}
-	c.JSON(http.StatusOK, details)
+
+	// Enhance with time group info and status
+	type ACLWithStatus struct {
+		acl.ACLDetail
+		TimeGroupName string `json:"time_group_name"`
+		TimeGroupID   string `json:"time_group_id"`
+		IsActive      bool   `json:"is_active"`
+		StatusMessage string `json:"status_message"`
+	}
+
+	enhancedList := make([]ACLWithStatus, 0, len(details))
+	for _, aclDetail := range details {
+		aclID := fmt.Sprintf("%d", aclDetail.ACLIndex)
+		enhanced := ACLWithStatus{
+			ACLDetail:     aclDetail,
+			TimeGroupName: "-",
+			TimeGroupID:   "",
+			IsActive:      true,
+			StatusMessage: "Har doim faol",
+		}
+
+		// Get time group assignments
+		groups, _ := h.VPP.TimeGroupManager.GetRuleTimeAssignments(c.Request.Context(), "ACL", aclID)
+		if len(groups) > 0 {
+			enhanced.TimeGroupName = groups[0].Name
+			enhanced.TimeGroupID = groups[0].ID
+
+			// Check if currently active
+			isActive, statusMsg, _ := h.VPP.TimeGroupManager.CheckIfRuleActive(c.Request.Context(), "ACL", aclID)
+			enhanced.IsActive = isActive
+			enhanced.StatusMessage = statusMsg
+		}
+
+		enhancedList = append(enhancedList, enhanced)
+	}
+
+	c.JSON(http.StatusOK, enhancedList)
 }
 
 // 4. ApplyToInterface - (POST /api/acl/interface/apply)
