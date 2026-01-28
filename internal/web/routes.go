@@ -307,6 +307,8 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				abfApi.POST("/policy", abfHandler.HandleCreatePolicy)
 				abfApi.POST("/attach", abfHandler.HandleAttachInterface)
 				abfApi.GET("/attachments", abfHandler.HandleGetAttachments)
+				abfApi.GET("/interfaces", abfHandler.HandleGetInterfacesForABF)        // Enriched interface list
+				abfApi.POST("/policies/bulk", abfHandler.HandleCreateMultiplePolicies) // Bulk create
 			}
 
 			// --- IP GROUPS API endpoints ---

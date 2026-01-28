@@ -16,6 +16,22 @@ import (
 	"vpp-go-test/binapi/ip_types"
 )
 
+// TLSInterfaceABFConfig - Per-interface ACL and ABF policy tracking
+type TLSInterfaceABFConfig struct {
+	InterfaceName  string `json:"interface_name"`
+	InterfaceIndex uint32 `json:"interface_index"`
+	ACLIndex       uint32 `json:"acl_index"`
+	ABFPolicyID    uint32 `json:"abf_policy_id"`
+}
+
+// TLSSavedNATState - Saved NAT state for an interface (to restore after TLS is disabled)
+type TLSSavedNATState struct {
+	InterfaceName  string `json:"interface_name"`
+	InterfaceIndex uint32 `json:"interface_index"`
+	WasNATInside   bool   `json:"was_nat_inside"`
+	WasNATOutside  bool   `json:"was_nat_outside"`
+}
+
 // TLSInterceptionConfig - Main configuration for TLS interception
 type TLSInterceptionConfig struct {
 	// TAP Interface Configuration
@@ -33,10 +49,12 @@ type TLSInterceptionConfig struct {
 	// LAN subnet to intercept
 	InterceptSubnet string `json:"intercept_subnet"` // e.g., 192.168.10.0/24
 
-	// LAN interface in VPP to attach ABF
-	LanInterface string `json:"lan_interface"` // e.g., vmxnet3-0/b/0/0
+	// LAN interfaces in VPP to attach ABF (supports multiple interfaces)
+	LanInterfaces []string `json:"lan_interfaces"` // e.g., ["vmxnet3-0/b/0/0", "GigabitEthernet0/8/0"]
+	// Deprecated: Use LanInterfaces instead. Kept for backwards compatibility.
+	LanInterface string `json:"lan_interface,omitempty"`
 
-	// ABF/ACL IDs
+	// ABF/ACL IDs (deprecated - now per-interface, kept for backwards compat)
 	ACLIndex  uint32 `json:"acl_index"`
 	ABFPolicy uint32 `json:"abf_policy"`
 
@@ -82,6 +100,12 @@ type TLSInterceptionManager struct {
 	// Created interface indices
 	tap0SwIfIndex uint32
 	tap1SwIfIndex uint32
+
+	// Per-interface ABF configurations (one ACL + ABF policy per LAN interface)
+	interfaceABFConfigs []TLSInterfaceABFConfig
+
+	// Saved NAT state for LAN interfaces (to restore when TLS is disabled)
+	savedNATStates []TLSSavedNATState
 }
 
 // NewTLSInterceptionManager creates a new TLS interception manager
@@ -105,7 +129,8 @@ func DefaultTLSInterceptionConfig() *TLSInterceptionConfig {
 		Tap0HostIP:       "203.0.113.2/30",
 		Tap1HostIP:       "203.0.113.6/30",
 		InterceptSubnet:  "192.168.10.0/24",
-		LanInterface:     "",
+		LanInterfaces:    []string{},
+		LanInterface:     "", // Deprecated
 		ACLIndex:         100,
 		ABFPolicy:        10,
 		MitmproxyPort:    8080,
@@ -113,6 +138,19 @@ func DefaultTLSInterceptionConfig() *TLSInterceptionConfig {
 		InterceptHTTP:    true,
 		InterceptHTTPS:   true,
 	}
+}
+
+// GetLanInterfaces returns the list of LAN interfaces (handles backwards compatibility)
+func (c *TLSInterceptionConfig) GetLanInterfaces() []string {
+	// If LanInterfaces is set, use it
+	if len(c.LanInterfaces) > 0 {
+		return c.LanInterfaces
+	}
+	// Backwards compatibility: use LanInterface if set
+	if c.LanInterface != "" {
+		return []string{c.LanInterface}
+	}
+	return []string{}
 }
 
 // GetConfig returns current configuration
@@ -321,7 +359,7 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 	if err != nil {
 		lastError = fmt.Sprintf("Failed to get interfaces: %v", err)
 		m.status.LastError = lastError
-		return fmt.Errorf(lastError)
+		return fmt.Errorf("%s", lastError)
 	}
 
 	// Check if TAP interfaces already exist by IP
@@ -365,8 +403,18 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 		fmt.Println("  ✅ VPP IPs configured")
 	}
 
+	// Step 2.5: Save NAT state for LAN interfaces and disable NAT on them
+	fmt.Println("\n📝 Step 2.5: Saving and disabling NAT on LAN interfaces...")
+	if err := m.saveAndDisableLANInterfacesNAT(ctx); err != nil {
+		fmt.Printf("  ⚠️  Failed to save/disable NAT on LAN interfaces: %v\n", err)
+	} else if len(m.savedNATStates) > 0 {
+		fmt.Printf("  ✅ Saved NAT state for %d interfaces and disabled NAT\n", len(m.savedNATStates))
+	} else {
+		fmt.Println("  ℹ️  No LAN interfaces had NAT configured")
+	}
+
 	// Step 3: Create ACL and ABF policy (check if exists)
-	fmt.Println("\n📝 Step 3: Creating ACL and ABF policy...")
+	fmt.Println("\n📝 Step 3: Creating ACL and ABF policy (per interface)...")
 	abfExists, _ := m.checkABFAndAttachmentsWithInterfaces(interfaces)
 	if abfExists {
 		m.status.ABFConfigured = true
@@ -462,11 +510,20 @@ func (m *TLSInterceptionManager) Disable(ctx context.Context) error {
 		fmt.Printf("  ⚠️  Failed to remove NAT44 from tap1: %v\n", err)
 	}
 
-	// Step 4: Remove ABF policy
+	// Step 4: Remove ABF policy (per-interface cleanup)
 	if err := m.removeABF(ctx); err != nil {
 		fmt.Printf("  ⚠️  Failed to remove ABF: %v\n", err)
 	}
 	m.status.ABFConfigured = false
+
+	// Step 4.5: Restore NAT state for LAN interfaces
+	fmt.Println("  📝 Restoring NAT state for LAN interfaces...")
+	if err := m.restoreLANInterfacesNAT(ctx); err != nil {
+		fmt.Printf("  ⚠️  Failed to restore NAT on LAN interfaces: %v\n", err)
+	} else if len(m.savedNATStates) > 0 {
+		fmt.Printf("  ✅ Restored NAT state for %d interfaces\n", len(m.savedNATStates))
+	}
+	m.savedNATStates = nil // Clear saved states
 
 	// Step 5: Delete TAP interfaces
 	if err := m.deleteTAPInterfaces(ctx); err != nil {
@@ -532,37 +589,14 @@ func (m *TLSInterceptionManager) configureVPPIPs(ctx context.Context) error {
 }
 
 func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
-	// Get LAN interface index
-	lanIfIndex, err := m.vppClient.GetInterfaceIndexByName(m.config.LanInterface)
-	if err != nil {
-		return fmt.Errorf("LAN interface '%s' not found: %v", m.config.LanInterface, err)
+	// Get LAN interfaces (supports multiple)
+	lanInterfaces := m.config.GetLanInterfaces()
+	if len(lanInterfaces) == 0 {
+		return fmt.Errorf("no LAN interfaces configured")
 	}
 
-	// Create ACL for TCP traffic from LAN subnet + DNS (UDP 53)
-	aclRules := []ACLRuleSimple{
-		// Allow DNS traffic (UDP port 53) - important for name resolution
-		{
-			Action:    "permit",
-			Protocol:  "udp",
-			SrcPrefix: m.config.InterceptSubnet,
-			DstPrefix: "0.0.0.0/0",
-			DstPort:   53,
-		},
-		// Allow TCP traffic for HTTP/HTTPS interception
-		{
-			Action:    "permit",
-			Protocol:  "tcp",
-			SrcPrefix: m.config.InterceptSubnet,
-			DstPrefix: "0.0.0.0/0",
-		},
-	}
-
-	aclIndex, err := m.vppClient.CreateSimpleACL(ctx, fmt.Sprintf("tls-intercept-%d", m.config.ACLIndex), aclRules)
-	if err != nil {
-		return fmt.Errorf("failed to create ACL: %v", err)
-	}
-	m.config.ACLIndex = aclIndex
-	fmt.Printf("  ✅ ACL created (index: %d) - TCP from %s\n", aclIndex, m.config.InterceptSubnet)
+	// Clear previous ABF configs
+	m.interfaceABFConfigs = nil
 
 	// Parse next-hop IP (kernel's tap0 IP without mask)
 	nextHopIP := strings.Split(m.config.Tap0HostIP, "/")[0]
@@ -571,7 +605,7 @@ func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
 		return fmt.Errorf("failed to parse next-hop IP: %v", err)
 	}
 
-	// Create FibPath for ABF
+	// Create FibPath for ABF (same for all interfaces, routes to tap0)
 	fibPaths := []fib_types.FibPath{
 		{
 			SwIfIndex: m.tap0SwIfIndex,
@@ -583,34 +617,160 @@ func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
 		},
 	}
 
-	// Create ABF policy
-	if err := m.vppClient.AbfManager.ConfigurePolicy(ctx, m.config.ABFPolicy, aclIndex, fibPaths, true); err != nil {
-		return fmt.Errorf("failed to create ABF policy: %v", err)
-	}
-	fmt.Printf("  ✅ ABF policy created (ID: %d) -> next-hop %s via tap0\n", m.config.ABFPolicy, nextHopIP)
+	// Create separate ACL and ABF policy for EACH LAN interface
+	baseACLIndex := m.config.ACLIndex
+	baseABFPolicy := m.config.ABFPolicy
 
-	// Attach ABF to LAN interface
-	if err := m.vppClient.AbfManager.AttachToInterface(ctx, m.config.ABFPolicy, lanIfIndex, 10, false, true); err != nil {
-		return fmt.Errorf("failed to attach ABF to interface: %v", err)
-	}
-	fmt.Printf("  ✅ ABF attached to %s (priority: 10)\n", m.config.LanInterface)
+	for i, lanIface := range lanInterfaces {
+		// Get interface index
+		lanIfIndex, err := m.vppClient.GetInterfaceIndexByName(lanIface)
+		if err != nil {
+			return fmt.Errorf("LAN interface '%s' not found: %v", lanIface, err)
+		}
 
+		// Calculate unique IDs for this interface
+		aclID := baseACLIndex + uint32(i)
+		abfPolicyID := baseABFPolicy + uint32(i)
+
+		// Create ACL for TCP traffic from LAN subnet + DNS (UDP 53)
+		aclRules := []ACLRuleSimple{
+			// Allow DNS traffic (UDP port 53) - important for name resolution
+			{
+				Action:    "permit",
+				Protocol:  "udp",
+				SrcPrefix: m.config.InterceptSubnet,
+				DstPrefix: "0.0.0.0/0",
+				DstPort:   53,
+			},
+			// Allow TCP traffic for HTTP/HTTPS interception
+			{
+				Action:    "permit",
+				Protocol:  "tcp",
+				SrcPrefix: m.config.InterceptSubnet,
+				DstPrefix: "0.0.0.0/0",
+			},
+		}
+
+		aclIndex, err := m.vppClient.CreateSimpleACL(ctx, fmt.Sprintf("tls-intercept-%s-%d", lanIface, aclID), aclRules)
+		if err != nil {
+			return fmt.Errorf("failed to create ACL for %s: %v", lanIface, err)
+		}
+		fmt.Printf("  ✅ ACL created for %s (index: %d) - TCP from %s\n", lanIface, aclIndex, m.config.InterceptSubnet)
+
+		// Create ABF policy for this interface
+		if err := m.vppClient.AbfManager.ConfigurePolicy(ctx, abfPolicyID, aclIndex, fibPaths, true); err != nil {
+			return fmt.Errorf("failed to create ABF policy for %s: %v", lanIface, err)
+		}
+		fmt.Printf("  ✅ ABF policy created for %s (ID: %d) -> next-hop %s via tap0\n", lanIface, abfPolicyID, nextHopIP)
+
+		// Attach ABF to this LAN interface
+		if err := m.vppClient.AbfManager.AttachToInterface(ctx, abfPolicyID, lanIfIndex, 10, false, true); err != nil {
+			return fmt.Errorf("failed to attach ABF to interface %s: %v", lanIface, err)
+		}
+		fmt.Printf("  ✅ ABF attached to %s (priority: 10)\n", lanIface)
+
+		// Track this interface's ABF config
+		m.interfaceABFConfigs = append(m.interfaceABFConfigs, TLSInterfaceABFConfig{
+			InterfaceName:  lanIface,
+			InterfaceIndex: lanIfIndex,
+			ACLIndex:       aclIndex,
+			ABFPolicyID:    abfPolicyID,
+		})
+	}
+
+	fmt.Printf("  ✅ Created %d separate ACL+ABF policies for %d LAN interfaces\n", len(m.interfaceABFConfigs), len(lanInterfaces))
 	return nil
 }
 
 func (m *TLSInterceptionManager) removeABF(ctx context.Context) error {
-	// Get LAN interface index
-	lanIfIndex, err := m.vppClient.GetInterfaceIndexByName(m.config.LanInterface)
-	if err == nil {
-		// Detach ABF from interface
-		_ = m.vppClient.AbfManager.AttachToInterface(ctx, m.config.ABFPolicy, lanIfIndex, 10, false, false)
+	fmt.Println("  📝 Removing ABF configuration...")
+
+	if m.vppClient.AbfManager == nil {
+		fmt.Println("  ⚠️  ABF manager not available")
+		return nil
 	}
 
-	// Delete ABF policy
-	_ = m.vppClient.AbfManager.ConfigurePolicy(ctx, m.config.ABFPolicy, m.config.ACLIndex, nil, false)
+	// Method 1: Use tracked per-interface configs if available
+	if len(m.interfaceABFConfigs) > 0 {
+		for _, cfg := range m.interfaceABFConfigs {
+			// Detach ABF from interface
+			if detachErr := m.vppClient.AbfManager.AttachToInterface(ctx, cfg.ABFPolicyID, cfg.InterfaceIndex, 10, false, false); detachErr != nil {
+				fmt.Printf("  ⚠️  Failed to detach ABF from %s: %v\n", cfg.InterfaceName, detachErr)
+			} else {
+				fmt.Printf("  ✅ Detached ABF from %s\n", cfg.InterfaceName)
+			}
 
-	// Delete ACL
-	_ = m.vppClient.ACLManager.DeleteACL(ctx, m.config.ACLIndex)
+			// Delete ABF policy
+			policies, err := m.vppClient.AbfManager.ListPolicies(ctx)
+			if err == nil {
+				for _, p := range policies {
+					if p.Policy.PolicyID == cfg.ABFPolicyID {
+						if delErr := m.vppClient.AbfManager.ConfigurePolicy(ctx, p.Policy.PolicyID, p.Policy.ACLIndex, p.Policy.Paths, false); delErr != nil {
+							fmt.Printf("  ⚠️  Failed to delete ABF policy %d: %v\n", cfg.ABFPolicyID, delErr)
+						} else {
+							fmt.Printf("  ✅ Deleted ABF policy %d\n", cfg.ABFPolicyID)
+						}
+						break
+					}
+				}
+			}
+
+			// Delete ACL
+			if m.vppClient.ACLManager != nil && cfg.ACLIndex > 0 {
+				if err := m.vppClient.ACLManager.DeleteACL(ctx, cfg.ACLIndex); err != nil {
+					fmt.Printf("  ⚠️  Failed to delete ACL %d: %v\n", cfg.ACLIndex, err)
+				} else {
+					fmt.Printf("  ✅ Deleted ACL %d\n", cfg.ACLIndex)
+				}
+			}
+		}
+		// Clear tracked configs
+		m.interfaceABFConfigs = nil
+		return nil
+	}
+
+	// Method 2: Fallback - scan all ABF policies and remove TLS-related ones
+	fmt.Println("  ℹ️  No tracked configs, scanning for TLS-related ABF policies...")
+
+	// Get all attachments and detach those matching our policy range
+	attachments, err := m.vppClient.AbfManager.ListInterfaceAttachments(ctx)
+	if err == nil {
+		for _, att := range attachments {
+			// Check if this is one of our TLS policies (within our range)
+			if att.Attach.PolicyID >= m.config.ABFPolicy && att.Attach.PolicyID < m.config.ABFPolicy+100 {
+				if detachErr := m.vppClient.AbfManager.AttachToInterface(ctx, att.Attach.PolicyID, uint32(att.Attach.SwIfIndex), att.Attach.Priority, att.Attach.IsIPv6, false); detachErr != nil {
+					fmt.Printf("  ⚠️  Failed to detach ABF policy %d from interface %d: %v\n", att.Attach.PolicyID, att.Attach.SwIfIndex, detachErr)
+				} else {
+					fmt.Printf("  ✅ Detached ABF policy %d from interface index %d\n", att.Attach.PolicyID, att.Attach.SwIfIndex)
+				}
+			}
+		}
+	}
+
+	// Get all policies and delete TLS-related ones
+	policies, err := m.vppClient.AbfManager.ListPolicies(ctx)
+	if err == nil {
+		for _, p := range policies {
+			// Check if this is one of our TLS policies
+			if p.Policy.PolicyID >= m.config.ABFPolicy && p.Policy.PolicyID < m.config.ABFPolicy+100 {
+				aclIndex := p.Policy.ACLIndex
+				if delErr := m.vppClient.AbfManager.ConfigurePolicy(ctx, p.Policy.PolicyID, p.Policy.ACLIndex, p.Policy.Paths, false); delErr != nil {
+					fmt.Printf("  ⚠️  Failed to delete ABF policy %d: %v\n", p.Policy.PolicyID, delErr)
+				} else {
+					fmt.Printf("  ✅ Deleted ABF policy %d\n", p.Policy.PolicyID)
+				}
+
+				// Delete associated ACL
+				if m.vppClient.ACLManager != nil && aclIndex > 0 {
+					if aclErr := m.vppClient.ACLManager.DeleteACL(ctx, aclIndex); aclErr != nil {
+						fmt.Printf("  ⚠️  Failed to delete ACL %d: %v\n", aclIndex, aclErr)
+					} else {
+						fmt.Printf("  ✅ Deleted ACL %d\n", aclIndex)
+					}
+				}
+			}
+		}
+	}
 
 	return nil
 }
@@ -646,13 +806,144 @@ func (m *TLSInterceptionManager) removeTap1NAT(ctx context.Context) error {
 	return nil
 }
 
+// saveAndDisableLANInterfacesNAT saves current NAT state for LAN interfaces and disables NAT on them
+// This is necessary because TLS interception uses ABF to redirect traffic, which conflicts with NAT
+func (m *TLSInterceptionManager) saveAndDisableLANInterfacesNAT(ctx context.Context) error {
+	if m.vppClient.NatManager == nil {
+		return fmt.Errorf("NAT manager not available")
+	}
+
+	// Get configured LAN interfaces
+	lanInterfaces := m.config.GetLanInterfaces()
+	if len(lanInterfaces) == 0 {
+		return nil
+	}
+
+	// Get current NAT interface configurations
+	natInterfaces, err := m.vppClient.NatManager.GetNatInterfaces(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get NAT interfaces: %v", err)
+	}
+
+	// Build a map of interface index -> NAT state
+	natStateMap := make(map[uint32]struct {
+		isInside  bool
+		isOutside bool
+	})
+	for _, natIface := range natInterfaces {
+		state := natStateMap[natIface.SwIfIndex]
+		if natIface.IsInside {
+			state.isInside = true
+		} else {
+			state.isOutside = true
+		}
+		natStateMap[natIface.SwIfIndex] = state
+	}
+
+	// Clear previous saved states
+	m.savedNATStates = nil
+
+	// Check each LAN interface and save/disable NAT if configured
+	for _, lanIface := range lanInterfaces {
+		lanIfIndex, err := m.vppClient.GetInterfaceIndexByName(lanIface)
+		if err != nil {
+			fmt.Printf("  ⚠️  LAN interface '%s' not found, skipping NAT check\n", lanIface)
+			continue
+		}
+
+		natState, hasNAT := natStateMap[lanIfIndex]
+		if !hasNAT {
+			// No NAT configured on this interface
+			continue
+		}
+
+		// Save NAT state
+		savedState := TLSSavedNATState{
+			InterfaceName:  lanIface,
+			InterfaceIndex: lanIfIndex,
+			WasNATInside:   natState.isInside,
+			WasNATOutside:  natState.isOutside,
+		}
+		m.savedNATStates = append(m.savedNATStates, savedState)
+
+		// Disable NAT on this interface
+		if natState.isInside {
+			if err := m.vppClient.NatManager.SetInterfaceNAT(ctx, lanIfIndex, true, false); err != nil {
+				fmt.Printf("  ⚠️  Failed to disable NAT inside on %s: %v\n", lanIface, err)
+			} else {
+				fmt.Printf("  ✅ Disabled NAT inside on %s (will restore later)\n", lanIface)
+			}
+		}
+		if natState.isOutside {
+			if err := m.vppClient.NatManager.SetInterfaceNAT(ctx, lanIfIndex, false, false); err != nil {
+				fmt.Printf("  ⚠️  Failed to disable NAT outside on %s: %v\n", lanIface, err)
+			} else {
+				fmt.Printf("  ✅ Disabled NAT outside on %s (will restore later)\n", lanIface)
+			}
+		}
+	}
+
+	return nil
+}
+
+// restoreLANInterfacesNAT restores NAT state for LAN interfaces that were saved before TLS interception
+func (m *TLSInterceptionManager) restoreLANInterfacesNAT(ctx context.Context) error {
+	if m.vppClient.NatManager == nil {
+		return fmt.Errorf("NAT manager not available")
+	}
+
+	if len(m.savedNATStates) == 0 {
+		fmt.Println("  ℹ️  No saved NAT states to restore")
+		return nil
+	}
+
+	for _, saved := range m.savedNATStates {
+		// Restore NAT inside if it was configured
+		if saved.WasNATInside {
+			if err := m.vppClient.NatManager.SetInterfaceNAT(ctx, saved.InterfaceIndex, true, true); err != nil {
+				fmt.Printf("  ⚠️  Failed to restore NAT inside on %s: %v\n", saved.InterfaceName, err)
+			} else {
+				fmt.Printf("  ✅ Restored NAT inside on %s\n", saved.InterfaceName)
+			}
+		}
+
+		// Restore NAT outside if it was configured
+		if saved.WasNATOutside {
+			if err := m.vppClient.NatManager.SetInterfaceNAT(ctx, saved.InterfaceIndex, false, true); err != nil {
+				fmt.Printf("  ⚠️  Failed to restore NAT outside on %s: %v\n", saved.InterfaceName, err)
+			} else {
+				fmt.Printf("  ✅ Restored NAT outside on %s\n", saved.InterfaceName)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (m *TLSInterceptionManager) deleteTAPInterfaces(ctx context.Context) error {
+	fmt.Println("  📝 Deleting TAP interfaces...")
+
+	// Delete tap0
 	if m.tap0SwIfIndex != 0 {
-		_ = m.vppClient.DeleteInterface(m.tap0SwIfIndex, fmt.Sprintf("tap%d", m.config.Tap0ID))
+		if err := m.vppClient.DeleteInterface(m.tap0SwIfIndex, fmt.Sprintf("tap%d", m.config.Tap0ID)); err != nil {
+			fmt.Printf("  ⚠️  Failed to delete tap0 (idx=%d): %v\n", m.tap0SwIfIndex, err)
+		} else {
+			fmt.Printf("  ✅ Deleted tap0 (idx=%d)\n", m.tap0SwIfIndex)
+		}
+		m.tap0SwIfIndex = 0
 	}
+
+	// Delete tap1
 	if m.tap1SwIfIndex != 0 {
-		_ = m.vppClient.DeleteInterface(m.tap1SwIfIndex, fmt.Sprintf("tap%d", m.config.Tap1ID))
+		if err := m.vppClient.DeleteInterface(m.tap1SwIfIndex, fmt.Sprintf("tap%d", m.config.Tap1ID)); err != nil {
+			fmt.Printf("  ⚠️  Failed to delete tap1 (idx=%d): %v\n", m.tap1SwIfIndex, err)
+		} else {
+			fmt.Printf("  ✅ Deleted tap1 (idx=%d)\n", m.tap1SwIfIndex)
+		}
+		m.tap1SwIfIndex = 0
 	}
+
+	fmt.Println("  ✅ TAP interface cleanup completed")
 	return nil
 }
 
@@ -763,18 +1054,48 @@ func (m *TLSInterceptionManager) iptablesRuleExists(table, chain string, ruleArg
 }
 
 func (m *TLSInterceptionManager) cleanupKernel() error {
+	fmt.Println("  📝 Cleaning up kernel networking rules...")
 	proxyPort := fmt.Sprintf("%d", m.config.MitmproxyPort)
 	tap1VppIP := strings.Split(m.config.Tap1VppIP, "/")[0]
 
-	// Remove iptables rules (ignore errors if not exist)
-	_ = m.runCommand("iptables", "-t", "nat", "-D", "PREROUTING", "-i", m.config.Tap0HostName,
-		"-p", "tcp", "--dport", "80", "-j", "REDIRECT", "--to-port", proxyPort)
-	_ = m.runCommand("iptables", "-t", "nat", "-D", "PREROUTING", "-i", m.config.Tap0HostName,
-		"-p", "tcp", "--dport", "443", "-j", "REDIRECT", "--to-port", proxyPort)
-	_ = m.runCommand("iptables", "-t", "nat", "-D", "POSTROUTING", "-o", m.config.Tap1HostName, "-j", "MASQUERADE")
+	// Remove HTTP redirect rule
+	if m.iptablesRuleExists("nat", "PREROUTING", "-i", m.config.Tap0HostName, "-p", "tcp", "--dport", "80", "-j", "REDIRECT", "--to-port", proxyPort) {
+		if err := m.runCommand("iptables", "-t", "nat", "-D", "PREROUTING", "-i", m.config.Tap0HostName,
+			"-p", "tcp", "--dport", "80", "-j", "REDIRECT", "--to-port", proxyPort); err != nil {
+			fmt.Printf("  ⚠️  Failed to remove HTTP redirect rule: %v\n", err)
+		} else {
+			fmt.Println("  ✅ Removed HTTP redirect rule")
+		}
+	}
 
-	// Remove route
-	_ = m.runCommand("ip", "route", "del", "default", "via", tap1VppIP, "dev", m.config.Tap1HostName)
+	// Remove HTTPS redirect rule
+	if m.iptablesRuleExists("nat", "PREROUTING", "-i", m.config.Tap0HostName, "-p", "tcp", "--dport", "443", "-j", "REDIRECT", "--to-port", proxyPort) {
+		if err := m.runCommand("iptables", "-t", "nat", "-D", "PREROUTING", "-i", m.config.Tap0HostName,
+			"-p", "tcp", "--dport", "443", "-j", "REDIRECT", "--to-port", proxyPort); err != nil {
+			fmt.Printf("  ⚠️  Failed to remove HTTPS redirect rule: %v\n", err)
+		} else {
+			fmt.Println("  ✅ Removed HTTPS redirect rule")
+		}
+	}
+
+	// Remove MASQUERADE rule
+	if m.iptablesRuleExists("nat", "POSTROUTING", "-o", m.config.Tap1HostName, "-j", "MASQUERADE") {
+		if err := m.runCommand("iptables", "-t", "nat", "-D", "POSTROUTING", "-o", m.config.Tap1HostName, "-j", "MASQUERADE"); err != nil {
+			fmt.Printf("  ⚠️  Failed to remove MASQUERADE rule: %v\n", err)
+		} else {
+			fmt.Println("  ✅ Removed MASQUERADE rule")
+		}
+	}
+
+	// Remove default route via tap1
+	// First check if route exists
+	if out, _ := exec.Command("ip", "route", "show", "default", "via", tap1VppIP, "dev", m.config.Tap1HostName).Output(); len(out) > 0 {
+		if err := m.runCommand("ip", "route", "del", "default", "via", tap1VppIP, "dev", m.config.Tap1HostName); err != nil {
+			fmt.Printf("  ⚠️  Failed to remove default route: %v\n", err)
+		} else {
+			fmt.Printf("  ✅ Removed default route via %s\n", m.config.Tap1HostName)
+		}
+	}
 
 	// Restore DNS from backup if exists
 	if _, err := os.Stat("/etc/resolv.conf.bak.tls"); err == nil {
@@ -783,7 +1104,7 @@ func (m *TLSInterceptionManager) cleanupKernel() error {
 		fmt.Println("  ✅ DNS restored from backup")
 	}
 
-	fmt.Println("  ✅ Kernel rules cleaned up")
+	fmt.Println("  ✅ Kernel rules cleanup completed")
 	return nil
 }
 
@@ -948,18 +1269,37 @@ func (m *TLSInterceptionManager) GenerateVPPScript() string {
 	sb.WriteString(fmt.Sprintf("set interface ip address tap%d %s\n", m.config.Tap0ID, m.config.Tap0VppIP))
 	sb.WriteString(fmt.Sprintf("set interface ip address tap%d %s\n\n", m.config.Tap1ID, m.config.Tap1VppIP))
 
-	sb.WriteString("## 3. ABF Policy (The \"Traffic Hook\")\n")
-	sb.WriteString("# Define which traffic to intercept\n")
-	sb.WriteString(fmt.Sprintf("acl edit %d permit tcp src %s dst 0.0.0.0/0\n\n", m.config.ACLIndex, m.config.InterceptSubnet))
-
+	sb.WriteString("## 3. ABF Policy (Per-Interface - separate ACL+ABF for each LAN interface)\n")
+	lanInterfaces := m.config.GetLanInterfaces()
 	nextHopIP := strings.Split(m.config.Tap0HostIP, "/")[0]
-	sb.WriteString("# Define the path to the kernel\n")
-	sb.WriteString(fmt.Sprintf("abf policy add id %d acl %d via %s tap%d\n\n",
-		m.config.ABFPolicy, m.config.ACLIndex, nextHopIP, m.config.Tap0ID))
 
-	sb.WriteString("# Attach policy to LAN interface\n")
-	sb.WriteString(fmt.Sprintf("abf attach slot 1 policy id %d interface %s\n",
-		m.config.ABFPolicy, m.config.LanInterface))
+	if len(lanInterfaces) == 0 {
+		sb.WriteString("# WARNING: No LAN interfaces configured!\n")
+		sb.WriteString("# Example for single interface:\n")
+		sb.WriteString(fmt.Sprintf("# acl edit %d permit udp src %s dst 0.0.0.0/0 dstport 53\n", m.config.ACLIndex, m.config.InterceptSubnet))
+		sb.WriteString(fmt.Sprintf("# acl edit %d permit tcp src %s dst 0.0.0.0/0\n", m.config.ACLIndex, m.config.InterceptSubnet))
+		sb.WriteString(fmt.Sprintf("# abf policy add id %d acl %d via %s tap%d\n", m.config.ABFPolicy, m.config.ACLIndex, nextHopIP, m.config.Tap0ID))
+		sb.WriteString(fmt.Sprintf("# abf attach policy id %d interface <YOUR_LAN_INTERFACE>\n\n", m.config.ABFPolicy))
+	} else {
+		for i, iface := range lanInterfaces {
+			aclID := m.config.ACLIndex + uint32(i)
+			abfPolicyID := m.config.ABFPolicy + uint32(i)
+
+			sb.WriteString(fmt.Sprintf("\n# --- Interface: %s (ACL=%d, ABF Policy=%d) ---\n", iface, aclID, abfPolicyID))
+			sb.WriteString(fmt.Sprintf("acl edit %d permit udp src %s dst 0.0.0.0/0 dstport 53\n", aclID, m.config.InterceptSubnet))
+			sb.WriteString(fmt.Sprintf("acl edit %d permit tcp src %s dst 0.0.0.0/0\n", aclID, m.config.InterceptSubnet))
+			sb.WriteString(fmt.Sprintf("abf policy add id %d acl %d via %s tap%d\n", abfPolicyID, aclID, nextHopIP, m.config.Tap0ID))
+			sb.WriteString(fmt.Sprintf("abf attach policy id %d interface %s\n", abfPolicyID, iface))
+		}
+		sb.WriteString("\n")
+	}
+
+	sb.WriteString("## 4. Disable NAT on LAN interfaces (if previously configured)\n")
+	sb.WriteString("# NAT must be disabled on LAN interfaces for TLS interception to work\n")
+	for _, iface := range lanInterfaces {
+		sb.WriteString(fmt.Sprintf("# set interface nat44 in %s del\n", iface))
+	}
+	sb.WriteString("\n")
 
 	return sb.String()
 }

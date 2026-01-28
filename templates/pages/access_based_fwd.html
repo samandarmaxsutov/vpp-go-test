@@ -19,8 +19,11 @@
                             <input type="number" class="form-control" id="policy_id" min="1" placeholder="Masalan: 1" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">ACL Index</label>
-                            <input type="number" class="form-control" id="acl_index" placeholder="ACL tartib raqami" required>
+                            <label class="form-label">ACL</label>
+                            <select class="form-select" id="acl_select" required>
+                                <option value="">ACL tanlang...</option>
+                            </select>
+                            <small class="text-muted">ACL index: <span id="selected_acl_index">-</span></small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Next-Hop IP</label>
@@ -42,13 +45,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Policy ID</label>
-                                <input type="number" class="form-control" id="attach_policy_id" required>
+                                <select class="form-select" id="attach_policy_id" required>
+                                    <option value="">Policy tanlang...</option>
+                                </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Interfeys</label>
                                 <select class="form-select" id="sw_if_index_select" required>
                                     <option value="">Interfeysni tanlang...</option>
-                                    </select>
+                                </select>
                             </div>
                         </div>
                         <div class="row">
@@ -103,8 +108,8 @@
                     <table class="table table-sm table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>IfIndex</th>
+                                <th>Policy</th>
+                                <th>Interfeys</th>
                                 <th>Priority</th>
                                 <th>Amal</th>
                             </tr>
@@ -118,34 +123,69 @@
 </div>
 
 <script>
+    // Global cache for interfaces and ACLs
+    let interfacesCache = [];
+    let aclsCache = [];
+    let policiesCache = [];
+
     // Sahifa yuklanganda barcha ma'lumotlarni olish
     window.onload = function() {
         loadInterfaces();
+        loadACLs();
         loadAbfPolicies();
         loadAbfAttachments();
     };
 
-    // 1. Interfeyslarni yuklash (Select uchun)
+    // 1. Interfeyslarni yuklash (enriched data)
     async function loadInterfaces() {
-        const res = await fetch('/api/interfaces');
-        const ifaces = await res.json();
-        const select = document.getElementById('sw_if_index_select');
-        ifaces.forEach(i => {
-            if (i.name !== 'local0') {
+        try {
+            const res = await fetch('/api/abf/interfaces');
+            interfacesCache = await res.json();
+            const select = document.getElementById('sw_if_index_select');
+            select.innerHTML = '<option value="">Interfeysni tanlang...</option>';
+            
+            interfacesCache.forEach(i => {
                 const opt = document.createElement('option');
                 opt.value = i.index;
-                opt.text = `${i.name} (Idx: ${i.index})`;
+                opt.text = i.display_name;
+                opt.title = `Name: ${i.name}, Tag: ${i.tag || '-'}, IPs: ${i.ip_addresses.join(', ') || '-'}`;
                 select.add(opt);
-            }
-        });
+            });
+        } catch (err) {
+            console.error('Interfaces loading error:', err);
+        }
     }
 
-    // 2. Policy Yaratish
+    // 2. ACL larni yuklash
+    async function loadACLs() {
+        try {
+            const res = await fetch('/api/acl');
+            aclsCache = await res.json();
+            const select = document.getElementById('acl_select');
+            select.innerHTML = '<option value="">ACL tanlang...</option>';
+            
+            aclsCache.forEach(acl => {
+                const opt = document.createElement('option');
+                opt.value = acl.acl_index;
+                opt.text = acl.tag ? `${acl.tag} (ID: ${acl.acl_index})` : `ACL-${acl.acl_index}`;
+                select.add(opt);
+            });
+
+            // Update selected ACL index display
+            select.addEventListener('change', function() {
+                document.getElementById('selected_acl_index').textContent = this.value || '-';
+            });
+        } catch (err) {
+            console.error('ACL loading error:', err);
+        }
+    }
+
+    // 3. Policy Yaratish
     document.getElementById('abfPolicyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = {
             policy_id: parseInt(document.getElementById('policy_id').value),
-            acl_index: parseInt(document.getElementById('acl_index').value),
+            acl_index: parseInt(document.getElementById('acl_select').value),
             next_hop: document.getElementById('next_hop').value.trim(),
             is_add: true
         };
@@ -159,7 +199,7 @@
         loadAbfPolicies();
     });
 
-    // 3. Attach (Biriktirish)
+    // 4. Attach (Biriktirish)
     document.getElementById('abfAttachForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = {
@@ -179,65 +219,95 @@
         loadAbfAttachments();
     });
 
-    // 4. Policy Ro'yxatini yuklash
+    // 5. Policy Ro'yxatini yuklash (enriched with ACL names)
     async function loadAbfPolicies() {
-        const res = await fetch('/api/abf/policies');
-        const policies = await res.json();
-        const tbody = document.getElementById('abfTableBody');
-        tbody.innerHTML = '';
-        
-        if(!policies) return;
+        try {
+            const res = await fetch('/api/abf/policies');
+            policiesCache = await res.json();
+            const tbody = document.getElementById('abfTableBody');
+            tbody.innerHTML = '';
+            
+            // Update policy dropdown
+            const policySelect = document.getElementById('attach_policy_id');
+            policySelect.innerHTML = '<option value="">Policy tanlang...</option>';
 
-        policies.forEach(p => {
-            const pId = p.policy.policy_id;
-            const aIdx = p.policy.acl_index || 0;
-            let firstIp = "";
-            const paths = p.policy.paths.map((path, idx) => {
-                const bytes = path.nh.address.XXX_UnionData;
-                const ip = `${bytes[0]}.${bytes[1]}.${bytes[2]}.${bytes[3]}`;
-                if (idx === 0) firstIp = ip;
-                return ip;
-            }).join(', ');
+            if(!policiesCache || policiesCache.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Hech qanday policy topilmadi</td></tr>';
+                return;
+            }
 
-            tbody.innerHTML += `
-                <tr>
-                    <td>${pId}</td>
-                    <td>${aIdx}</td>
-                    <td><small>${paths}</small></td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="deletePolicy(${pId}, ${aIdx}, '${firstIp}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-        });
+            policiesCache.forEach(p => {
+                const pId = p.policy_id;
+                const aclTag = p.acl_tag || `ACL-${p.acl_index}`;
+                const nextHops = p.next_hops ? p.next_hops.join(', ') : '-';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${pId}</strong></td>
+                        <td>
+                            <span class="badge bg-info">${aclTag}</span>
+                            <small class="text-muted d-block">Index: ${p.acl_index}</small>
+                        </td>
+                        <td><code>${nextHops}</code></td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deletePolicy(${pId}, ${p.acl_index}, '${p.next_hops ? p.next_hops[0] : '0.0.0.0'}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+
+                // Add to dropdown
+                const opt = document.createElement('option');
+                opt.value = pId;
+                opt.text = `Policy ${pId} (${aclTag})`;
+                policySelect.add(opt);
+            });
+        } catch (err) {
+            console.error('Policies loading error:', err);
+        }
     }
 
-    // 5. Attachment Ro'yxatini yuklash
+    // 6. Attachment Ro'yxatini yuklash (enriched with interface info)
     async function loadAbfAttachments() {
-        const res = await fetch('/api/abf/attachments');
-        const attaches = await res.json();
-        const tbody = document.getElementById('attachTableBody');
-        tbody.innerHTML = '';
+        try {
+            const res = await fetch('/api/abf/attachments');
+            const attaches = await res.json();
+            const tbody = document.getElementById('attachTableBody');
+            tbody.innerHTML = '';
 
-        if(!attaches) return;
+            if(!attaches || attaches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Hech qanday biriktirma topilmadi</td></tr>';
+                return;
+            }
 
-        attaches.forEach(a => {
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${a.attach.policy_id}</b></td>
-                    <td>Idx: ${a.attach.sw_if_index}</td>
-                    <td>${a.attach.priority}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="detachInterface(${a.attach.policy_id}, ${a.attach.sw_if_index}, ${a.attach.priority})">
-                            <i class="bi bi-link-45deg"></i> Uzish
-                        </button>
-                    </td>
-                </tr>`;
-        });
+            attaches.forEach(a => {
+                // Build interface display
+                let ifaceDisplay = a.interface_name || `Idx: ${a.sw_if_index}`;
+                if (a.interface_tag && a.interface_tag !== a.interface_name) {
+                    ifaceDisplay = `${a.interface_name} <small class="text-muted">(${a.interface_tag})</small>`;
+                }
+                if (a.interface_ip) {
+                    ifaceDisplay += `<br><small class="text-success">${a.interface_ip}</small>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${a.policy_id}</strong></td>
+                        <td>${ifaceDisplay}</td>
+                        <td><span class="badge bg-secondary">${a.priority}</span></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="detachInterface(${a.policy_id}, ${a.sw_if_index}, ${a.priority})">
+                                <i class="bi bi-link-45deg"></i> Uzish
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            console.error('Attachments loading error:', err);
+        }
     }
 
-    // 6. Detach (Interfeysdan uzish)
+    // 7. Detach (Interfeysdan uzish)
     async function detachInterface(pId, swIdx, priority) {
         if(!confirm("Ushbu interfeysdan siyosatni uzasizmi?")) return;
         const data = {
@@ -256,7 +326,7 @@
         loadAbfAttachments();
     }
 
-    // 7. Policy o'chirish
+    // 8. Policy o'chirish
     async function deletePolicy(pId, aIdx, ip) {
         if(!confirm("Policy o'chirilsinmi? (Eslatma: Avval interfeysdan uzing!)")) return;
         const data = { policy_id: pId, acl_index: aIdx, next_hop: ip, is_add: false };
@@ -268,6 +338,15 @@
         const result = await res.json();
         alert(result.message || "O'chirildi");
         loadAbfPolicies();
+    }
+
+    // Helper: Get interface name by index from cache
+    function getInterfaceName(idx) {
+        const iface = interfacesCache.find(i => i.index === idx);
+        if (iface) {
+            return iface.tag || iface.name;
+        }
+        return `Idx: ${idx}`;
     }
 </script>
 {{ end }}
