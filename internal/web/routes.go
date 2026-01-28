@@ -151,6 +151,14 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				"user":   session.Get("user_id"),
 			})
 		})
+		protected.GET("/tls-interception", func(c *gin.Context) {
+			session := sessions.Default(c)
+			c.HTML(200, "tls_interception.html", gin.H{
+				"title":  "TLS Interception",
+				"active": "tls_interception_page",
+				"user":   session.Get("user_id"),
+			})
+		})
 
 		api := protected.Group("/api")
 		{
@@ -315,6 +323,24 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				ipGroupsApi.GET("/:id/download", ipGroupsHandler.HandleDownloadGroup) // GET download group
 				ipGroupsApi.PUT("/:id", ipGroupsHandler.HandleUpdateGroup)            // PUT update group
 				ipGroupsApi.DELETE("/:id", ipGroupsHandler.HandleDeleteGroup)         // DELETE group
+			}
+
+			// --- TLS INTERCEPTION API endpoints ---
+			tlsHandler := NewTLSInterceptionHandler(client)
+			tlsApi := api.Group("/tls-interception")
+			{
+				tlsApi.GET("/status", tlsHandler.GetStatus)                      // GET full status
+				tlsApi.GET("/simple-status", tlsHandler.GetSimpleStatus)         // GET user-friendly status
+				tlsApi.GET("/logs", tlsHandler.GetLogs)                          // GET inspection logs
+				tlsApi.GET("/config", tlsHandler.GetConfig)                      // GET current config
+				tlsApi.PUT("/config", tlsHandler.UpdateConfig)                   // PUT update config
+				tlsApi.POST("/enable", tlsHandler.Enable)                        // POST enable interception
+				tlsApi.POST("/disable", tlsHandler.Disable)                      // POST disable interception
+				tlsApi.GET("/scripts", tlsHandler.GetAllScripts)                 // GET all scripts
+				tlsApi.GET("/scripts/vpp", tlsHandler.GetVPPScript)              // GET VPP script
+				tlsApi.GET("/scripts/kernel", tlsHandler.GetKernelScript)        // GET kernel script
+				tlsApi.GET("/scripts/mitmproxy", tlsHandler.GetMitmproxyCommand) // GET mitmproxy cmd
+				tlsApi.POST("/scripts/save", tlsHandler.SaveScripts)             // POST save scripts to disk
 			}
 		}
 	}

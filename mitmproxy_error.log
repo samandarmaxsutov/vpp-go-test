@@ -1,0 +1,33 @@
+usage: mitmdump [options] [filter]
+mitmdump: error: unrecognized arguments: --web-port
+
+192.168.10.10:56874: POST https://www.instagram.com/error/ig_web_error_reports/?d… HTTP/2.0
+         << HTTP/2.0 200 OK 0b
+192.168.10.10:56874: GET https://www.instagram.com/ HTTP/2.0
+         << HTTP/2.0 200 OK 121k
+192.168.10.10:56874: POST https://www.instagram.com/ajax/qm/?__a=1&__user=0&__com… HTTP/2.0
+         << HTTP/2.0 200 OK 106b
+192.168.10.10:56874: POST https://www.instagram.com/ajax/bz?__a=1&__ccg=GOOD&__co… HTTP/2.0
+         << HTTP/2.0 200 OK 106b
+192.168.10.10:56874: GET https://www.instagram.com/data/manifest.json/ HTTP/2.0
+         << HTTP/2.0 200 OK 489b
+192.168.10.10:56874: POST https://www.instagram.com/ajax/bulk-route-definitions/ HTTP/2.0
+         << HTTP/2.0 200 OK 1.4k
+192.168.10.10:56874: POST https://www.instagram.com/ajax/bulk-route-definitions/ HTTP/2.0
+         << HTTP/2.0 200 OK 1.2k
+192.168.10.10:56874: POST https://www.instagram.com/ajax/bulk-route-definitions/ HTTP/2.0
+         << HTTP/2.0 200 OK 5.0k
+192.168.10.10:49958: GET https://www.facebook.com/ig_xsite_user_obid/ HTTP/2.0
+         << HTTP/2.0 200 OK 34b
+192.168.10.10:49958: GET https://www.facebook.com/ig_xsite_user_info/ HTTP/2.0
+         << HTTP/2.0 200 OK 69b
+192.168.10.10:56874: POST https://www.instagram.com/ajax/bz?__a=1&__ccg=GOOD&__co… HTTP/2.0
+         << HTTP/2.0 200 OK 106b
+192.168.10.10:56874: GET https://www.instagram.com/ajax/bootloader-endpoint/?mod… HTTP/2.0
+         << HTTP/2.0 200 OK 107k
+192.168.10.10:56874: POST https://www.instagram.com/error/ig_web_error_reports/?d… HTTP/2.0
+         << HTTP/2.0 200 OK 0b
+192.168.10.10:56874: POST https://www.instagram.com/ajax/bz?__a=1&__ccg=GOOD&__co… HTTP/2.0
+         << HTTP/2.0 200 OK 106b
+192.168.10.10:53100: GET http://connectivity-check.ubuntu.com./
+                  << 204 No Content 0b

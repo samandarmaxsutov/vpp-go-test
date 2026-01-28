@@ -32,6 +32,13 @@ type InterfaceInfo struct {
 // --- INTERFACE LIST & STATS ---
 
 func (v *VPPClient) GetActiveDHCPClients() map[uint32]bool {
+	v.apiMutex.Lock()
+	defer v.apiMutex.Unlock()
+	return v.getActiveDHCPClientsUnsafe()
+}
+
+// getActiveDHCPClientsUnsafe - internal version without mutex (caller must hold lock)
+func (v *VPPClient) getActiveDHCPClientsUnsafe() map[uint32]bool {
 	dhcpMap := make(map[uint32]bool)
 	req := &dhcp.DHCPClientDump{}
 	stream := v.Channel.SendMultiRequest(req)
@@ -50,7 +57,11 @@ func (v *VPPClient) GetActiveDHCPClients() map[uint32]bool {
 	return dhcpMap
 }
 func (v *VPPClient) GetInterfaces() ([]InterfaceInfo, error) {
-	activeDHCPs := v.GetActiveDHCPClients()
+	// Lock to prevent concurrent VPP API calls
+	v.apiMutex.Lock()
+	defer v.apiMutex.Unlock()
+
+	activeDHCPs := v.getActiveDHCPClientsUnsafe()
 	var result []InterfaceInfo
 
 	// 1. Avval interfeyslarni VPPdan o'qiymiz
@@ -563,7 +574,7 @@ func (v *VPPClient) CreateVmxnet3(pciAddr uint32, rxSize uint16, txSize uint16) 
 	// }
 
 	req := &vmxnet3.Vmxnet3Create{
-		PciAddr:   pciAddr, 
+		PciAddr:   pciAddr,
 		RxqSize:   1024,
 		RxqNum:    1,
 		TxqSize:   1024,
@@ -642,71 +653,125 @@ func ParsePciAddress(address string) uint32 {
 	return pci
 }
 
-
 // PCIDevice - Frontend uchun PCI qurilma ma'lumoti
 type PCIDevice struct {
-    PciAddr     string `json:"pci_addr"`    // 0000:03:00.0
-    PciValue    uint32 `json:"pci_value"`   // 196608
-    Description string `json:"description"` // VMware VMXNET3
-    IsBound     bool   `json:"is_bound"`    // VPP interfeysi bormi?
+	PciAddr     string `json:"pci_addr"`    // 0000:03:00.0
+	PciValue    uint32 `json:"pci_value"`   // 196608
+	Description string `json:"description"` // VMware VMXNET3
+	IsBound     bool   `json:"is_bound"`    // VPP interfeysi bormi?
 }
 
 func (v *VPPClient) GetLinuxPciDevices() ([]PCIDevice, error) {
-    var devices []PCIDevice
-    
-    // 1. VPP-da allaqachon yaratilgan interfeyslarni olamiz
-    boundPciMap := make(map[uint32]bool)
-    existingVmx3, _ := v.GetVmxnet3Details()
-    for _, item := range existingVmx3 {
-        boundPciMap[uint32(item.PciAddr)] = true
-    }
+	var devices []PCIDevice
 
-    pciRoot := "/sys/bus/pci/devices"
-    entries, err := os.ReadDir(pciRoot)
-    if err != nil {
-        return nil, err
-    }
+	// 1. VPP-da allaqachon yaratilgan interfeyslarni olamiz
+	boundPciMap := make(map[uint32]bool)
+	existingVmx3, _ := v.GetVmxnet3Details()
+	for _, item := range existingVmx3 {
+		boundPciMap[uint32(item.PciAddr)] = true
+	}
 
-    for _, entry := range entries {
-        pciAddr := entry.Name()
-        
-        // Vendor va Device ID o'qish
-        vByte, _ := os.ReadFile(filepath.Join(pciRoot, pciAddr, "vendor"))
-        dByte, _ := os.ReadFile(filepath.Join(pciRoot, pciAddr, "device"))
-        vendor := strings.TrimSpace(string(vByte))
-        device := strings.TrimSpace(string(dByte))
+	pciRoot := "/sys/bus/pci/devices"
+	entries, err := os.ReadDir(pciRoot)
+	if err != nil {
+		return nil, err
+	}
 
-        // VMXNET3: 0x15ad & 0x07b0
-        if vendor == "0x15ad" && device == "0x07b0" {
-            pciVal := ParsePciAddress(pciAddr)
-            
-            // Faqat VPP-da interfeys sifatida yaratilmagan bo'lsa
-            if !boundPciMap[pciVal] {
-                // Drayver nomini aniqlaymiz (vfio-pci yoki vmxnet3)
-                // /sys/bus/pci/devices/0000:03:00.0/driver -> ../../../bus/pci/drivers/vfio-pci
-                driverPath, _ := os.Readlink(filepath.Join(pciRoot, pciAddr, "driver"))
-                driverName := filepath.Base(driverPath)
+	for _, entry := range entries {
+		pciAddr := entry.Name()
 
-                // Agar kernelda bo'lsa interfeys nomini olamiz
-                linuxName := ""
-                netPath := filepath.Join(pciRoot, pciAddr, "net")
-                if netEntries, err := os.ReadDir(netPath); err == nil && len(netEntries) > 0 {
-                    linuxName = netEntries[0].Name()
-                }
+		// Vendor va Device ID o'qish
+		vByte, _ := os.ReadFile(filepath.Join(pciRoot, pciAddr, "vendor"))
+		dByte, _ := os.ReadFile(filepath.Join(pciRoot, pciAddr, "device"))
+		vendor := strings.TrimSpace(string(vByte))
+		device := strings.TrimSpace(string(dByte))
 
-                description := "VMware VMXNET3"
-                if linuxName != "" {
-                    description = fmt.Sprintf("VMware VMXNET3 (%s)", linuxName)
-                }
+		// VMXNET3: 0x15ad & 0x07b0
+		if vendor == "0x15ad" && device == "0x07b0" {
+			pciVal := ParsePciAddress(pciAddr)
 
-                devices = append(devices, PCIDevice{
-                    PciAddr:     pciAddr,
-                    PciValue:    pciVal,
-                    Description: fmt.Sprintf("%s [Driver: %s]", description, driverName),
-                    IsBound:     false,
-                })
-            }
-        }
-    }
-    return devices, nil
+			// Faqat VPP-da interfeys sifatida yaratilmagan bo'lsa
+			if !boundPciMap[pciVal] {
+				// Drayver nomini aniqlaymiz (vfio-pci yoki vmxnet3)
+				// /sys/bus/pci/devices/0000:03:00.0/driver -> ../../../bus/pci/drivers/vfio-pci
+				driverPath, _ := os.Readlink(filepath.Join(pciRoot, pciAddr, "driver"))
+				driverName := filepath.Base(driverPath)
+
+				// Agar kernelda bo'lsa interfeys nomini olamiz
+				linuxName := ""
+				netPath := filepath.Join(pciRoot, pciAddr, "net")
+				if netEntries, err := os.ReadDir(netPath); err == nil && len(netEntries) > 0 {
+					linuxName = netEntries[0].Name()
+				}
+
+				description := "VMware VMXNET3"
+				if linuxName != "" {
+					description = fmt.Sprintf("VMware VMXNET3 (%s)", linuxName)
+				}
+
+				devices = append(devices, PCIDevice{
+					PciAddr:     pciAddr,
+					PciValue:    pciVal,
+					Description: fmt.Sprintf("%s [Driver: %s]", description, driverName),
+					IsBound:     false,
+				})
+			}
+		}
+	}
+	return devices, nil
+}
+
+// GetInterfaceIndexByName - Get interface index by name
+func (v *VPPClient) GetInterfaceIndexByName(name string) (uint32, error) {
+	interfaces, err := v.GetInterfaces()
+	if err != nil {
+		return 0, err
+	}
+
+	for _, iface := range interfaces {
+		if iface.Name == name || iface.Tag == name {
+			return iface.Index, nil
+		}
+	}
+
+	return 0, fmt.Errorf("interface '%s' not found", name)
+}
+
+// CreateTapWithHostIP - Create TAP interface with host-side IP address
+func (v *VPPClient) CreateTapWithHostIP(id uint32, hostIfName string, hostIP string) (uint32, error) {
+	// Parse host IP to get address and prefix
+	ip, ipNet, err := net.ParseCIDR(hostIP)
+	if err != nil {
+		return 0, fmt.Errorf("invalid host IP: %v", err)
+	}
+
+	prefixLen, _ := ipNet.Mask.Size()
+	var hostIP4Addr ip_types.IP4Address
+	copy(hostIP4Addr[:], ip.To4())
+
+	req := &tapv2.TapCreateV3{
+		ID:               id,
+		UseRandomMac:     true,
+		HostIfNameSet:    true,
+		HostIfName:       hostIfName,
+		HostIP4PrefixSet: true,
+		HostIP4Prefix: ip_types.IP4AddressWithPrefix{
+			Address: hostIP4Addr,
+			Len:     uint8(prefixLen),
+		},
+		TapFlags: 0,
+	}
+
+	reply := &tapv2.TapCreateV3Reply{}
+	err = v.Channel.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create TAP: %v", err)
+	}
+
+	swIfIndex := uint32(reply.SwIfIndex)
+
+	// Bring interface up
+	_ = v.SetInterfaceState(swIfIndex, true)
+
+	return swIfIndex, nil
 }

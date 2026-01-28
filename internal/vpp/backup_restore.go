@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 	"vpp-go-test/binapi/acl_types"
@@ -1332,6 +1333,12 @@ func (v *VPPClient) createInterface(config InterfaceConfig) (uint32, error) {
 		if config.PciAddr == 0 {
 			return 0, fmt.Errorf("missing PCI address for vmxnet3")
 		}
+		// Convert PCI uint32 to string format (e.g., 0000:03:00.0)
+		pciStr := PciUint32ToString(config.PciAddr)
+		// Unbind from kernel driver and bind to vfio-pci if needed
+		if err := EnsurePciBindToVfio(pciStr); err != nil {
+			fmt.Printf("  ⚠️  PCI bind warning for %s: %v\n", pciStr, err)
+		}
 		return v.CreateVmxnet3(config.PciAddr, 1024, 1024)
 	case config.IsSubInterface:
 		return 0, fmt.Errorf("VLAN interfaces should be created in Phase 1.5")
@@ -1396,4 +1403,76 @@ func (v *VPPClient) AutoSave() {
 func (v *VPPClient) RestoreFromRawJSON() error {
 	// Keep existing legacy restore implementation
 	return fmt.Errorf("legacy restore not implemented in this version")
+}
+
+// PciUint32ToString converts a PCI address from uint32 format to string format
+// e.g., 196608 (0x30000) -> "0000:03:00.0"
+func PciUint32ToString(pciAddr uint32) string {
+	// VPP PCI format: domain | (bus << 16) | (slot << 24) | (function << 29)
+	domain := pciAddr & 0xFFFF
+	bus := (pciAddr >> 16) & 0xFF
+	slot := (pciAddr >> 24) & 0x1F
+	function := (pciAddr >> 29) & 0x7
+	return fmt.Sprintf("%04x:%02x:%02x.%x", domain, bus, slot, function)
+}
+
+// EnsurePciBindToVfio unbinds a PCI device from kernel driver and binds to vfio-pci
+func EnsurePciBindToVfio(pciAddr string) error {
+	pciRoot := "/sys/bus/pci/devices"
+	devicePath := fmt.Sprintf("%s/%s", pciRoot, pciAddr)
+
+	// Check if device exists
+	if _, err := os.Stat(devicePath); os.IsNotExist(err) {
+		return fmt.Errorf("PCI device %s not found", pciAddr)
+	}
+
+	// Check current driver
+	driverLink := fmt.Sprintf("%s/driver", devicePath)
+	currentDriver := ""
+	if link, err := os.Readlink(driverLink); err == nil {
+		currentDriver = filepath.Base(link)
+	}
+
+	fmt.Printf("  📡 PCI %s current driver: %s\n", pciAddr, currentDriver)
+
+	// If already bound to vfio-pci, nothing to do
+	if currentDriver == "vfio-pci" {
+		fmt.Printf("  ✅ PCI %s already bound to vfio-pci\n", pciAddr)
+		return nil
+	}
+
+	// Step 1: Unbind from current driver if any
+	if currentDriver != "" && currentDriver != "(none)" {
+		unbindPath := fmt.Sprintf("%s/driver/unbind", devicePath)
+		if err := os.WriteFile(unbindPath, []byte(pciAddr), 0200); err != nil {
+			fmt.Printf("  ⚠️  Failed to unbind from %s: %v\n", currentDriver, err)
+		} else {
+			fmt.Printf("  🔓 Unbound PCI %s from %s\n", pciAddr, currentDriver)
+		}
+		// Small delay for driver unbind
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// Step 2: Set driver_override to vfio-pci
+	overridePath := fmt.Sprintf("%s/driver_override", devicePath)
+	if err := os.WriteFile(overridePath, []byte("vfio-pci"), 0200); err != nil {
+		return fmt.Errorf("failed to set driver_override: %v", err)
+	}
+	fmt.Printf("  📝 Set driver_override to vfio-pci for %s\n", pciAddr)
+
+	// Step 3: Bind to vfio-pci
+	bindPath := "/sys/bus/pci/drivers/vfio-pci/bind"
+	if err := os.WriteFile(bindPath, []byte(pciAddr), 0200); err != nil {
+		// Try probe as alternative
+		probePath := "/sys/bus/pci/drivers_probe"
+		if err2 := os.WriteFile(probePath, []byte(pciAddr), 0200); err2 != nil {
+			return fmt.Errorf("failed to bind to vfio-pci: %v (probe also failed: %v)", err, err2)
+		}
+	}
+	fmt.Printf("  ✅ Bound PCI %s to vfio-pci\n", pciAddr)
+
+	// Small delay for driver to initialize
+	time.Sleep(200 * time.Millisecond)
+
+	return nil
 }
