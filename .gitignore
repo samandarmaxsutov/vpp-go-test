@@ -1,2 +1,4 @@
 auth_logs.jsonl
 system_logs.jsonl
+scripts/
+system_logs.jsonl
