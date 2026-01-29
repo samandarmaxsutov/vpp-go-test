@@ -241,3 +241,78 @@ func (h *TLSInterceptionHandler) GetInterfaces(c *gin.Context) {
 		"message": "Use /api/interfaces to get available interfaces",
 	})
 }
+
+// GetCertificateInfo returns information about the mitmproxy CA certificate
+// GET /api/tls-interception/certificates
+func (h *TLSInterceptionHandler) GetCertificateInfo(c *gin.Context) {
+	certInfo := h.manager.GetCertificateInfo()
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    certInfo,
+	})
+}
+
+// DownloadCACert returns the CA certificate for download
+// GET /api/tls-interception/certificates/ca.pem
+func (h *TLSInterceptionHandler) DownloadCACert(c *gin.Context) {
+	certData, err := h.manager.GetCACertificate()
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename=mitmproxy-ca-cert.pem")
+	c.Header("Content-Type", "application/x-pem-file")
+	c.Data(http.StatusOK, "application/x-pem-file", certData)
+}
+
+// UploadCACert uploads a CA certificate
+// POST /api/tls-interception/certificates/upload
+func (h *TLSInterceptionHandler) UploadCACert(c *gin.Context) {
+	file, err := c.FormFile("certificate")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "No certificate file provided",
+		})
+		return
+	}
+
+	// Open the file
+	f, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to open uploaded file",
+		})
+		return
+	}
+	defer f.Close()
+
+	// Read file content
+	certData := make([]byte, file.Size)
+	if _, err := f.Read(certData); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to read certificate file",
+		})
+		return
+	}
+
+	// Upload the certificate
+	if err := h.manager.UploadCACertificate(certData); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Certificate uploaded successfully",
+	})
+}

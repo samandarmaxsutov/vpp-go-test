@@ -343,6 +343,9 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				tlsApi.GET("/scripts/kernel", tlsHandler.GetKernelScript)        // GET kernel script
 				tlsApi.GET("/scripts/mitmproxy", tlsHandler.GetMitmproxyCommand) // GET mitmproxy cmd
 				tlsApi.POST("/scripts/save", tlsHandler.SaveScripts)             // POST save scripts to disk
+				tlsApi.GET("/certificates", tlsHandler.GetCertificateInfo)       // GET certificate info
+				tlsApi.GET("/certificates/ca.pem", tlsHandler.DownloadCACert)    // GET download CA cert
+				tlsApi.POST("/certificates/upload", tlsHandler.UploadCACert)     // POST upload CA cert
 			}
 		}
 	}

@@ -11,7 +11,7 @@ from datetime import datetime
 from mitmproxy import http, ctx
 
 # Log file path - same location as other logs
-LOG_FILE = os.environ.get("MITMPROXY_LOG_FILE", "/home/mitigator/vpp-go-test/url_logs.jsonl")
+LOG_FILE = os.environ.get("MITMPROXY_LOG_FILE", "/etc/sarhad-guard/url_logs/url_logs.jsonl")
 
 class URLLogger:
     def __init__(self):

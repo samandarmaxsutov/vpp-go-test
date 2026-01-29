@@ -24,7 +24,7 @@
 
     <!-- Status Cards - Simplified -->
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div id="statusIndicator" class="fs-1 mb-2">
@@ -35,18 +35,18 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
-                    <div id="systemIndicator" class="fs-1 mb-2">
+                    <div id="proxyIndicator" class="fs-1 mb-2">
                         <i class="bi bi-circle-fill text-secondary"></i>
                     </div>
-                    <h6 class="text-muted mb-0">System Ready</h6>
-                    <span id="systemText" class="fw-bold">Not Configured</span>
+                    <h6 class="text-muted mb-0">Proxy Status</h6>
+                    <span id="proxyText" class="fw-bold">Stopped</span>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="fs-1 mb-2">
@@ -54,6 +54,17 @@
                     </div>
                     <h6 class="text-muted mb-0">Active Interfaces</h6>
                     <span id="interfaceCount" class="fw-bold">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="fs-1 mb-2">
+                        <i class="bi bi-plug text-info"></i>
+                    </div>
+                    <h6 class="text-muted mb-0">Active Ports</h6>
+                    <span id="activePortsText" class="fw-bold">None</span>
                 </div>
             </div>
         </div>
@@ -98,14 +109,15 @@
                         </div>
                     </div>
 
-                    <!-- Subnet to Inspect -->
+                    <!-- Subnet Info -->
                     <h6 class="text-primary mb-3"><i class="bi bi-hdd-network me-1"></i> Network Range</h6>
                     <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Subnet to Inspect</label>
-                            <input type="text" class="form-control" id="interceptSubnet" value="192.168.10.0/24"
-                                   placeholder="e.g., 192.168.10.0/24">
-                            <small class="text-muted">Traffic from this subnet will be inspected</small>
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Automatic Subnet Detection:</strong> Each selected interface will use its own subnet for ACL rules.
+                                <div id="selectedSubnetsInfo" class="mt-2 small"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -135,21 +147,33 @@
                 </div>
             </div>
 
-            <!-- Logs -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Inspection Log</h5>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
+            <!-- CA Certificate -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-lock me-2"></i>CA Certificate</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div id="logContainer" class="bg-dark text-light p-3" 
-                         style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">
-                        <div class="text-muted">No logs available</div>
+                <div class="card-body">
+                    <div id="certInfo">
+                        <p class="text-muted mb-0">Loading certificate info...</p>
+                    </div>
+                    <div class="d-flex gap-2 mt-3" id="certButtons">
+                        <a href="/api/tls-interception/certificates/ca.pem" class="btn btn-sm btn-outline-primary" download id="downloadCertBtn" style="display:none;">
+                            <i class="bi bi-download me-1"></i> Download
+                        </a>
+                        <label class="btn btn-sm btn-outline-secondary mb-0">
+                            <i class="bi bi-upload me-1"></i> Upload
+                            <input type="file" id="uploadCert" accept=".pem,.crt,.cer" style="display:none;" onchange="uploadCertificate(this)">
+                        </label>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label small">Custom Certificate Directory (optional)</label>
+                        <input type="text" class="form-control form-control-sm" id="certDir" 
+                               placeholder="~/.mitmproxy">
+                        <small class="text-muted">Leave empty to use default location</small>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -163,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadInterfaces();
     loadConfig();
     refreshStatus();
-    refreshLogs();
+    loadCertificateInfo();
     
     // Auto-refresh every 5 seconds
     setInterval(refreshStatus, 5000);
@@ -215,17 +239,31 @@ function renderInterfaceList() {
 }
 
 function updateSubnetFromInterface(checkbox) {
-    // Use the first checked interface to set subnet
+    // Update the display of selected interfaces and their subnets
     const checkedInterfaces = document.querySelectorAll('input[name="lanInterfaces"]:checked');
-    if (checkedInterfaces.length > 0) {
-        const iface = availableInterfaces.find(i => i.name === checkedInterfaces[0].value);
+    const infoDiv = document.getElementById('selectedSubnetsInfo');
+    
+    if (checkedInterfaces.length === 0) {
+        infoDiv.innerHTML = '<em>No interfaces selected</em>';
+        return;
+    }
+    
+    const subnetList = Array.from(checkedInterfaces).map(el => {
+        const iface = availableInterfaces.find(i => i.name === el.value);
         if (iface && iface.ip_addresses && iface.ip_addresses.length > 0) {
             const ip = iface.ip_addresses[0];
             const parts = ip.split('/')[0].split('.');
-            const subnet = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0/24';
-            document.getElementById('interceptSubnet').value = subnet;
+            const mask = ip.split('/')[1] || '24';
+            const subnet = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0/' + mask;
+            const displayName = iface.tag || iface.name;
+            return `<span class="badge bg-primary me-1">${displayName}: ${subnet}</span>`;
         }
-    }
+        return null;
+    }).filter(s => s !== null);
+    
+    infoDiv.innerHTML = subnetList.length > 0 
+        ? subnetList.join(' ') 
+        : '<em>Selected interfaces have no IP addresses</em>';
 }
 
 async function loadConfig() {
@@ -243,9 +281,10 @@ async function loadConfig() {
 }
 
 function populateForm(config) {
-    document.getElementById('interceptSubnet').value = config.intercept_subnet || '192.168.10.0/24';
     document.getElementById('interceptHTTP').checked = config.intercept_http !== false;
     document.getElementById('interceptHTTPS').checked = config.intercept_https !== false;
+    // Update subnet info display after populating form
+    setTimeout(() => updateSubnetFromInterface(null), 100);
 }
 
 async function refreshStatus() {
@@ -264,9 +303,10 @@ async function refreshStatus() {
 function updateStatusUI(status) {
     const statusIndicator = document.getElementById('statusIndicator');
     const statusText = document.getElementById('statusText');
-    const systemIndicator = document.getElementById('systemIndicator');
-    const systemText = document.getElementById('systemText');
+    const proxyIndicator = document.getElementById('proxyIndicator');
+    const proxyText = document.getElementById('proxyText');
     const interfaceCount = document.getElementById('interfaceCount');
+    const activePortsText = document.getElementById('activePortsText');
     const toggleBtn = document.getElementById('toggleBtn');
     const activeInterfaces = document.getElementById('activeInterfaces');
 
@@ -283,13 +323,21 @@ function updateStatusUI(status) {
         toggleBtn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Enable';
     }
 
-    // System ready
-    if (status.system_ready) {
-        systemIndicator.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
-        systemText.textContent = 'Ready';
+    // Proxy (mitmproxy) status
+    if (status.mitmproxy_running) {
+        proxyIndicator.innerHTML = '<i class="bi bi-circle-fill text-success"></i>';
+        proxyText.textContent = 'Running';
     } else {
-        systemIndicator.innerHTML = '<i class="bi bi-exclamation-circle-fill text-warning"></i>';
-        systemText.textContent = 'Not Ready';
+        proxyIndicator.innerHTML = '<i class="bi bi-circle-fill text-danger"></i>';
+        proxyText.textContent = 'Stopped';
+    }
+
+    // Active ports
+    const ports = status.active_ports || [];
+    if (ports.length > 0) {
+        activePortsText.textContent = ports.map(p => p === 80 ? 'HTTP' : p === 443 ? 'HTTPS' : p).join(', ');
+    } else {
+        activePortsText.textContent = 'None';
     }
 
     // Active interfaces
@@ -306,32 +354,92 @@ function updateStatusUI(status) {
     } else {
         activeInterfaces.innerHTML = '<p class="text-muted mb-0">No interfaces being inspected</p>';
     }
-}
 
-async function refreshLogs() {
-    try {
-        const response = await fetch('/api/tls-interception/logs?lines=30');
-        const result = await response.json();
-        if (result.success && result.data) {
-            const container = document.getElementById('logContainer');
-            if (result.data.length > 0 && result.data[0] !== 'No inspection logs available') {
-                container.innerHTML = result.data.map(line => 
-                    `<div class="mb-1">${escapeHtml(line)}</div>`
-                ).join('');
-                container.scrollTop = container.scrollHeight;
-            } else {
-                container.innerHTML = '<div class="text-muted">No logs available</div>';
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load logs:', error);
+    // Show warning if proxy is not running but enabled
+    if (status.enabled && !status.mitmproxy_running) {
+        showToast('Warning: Proxy is not running. Traffic may not be inspected.', 'warning');
     }
 }
+
+
 
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+async function loadCertificateInfo() {
+    try {
+        const response = await fetch('/api/tls-interception/certificates');
+        const result = await response.json();
+        if (result.success) {
+            const cert = result.data;
+            const certInfo = document.getElementById('certInfo');
+            const downloadBtn = document.getElementById('downloadCertBtn');
+            
+            if (cert.ca_cert_exists) {
+                certInfo.innerHTML = `
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <span>CA Certificate: <strong>Found</strong></span>
+                    </div>
+                    <div class="small text-muted">${cert.cert_dir}</div>
+                    <p class="small text-muted mb-0">
+                        Install this certificate on clients to trust the inspection proxy.
+                    </p>
+                `;
+                downloadBtn.style.display = 'inline-block';
+            } else {
+                certInfo.innerHTML = `
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-exclamation-circle-fill text-warning me-2"></i>
+                        <span>CA Certificate: <strong>Not Found</strong></span>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Upload a certificate or start the proxy once to generate one.
+                    </p>
+                `;
+                downloadBtn.style.display = 'none';
+            }
+
+            // Set cert dir input
+            if (currentConfig.mitmproxy_cert_dir) {
+                document.getElementById('certDir').value = currentConfig.mitmproxy_cert_dir;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load certificate info:', error);
+    }
+}
+
+async function uploadCertificate(input) {
+    if (!input.files || input.files.length === 0) {
+        return;
+    }
+    
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('certificate', file);
+    
+    try {
+        const response = await fetch('/api/tls-interception/certificates/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+            showToast('Certificate uploaded successfully', 'success');
+            loadCertificateInfo();
+        } else {
+            showToast('Failed to upload certificate: ' + result.error, 'danger');
+        }
+    } catch (error) {
+        showToast('Error uploading certificate: ' + error.message, 'danger');
+    }
+    
+    // Clear the input
+    input.value = '';
 }
 
 async function saveConfig() {
@@ -344,23 +452,18 @@ async function saveConfig() {
 
     // Collect all selected interface names
     const lanInterfaces = Array.from(selectedInterfaces).map(el => el.value);
-
-    // Use first selected interface for subnet calculation
-    const firstIface = availableInterfaces.find(i => i.name === lanInterfaces[0]);
-    let subnet = document.getElementById('interceptSubnet').value;
     
-    if (!subnet && firstIface && firstIface.ip_addresses && firstIface.ip_addresses.length > 0) {
-        const ip = firstIface.ip_addresses[0];
-        const parts = ip.split('/')[0].split('.');
-        subnet = parts[0] + '.' + parts[1] + '.' + parts[2] + '.0/24';
-    }
+    // Get custom cert directory
+    const certDir = document.getElementById('certDir').value.trim();
 
+    // Each interface will use its own subnet (auto-detected from interface IP)
+    // The backend will derive subnet from each interface's IP address
     const config = {
         ...currentConfig,
         lan_interfaces: lanInterfaces,
-        intercept_subnet: subnet,
         intercept_http: document.getElementById('interceptHTTP').checked,
-        intercept_https: document.getElementById('interceptHTTPS').checked
+        intercept_https: document.getElementById('interceptHTTPS').checked,
+        mitmproxy_cert_dir: certDir
     };
 
     try {
@@ -395,7 +498,7 @@ async function toggleInspection() {
         if (result.success) {
             showToast(isEnabled ? 'Inspection disabled' : 'Inspection enabled', 'success');
             refreshStatus();
-            refreshLogs();
+            loadCertificateInfo();
         } else {
             showToast('Operation failed: ' + result.error, 'danger');
         }

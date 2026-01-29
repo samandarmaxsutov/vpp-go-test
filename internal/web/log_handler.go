@@ -46,7 +46,7 @@ func (h *LogHandler) GetLogs(c *gin.Context) {
 		filePath = "/etc/sarhad-guard/auth_logs/auth_logs.log"
 	} else if logType == "url" {
 		// URL logs from mitmproxy TLS interception
-		filePath = filepath.Join(wd, "url_logs.jsonl")
+		filePath = "/etc/sarhad-guard/url_logs/url_logs.jsonl"
 	} else {
 		filePath = filepath.Join(wd, fmt.Sprintf("%s_logs.jsonl", logType))
 	}

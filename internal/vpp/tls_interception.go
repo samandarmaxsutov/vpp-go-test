@@ -61,6 +61,7 @@ type TLSInterceptionConfig struct {
 	// mitmproxy settings
 	MitmproxyPort    uint16 `json:"mitmproxy_port"`     // Default: 8080
 	MitmproxyWebPort uint16 `json:"mitmproxy_web_port"` // Default: 8081
+	MitmproxyCertDir string `json:"mitmproxy_cert_dir"` // Directory containing mitmproxy certs (default: ~/.mitmproxy)
 
 	// Ports to intercept
 	InterceptHTTP  bool `json:"intercept_http"`  // Port 80
@@ -86,7 +87,9 @@ type TLSInterceptionStatusSimple struct {
 	Enabled            bool     `json:"enabled"`
 	SystemReady        bool     `json:"system_ready"`
 	InspectionActive   bool     `json:"inspection_active"`
+	MitmproxyRunning   bool     `json:"mitmproxy_running"`
 	AttachedInterfaces []string `json:"attached_interfaces"`
+	ActivePorts        []int    `json:"active_ports"`
 	ErrorMessage       string   `json:"error_message,omitempty"`
 }
 
@@ -135,6 +138,7 @@ func DefaultTLSInterceptionConfig() *TLSInterceptionConfig {
 		ABFPolicy:        10,
 		MitmproxyPort:    8080,
 		MitmproxyWebPort: 8081,
+		MitmproxyCertDir: "", // Empty means use default ~/.mitmproxy
 		InterceptHTTP:    true,
 		InterceptHTTPS:   true,
 	}
@@ -182,11 +186,22 @@ func (m *TLSInterceptionManager) GetStatus() TLSInterceptionStatus {
 func (m *TLSInterceptionManager) GetSimpleStatus() TLSInterceptionStatusSimple {
 	status := m.GetStatus()
 
+	// Build active ports list based on config
+	var activePorts []int
+	if m.config.InterceptHTTP {
+		activePorts = append(activePorts, 80)
+	}
+	if m.config.InterceptHTTPS {
+		activePorts = append(activePorts, 443)
+	}
+
 	return TLSInterceptionStatusSimple{
 		Enabled:            status.IsEnabled,
 		SystemReady:        status.Tap0Created && status.Tap1Created && status.KernelConfigured,
 		InspectionActive:   status.MitmproxyRunning,
+		MitmproxyRunning:   status.MitmproxyRunning,
 		AttachedInterfaces: status.AttachedInterfaces,
+		ActivePorts:        activePorts,
 		ErrorMessage:       status.LastError,
 	}
 }
@@ -273,9 +288,12 @@ func (m *TLSInterceptionManager) checkABFAndAttachmentsWithInterfaces(interfaces
 		return false, nil
 	}
 
+	// Check if any TLS-related policy exists (base policy or per-interface policies)
+	// Per-interface policies use IDs: baseABFPolicy, baseABFPolicy+1, baseABFPolicy+2, etc.
 	policyExists := false
 	for _, p := range policies {
-		if p.Policy.PolicyID == m.config.ABFPolicy {
+		// Check if policy ID is in our TLS interception range (base to base+99)
+		if p.Policy.PolicyID >= m.config.ABFPolicy && p.Policy.PolicyID < m.config.ABFPolicy+100 {
 			policyExists = true
 			break
 		}
@@ -293,7 +311,8 @@ func (m *TLSInterceptionManager) checkABFAndAttachmentsWithInterfaces(interfaces
 
 	var attachedNames []string
 	for _, att := range attachments {
-		if att.Attach.PolicyID == m.config.ABFPolicy {
+		// Check if attachment is for any of our TLS policies (base to base+99)
+		if att.Attach.PolicyID >= m.config.ABFPolicy && att.Attach.PolicyID < m.config.ABFPolicy+100 {
 			// Get interface name by index from pre-fetched list
 			ifaceName := getInterfaceNameFromList(interfaces, uint32(att.Attach.SwIfIndex))
 			if ifaceName != "" {
@@ -313,6 +332,36 @@ func getInterfaceNameFromList(interfaces []InterfaceInfo, swIfIndex uint32) stri
 				return iface.Tag
 			}
 			return iface.Name
+		}
+	}
+	return ""
+}
+
+// getInterfaceSubnet derives the subnet from an interface's IP address
+// For example: if interface has IP 192.168.20.1/24, returns 192.168.20.0/24
+func (m *TLSInterceptionManager) getInterfaceSubnet(interfaces []InterfaceInfo, ifaceName string) string {
+	for _, iface := range interfaces {
+		// Match by name or tag
+		if iface.Name == ifaceName || iface.Tag == ifaceName {
+			if len(iface.IPAddresses) > 0 {
+				ipWithMask := iface.IPAddresses[0]
+				// Parse the IP/mask to get the network address
+				_, ipNet, err := net.ParseCIDR(ipWithMask)
+				if err != nil {
+					// Try to construct subnet from IP
+					parts := strings.Split(ipWithMask, "/")
+					if len(parts) == 2 {
+						ipParts := strings.Split(parts[0], ".")
+						if len(ipParts) == 4 {
+							// Assume /24 network, replace last octet with 0
+							return ipParts[0] + "." + ipParts[1] + "." + ipParts[2] + ".0/" + parts[1]
+						}
+					}
+					return ""
+				}
+				// Return the network address (e.g., 192.168.20.0/24)
+				return ipNet.String()
+			}
 		}
 	}
 	return ""
@@ -621,6 +670,12 @@ func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
 	baseACLIndex := m.config.ACLIndex
 	baseABFPolicy := m.config.ABFPolicy
 
+	// Get all interfaces to find each LAN interface's subnet
+	allInterfaces, err := m.vppClient.GetInterfaces()
+	if err != nil {
+		return fmt.Errorf("failed to get interfaces for subnet detection: %v", err)
+	}
+
 	for i, lanIface := range lanInterfaces {
 		// Get interface index
 		lanIfIndex, err := m.vppClient.GetInterfaceIndexByName(lanIface)
@@ -628,17 +683,25 @@ func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
 			return fmt.Errorf("LAN interface '%s' not found: %v", lanIface, err)
 		}
 
+		// Get this interface's subnet from its IP address
+		interfaceSubnet := m.getInterfaceSubnet(allInterfaces, lanIface)
+		if interfaceSubnet == "" {
+			// Fallback to configured subnet if interface has no IP
+			interfaceSubnet = m.config.InterceptSubnet
+			fmt.Printf("  ⚠️  Interface %s has no IP, using fallback subnet: %s\n", lanIface, interfaceSubnet)
+		}
+
 		// Calculate unique IDs for this interface
 		aclID := baseACLIndex + uint32(i)
 		abfPolicyID := baseABFPolicy + uint32(i)
 
-		// Create ACL for TCP traffic from LAN subnet + DNS (UDP 53)
+		// Create ACL for TCP traffic from this interface's subnet + DNS (UDP 53)
 		aclRules := []ACLRuleSimple{
 			// Allow DNS traffic (UDP port 53) - important for name resolution
 			{
 				Action:    "permit",
 				Protocol:  "udp",
-				SrcPrefix: m.config.InterceptSubnet,
+				SrcPrefix: interfaceSubnet,
 				DstPrefix: "0.0.0.0/0",
 				DstPort:   53,
 			},
@@ -646,7 +709,7 @@ func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
 			{
 				Action:    "permit",
 				Protocol:  "tcp",
-				SrcPrefix: m.config.InterceptSubnet,
+				SrcPrefix: interfaceSubnet,
 				DstPrefix: "0.0.0.0/0",
 			},
 		}
@@ -655,7 +718,7 @@ func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to create ACL for %s: %v", lanIface, err)
 		}
-		fmt.Printf("  ✅ ACL created for %s (index: %d) - TCP from %s\n", lanIface, aclIndex, m.config.InterceptSubnet)
+		fmt.Printf("  ✅ ACL created for %s (index: %d) - TCP from %s\n", lanIface, aclIndex, interfaceSubnet)
 
 		// Create ABF policy for this interface
 		if err := m.vppClient.AbfManager.ConfigurePolicy(ctx, abfPolicyID, aclIndex, fibPaths, true); err != nil {
@@ -1122,8 +1185,8 @@ func (m *TLSInterceptionManager) startMitmproxy() error {
 	// Get working directory for the logger script
 	wd, _ := os.Getwd()
 	loggerScript := fmt.Sprintf("%s/scripts/mitmproxy_logger.py", wd)
-	logFile := fmt.Sprintf("%s/url_logs.jsonl", wd)
-	errorLogFile := fmt.Sprintf("%s/mitmproxy_error.log", wd)
+	logFile := "/etc/sarhad-guard/url_logs/url_logs.jsonl"
+	errorLogFile := "/etc/sarhad-guard/url_logs/mitmproxy_error.log"
 
 	// Build command with URL logger addon
 	args := []string{
@@ -1133,6 +1196,12 @@ func (m *TLSInterceptionManager) startMitmproxy() error {
 		"--listen-host", "0.0.0.0",
 		"--listen-port", fmt.Sprintf("%d", m.config.MitmproxyPort),
 		"--set", "termlog_verbosity=error",
+	}
+
+	// Add custom certificate directory if configured
+	if m.config.MitmproxyCertDir != "" {
+		args = append(args, "--set", fmt.Sprintf("confdir=%s", m.config.MitmproxyCertDir))
+		fmt.Printf("  ℹ️  Using certificate directory: %s\n", m.config.MitmproxyCertDir)
 	}
 
 	// Add URL logger script if exists
@@ -1199,6 +1268,72 @@ func (m *TLSInterceptionManager) checkMitmproxyRunning() (bool, int) {
 	var pid int
 	fmt.Sscanf(pidStr, "%d", &pid)
 	return true, pid
+}
+
+// CertificateInfo holds information about mitmproxy certificates
+type CertificateInfo struct {
+	CertDir      string `json:"cert_dir"`
+	CACertPath   string `json:"ca_cert_path"`
+	CACertExists bool   `json:"ca_cert_exists"`
+	CAKeyPath    string `json:"ca_key_path"`
+	CAKeyExists  bool   `json:"ca_key_exists"`
+}
+
+// GetCertificateInfo returns information about the mitmproxy CA certificate
+func (m *TLSInterceptionManager) GetCertificateInfo() CertificateInfo {
+	certDir := m.config.MitmproxyCertDir
+	if certDir == "" {
+		// Default mitmproxy cert directory
+		home, _ := os.UserHomeDir()
+		certDir = home + "/.mitmproxy"
+	}
+
+	caCertPath := certDir + "/mitmproxy-ca-cert.pem"
+	caKeyPath := certDir + "/mitmproxy-ca.pem"
+
+	_, caCertErr := os.Stat(caCertPath)
+	_, caKeyErr := os.Stat(caKeyPath)
+
+	return CertificateInfo{
+		CertDir:      certDir,
+		CACertPath:   caCertPath,
+		CACertExists: caCertErr == nil,
+		CAKeyPath:    caKeyPath,
+		CAKeyExists:  caKeyErr == nil,
+	}
+}
+
+// GetCACertificate returns the CA certificate content for download
+func (m *TLSInterceptionManager) GetCACertificate() ([]byte, error) {
+	certInfo := m.GetCertificateInfo()
+	if !certInfo.CACertExists {
+		return nil, fmt.Errorf("CA certificate not found at %s", certInfo.CACertPath)
+	}
+	return os.ReadFile(certInfo.CACertPath)
+}
+
+// UploadCACertificate saves an uploaded CA certificate to the cert directory
+func (m *TLSInterceptionManager) UploadCACertificate(certData []byte) error {
+	certDir := m.config.MitmproxyCertDir
+	if certDir == "" {
+		// Default mitmproxy cert directory
+		home, _ := os.UserHomeDir()
+		certDir = home + "/.mitmproxy"
+	}
+
+	// Create directory if it doesn't exist
+	if err := os.MkdirAll(certDir, 0755); err != nil {
+		return fmt.Errorf("failed to create cert directory: %v", err)
+	}
+
+	// Save the certificate
+	caCertPath := certDir + "/mitmproxy-ca.pem"
+	if err := os.WriteFile(caCertPath, certData, 0644); err != nil {
+		return fmt.Errorf("failed to write certificate: %v", err)
+	}
+
+	fmt.Printf("  ✅ CA certificate uploaded to %s\n", caCertPath)
+	return nil
 }
 
 // ============================================

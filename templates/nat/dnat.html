@@ -16,13 +16,15 @@
                     <thead class="table-light">
                         <tr>
                             <th>Interface</th>
+                            <th>Tag</th>
+                            <th>IP Address</th>
                             <th>Role</th>
                             <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody id="nat-iface-body">
                         <tr>
-                            <td colspan="3" class="text-center py-3 text-muted">Loading interfaces...</td>
+                            <td colspan="5" class="text-center py-3 text-muted">Loading interfaces...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -104,17 +106,17 @@
 
 <script>
     async function enableNatGlobal() {
-    if(!confirm("NAT engine-ni yoqmoqchimisiz?")) return;
-    
-    const res = await fetch('/api/nat/enable', { method: 'POST' });
-    if(res.ok) {
-        alert("NAT engine yoqildi. Endi interfeyslarni sozlasangiz bo'ladi.");
-        loadNatInfrastructure();
-    } else {
-        const data = await res.json();
-        alert("Xato: " + data.error);
+        if (!confirm("NAT engine-ni yoqmoqchimisiz?")) return;
+
+        const res = await fetch('/api/nat/enable', { method: 'POST' });
+        if (res.ok) {
+            alert("NAT engine yoqildi. Endi interfeyslarni sozlasangiz bo'ladi.");
+            loadNatInfrastructure();
+        } else {
+            const data = await res.json();
+            alert("Xato: " + data.error);
+        }
     }
-}
     // 1. Global modal o'zgaruvchilari
     let bootstrapPoolModal;
     let bootstrapIfaceModal;
@@ -146,8 +148,17 @@
 
 
                 allIfaces.forEach(iface => {
-                    // Backenddan kelgan 'index' va 'name' maydonlaridan foydalanamiz
                     const natInfo = natIfaces.find(n => n && n.sw_if_index === iface.index);
+
+                    // Format IP address (handling null or multiple IPs)
+                    const ipDisplay = iface.ip_addresses && iface.ip_addresses.length > 0
+                        ? iface.ip_addresses.join(', ')
+                        : '<span class="text-muted small">No IP</span>';
+
+                    // Format Tag
+                    const tagDisplay = iface.tag
+                        ? `<span class="badge bg-secondary-subtle text-secondary border">${iface.tag}</span>`
+                        : '<span class="text-muted small">-</span>';
 
                     let roleBadge = '<span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.65rem;">None</span>';
                     if (natInfo) {
@@ -160,8 +171,10 @@
         <tr>
             <td>
                 <div class="fw-bold text-dark">${iface.name}</div>
-                <small class="text-muted">ID: ${iface.index} | MAC: ${iface.mac}</small>
+                <small class="text-muted text-uppercase" style="font-size: 0.7rem;">ID: ${iface.index}</small>
             </td>
+            <td>${tagDisplay}</td>
+            <td><code class="small text-dark">${ipDisplay}</code></td>
             <td>${roleBadge}</td>
             <td class="text-end">
                 <button class="btn btn-sm btn-white border shadow-sm" onclick="openIfaceNatModal(${iface.index}, '${iface.name}')">
