@@ -37,6 +37,9 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 	ipfixHandler := &IpfixHandler{VPP: client}
 	// === BACKUP & RESTORE ENDPOINTS ===
 	backupHandler := NewBackupHandler(client)
+	// === IP GROUPS ENDPOINTS ===
+	ipGroupsService := vpp.NewIPGroupsService()
+	ipGroupsHandler := NewIPGroupsHandler(ipGroupsService)
 
 	r.GET("/login", auth.LoginGet)
 	r.POST("/login", auth.LoginPost)
@@ -123,11 +126,36 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 			})
 		})
 
+		protected.GET("/ip-groups", func(c *gin.Context) {
+			session := sessions.Default(c)
+			c.HTML(200, "ip_groups.html", gin.H{
+				"title":  "IP Groups",
+				"active": "ip_groups",
+				"user":   session.Get("user_id"),
+			})
+		})
+
+		protected.GET("/time", func(c *gin.Context) {
+			session := sessions.Default(c)
+			c.HTML(200, "time.html", gin.H{
+				"title":  "Time Settings",
+				"active": "time_manager",
+				"user":   session.Get("user_id"),
+			})
+		})
 		protected.GET("/logs", func(c *gin.Context) {
 			session := sessions.Default(c)
 			c.HTML(200, "logs.html", gin.H{
 				"title":  "Logs",
 				"active": "logs",
+				"user":   session.Get("user_id"),
+			})
+		})
+		protected.GET("/tls-interception", func(c *gin.Context) {
+			session := sessions.Default(c)
+			c.HTML(200, "tls_interception.html", gin.H{
+				"title":  "TLS Interception",
+				"active": "tls_interception_page",
 				"user":   session.Get("user_id"),
 			})
 		})
@@ -279,6 +307,45 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 				abfApi.POST("/policy", abfHandler.HandleCreatePolicy)
 				abfApi.POST("/attach", abfHandler.HandleAttachInterface)
 				abfApi.GET("/attachments", abfHandler.HandleGetAttachments)
+				abfApi.GET("/interfaces", abfHandler.HandleGetInterfacesForABF)        // Enriched interface list
+				abfApi.POST("/policies/bulk", abfHandler.HandleCreateMultiplePolicies) // Bulk create
+			}
+
+			// --- IP GROUPS API endpoints ---
+			ipGroupsApi := api.Group("/ip-groups")
+			{
+				// Specific routes MUST come before /:id routes in Gin
+				ipGroupsApi.POST("/upload", ipGroupsHandler.HandleUploadFile) // POST upload file
+				ipGroupsApi.GET("/stats", ipGroupsHandler.HandleStats)        // GET statistics
+				// Generic routes
+				ipGroupsApi.GET("", ipGroupsHandler.HandleGetGroups)    // GET all groups
+				ipGroupsApi.POST("", ipGroupsHandler.HandleCreateGroup) // POST create group
+				// ID-based routes
+				ipGroupsApi.GET("/:id", ipGroupsHandler.HandleGetGroupByID)           // GET single group
+				ipGroupsApi.GET("/:id/download", ipGroupsHandler.HandleDownloadGroup) // GET download group
+				ipGroupsApi.PUT("/:id", ipGroupsHandler.HandleUpdateGroup)            // PUT update group
+				ipGroupsApi.DELETE("/:id", ipGroupsHandler.HandleDeleteGroup)         // DELETE group
+			}
+
+			// --- TLS INTERCEPTION API endpoints ---
+			tlsHandler := NewTLSInterceptionHandler(client)
+			tlsApi := api.Group("/tls-interception")
+			{
+				tlsApi.GET("/status", tlsHandler.GetStatus)                      // GET full status
+				tlsApi.GET("/simple-status", tlsHandler.GetSimpleStatus)         // GET user-friendly status
+				tlsApi.GET("/logs", tlsHandler.GetLogs)                          // GET inspection logs
+				tlsApi.GET("/config", tlsHandler.GetConfig)                      // GET current config
+				tlsApi.PUT("/config", tlsHandler.UpdateConfig)                   // PUT update config
+				tlsApi.POST("/enable", tlsHandler.Enable)                        // POST enable interception
+				tlsApi.POST("/disable", tlsHandler.Disable)                      // POST disable interception
+				tlsApi.GET("/scripts", tlsHandler.GetAllScripts)                 // GET all scripts
+				tlsApi.GET("/scripts/vpp", tlsHandler.GetVPPScript)              // GET VPP script
+				tlsApi.GET("/scripts/kernel", tlsHandler.GetKernelScript)        // GET kernel script
+				tlsApi.GET("/scripts/mitmproxy", tlsHandler.GetMitmproxyCommand) // GET mitmproxy cmd
+				tlsApi.POST("/scripts/save", tlsHandler.SaveScripts)             // POST save scripts to disk
+				tlsApi.GET("/certificates", tlsHandler.GetCertificateInfo)       // GET certificate info
+				tlsApi.GET("/certificates/ca.pem", tlsHandler.DownloadCACert)    // GET download CA cert
+				tlsApi.POST("/certificates/upload", tlsHandler.UploadCACert)     // POST upload CA cert
 			}
 		}
 	}

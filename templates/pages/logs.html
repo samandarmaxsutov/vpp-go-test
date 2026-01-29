@@ -17,6 +17,7 @@
             
             <div class="btn-group shadow-sm bg-white p-1 rounded border">
                 <button class="btn btn-sm btn-light filter-btn active" onclick="loadLogs('acl', this)">Firewall</button>
+                <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('url', this)">URLs</button>
                 <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('config', this)">Config</button>
                 <button class="btn btn-sm btn-light filter-btn" onclick="loadLogs('auth', this)">Auth</button>
             </div>
@@ -134,6 +135,16 @@ function updateTableHeader(type) {
             <th style="width: 100px;">Packets</th>
             <th class="text-center pe-3" style="width: 80px;">Tafsilot</th>
         `;
+    } else if (type === 'url') {
+        tr.innerHTML = `
+            <th class="ps-3" style="width: 140px;">Vaqt</th>
+            <th style="width: 80px;">Method</th>
+            <th style="width: 120px;">Client IP</th>
+            <th>Host</th>
+            <th>URL/Path</th>
+            <th style="width: 80px;">Status</th>
+            <th class="text-center pe-3" style="width: 80px;">View</th>
+        `;
     } else if (type === 'config') {
         tr.innerHTML = `
             <th class="ps-3" style="width: 160px;">Vaqt</th>
@@ -211,6 +222,8 @@ function renderTable() {
     tbody.innerHTML = items.map(log => {
         if (currentType === 'acl') {
             return renderACLRow(log);
+        } else if (currentType === 'url') {
+            return renderURLRow(log);
         } else if (currentType === 'config') {
             return renderConfigRow(log);
         } else if (currentType === 'auth') {
@@ -299,6 +312,145 @@ function renderAuthRow(log) {
             </td>
         </tr>
     `;
+}
+
+function renderURLRow(log) {
+    const methodBadge = getMethodBadge(log.method);
+    const statusBadge = getURLStatusBadge(log.status, log.status_code);
+    const pathShort = (log.path || log.url || '').length > 50 
+        ? (log.path || log.url || '').substring(0, 50) + '...' 
+        : (log.path || log.url || '');
+    
+    return `
+        <tr>
+            <td class="ps-3 small text-muted font-monospace">${formatTimestamp(log.timestamp)}</td>
+            <td>${methodBadge}</td>
+            <td><span class="small font-monospace">${log.client_ip || '-'}</span></td>
+            <td>
+                <div class="d-flex align-items-center gap-1">
+                    <i class="bi bi-globe text-primary"></i>
+                    <span class="fw-semibold small">${log.host || '-'}</span>
+                    ${log.port && log.port !== 80 && log.port !== 443 ? '<span class="text-muted small">:' + log.port + '</span>' : ''}
+                </div>
+            </td>
+            <td>
+                <code class="small text-truncate d-inline-block" style="max-width: 300px;" title="${escapeHtml(log.url || log.path || '')}">
+                    ${escapeHtml(pathShort)}
+                </code>
+            </td>
+            <td>${statusBadge}</td>
+            <td class="text-center pe-3">
+                <button class="btn btn-sm btn-outline-primary" onclick='showURLDetails(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
+                    <i class="bi bi-info-circle"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+function getMethodBadge(method) {
+    const colors = {
+        'GET': 'bg-success-subtle text-success',
+        'POST': 'bg-primary-subtle text-primary',
+        'PUT': 'bg-warning-subtle text-warning',
+        'DELETE': 'bg-danger-subtle text-danger',
+        'PATCH': 'bg-info-subtle text-info',
+        'HEAD': 'bg-secondary-subtle text-secondary',
+        'OPTIONS': 'bg-secondary-subtle text-secondary'
+    };
+    const colorClass = colors[method] || 'bg-secondary-subtle text-secondary';
+    return `<span class="badge ${colorClass}">${method || 'N/A'}</span>`;
+}
+
+function getURLStatusBadge(status, statusCode) {
+    if (status === 'ERROR') {
+        return '<span class="badge bg-danger-subtle text-danger border border-danger"><i class="bi bi-x-circle me-1"></i>ERROR</span>';
+    }
+    if (status === 'RESPONSE' && statusCode) {
+        if (statusCode >= 200 && statusCode < 300) {
+            return `<span class="badge bg-success-subtle text-success">${statusCode}</span>`;
+        } else if (statusCode >= 300 && statusCode < 400) {
+            return `<span class="badge bg-info-subtle text-info">${statusCode}</span>`;
+        } else if (statusCode >= 400 && statusCode < 500) {
+            return `<span class="badge bg-warning-subtle text-warning">${statusCode}</span>`;
+        } else if (statusCode >= 500) {
+            return `<span class="badge bg-danger-subtle text-danger">${statusCode}</span>`;
+        }
+    }
+    if (status === 'REQUEST') {
+        return '<span class="badge bg-primary-subtle text-primary"><i class="bi bi-arrow-right me-1"></i>REQ</span>';
+    }
+    return `<span class="badge bg-secondary-subtle text-secondary">${status || 'N/A'}</span>`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showURLDetails(log) {
+    const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+    const body = document.getElementById('modalBody');
+    
+    body.innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <h6 class="text-muted mb-3"><i class="bi bi-diagram-3 me-2"></i>Request Info</h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted">Client IP:</td><td class="fw-semibold font-monospace">${log.client_ip || 'N/A'}</td></tr>
+                        <tr><td class="text-muted">Method:</td><td>${getMethodBadge(log.method)}</td></tr>
+                        <tr><td class="text-muted">Scheme:</td><td><span class="badge ${log.scheme === 'https' ? 'bg-success' : 'bg-warning'}">${log.scheme || 'http'}</span></td></tr>
+                        <tr><td class="text-muted">Timestamp:</td><td class="font-monospace small">${log.timestamp}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <h6 class="text-muted mb-3"><i class="bi bi-globe me-2"></i>Destination</h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td class="text-muted">Host:</td><td class="fw-semibold">${log.host || 'N/A'}</td></tr>
+                        <tr><td class="text-muted">Port:</td><td>${log.port || 'N/A'}</td></tr>
+                        <tr><td class="text-muted">Status:</td><td>${getURLStatusBadge(log.status, log.status_code)}</td></tr>
+                        ${log.content_length ? '<tr><td class="text-muted">Size:</td><td>' + formatBytes(log.content_length) + '</td></tr>' : ''}
+                    </table>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="border rounded p-3 bg-light">
+                    <h6 class="text-muted mb-2"><i class="bi bi-link-45deg me-2"></i>Full URL</h6>
+                    <code class="d-block p-2 bg-dark text-light rounded small" style="word-break: break-all;">${log.url || log.path || 'N/A'}</code>
+                </div>
+            </div>
+            ${log.user_agent ? `
+            <div class="col-12">
+                <div class="border rounded p-3">
+                    <h6 class="text-muted mb-2"><i class="bi bi-browser-chrome me-2"></i>User Agent</h6>
+                    <small class="text-muted" style="word-break: break-all;">${log.user_agent}</small>
+                </div>
+            </div>
+            ` : ''}
+            ${log.error ? `
+            <div class="col-12">
+                <div class="border rounded p-3 bg-danger-subtle">
+                    <h6 class="text-danger mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Error</h6>
+                    <code class="text-danger">${log.error}</code>
+                </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    modal.show();
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function renderStandardRow(log) {
@@ -501,13 +653,26 @@ function handleSearch() {
     const protoFilter = document.getElementById('protoFilter').value;
     
     filteredData = allData.filter(log => {
-        const matchSearch = !term || 
-            (log.sourceIP && log.sourceIP.toLowerCase().includes(term)) ||
-            (log.destIP && log.destIP.toLowerCase().includes(term)) ||
-            (log.sourcePort && log.sourcePort.includes(term)) ||
-            (log.destPort && log.destPort.includes(term)) ||
-            (log.action && log.action.toLowerCase().includes(term)) ||
-            (log.target && log.target.toLowerCase().includes(term));
+        let matchSearch = false;
+        
+        if (currentType === 'url') {
+            // URL log search
+            matchSearch = !term || 
+                (log.client_ip && log.client_ip.toLowerCase().includes(term)) ||
+                (log.host && log.host.toLowerCase().includes(term)) ||
+                (log.url && log.url.toLowerCase().includes(term)) ||
+                (log.path && log.path.toLowerCase().includes(term)) ||
+                (log.method && log.method.toLowerCase().includes(term));
+        } else {
+            // ACL and other logs search
+            matchSearch = !term || 
+                (log.sourceIP && log.sourceIP.toLowerCase().includes(term)) ||
+                (log.destIP && log.destIP.toLowerCase().includes(term)) ||
+                (log.sourcePort && log.sourcePort.includes(term)) ||
+                (log.destPort && log.destPort.includes(term)) ||
+                (log.action && log.action.toLowerCase().includes(term)) ||
+                (log.target && log.target.toLowerCase().includes(term));
+        }
             
         const matchAction = !actionFilter || log.action === actionFilter;
         const matchProto = !protoFilter || log.protocol === protoFilter;

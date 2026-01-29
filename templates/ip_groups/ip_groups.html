@@ -1,0 +1,558 @@
+{{ template "base" . }}
+{{ define "ip_groups_manager" }}
+
+<style>
+    .stat-box {
+        text-align: center;
+        padding: 20px;
+    }
+    .stat-box h3 {
+        font-weight: bold;
+        margin: 10px 0;
+        font-size: 2em;
+    }
+    .ip-list {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 250px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+    .btn-actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    
+    /* Toast Notification Styles */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    .toast-alert {
+        min-width: 300px;
+        animation: slideIn 0.3s ease-in-out;
+    }
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+    .toast-alert.hide {
+        animation: slideOut 0.3s ease-in-out forwards;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <div>
+            <h4 class="fw-bold mb-0 text-primary">
+                <i class="fa fa-sitemap me-2"></i>IP Groups Management
+            </h4>
+            <small class="text-muted">Organize IPs and subnets by groups (Telegram, YouTube, etc.)</small>
+        </div>
+        <div class="btn-group shadow-sm">
+            <button class="btn btn-primary fw-bold" onclick="openAddModal()">
+                <i class="fa fa-plus me-1"></i> Add Group
+            </button>
+            <button class="btn btn-info fw-bold" onclick="openUploadModal()">
+                <i class="fa fa-upload me-1"></i> Upload File
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow stat-box">
+                <h3 class="text-primary" id="stat-groups">0</h3>
+                <p class="text-muted mb-0">Groups</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow stat-box">
+                <h3 class="text-info" id="stat-ips">0</h3>
+                <p class="text-muted mb-0">IPs</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow stat-box">
+                <h3 class="text-success" id="stat-subnets">0</h3>
+                <p class="text-muted mb-0">Subnets</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow stat-box">
+                <h3 class="text-warning" id="stat-invalid">0</h3>
+                <p class="text-muted mb-0">Invalid</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Groups Table -->
+    <div class="card shadow">
+        <div class="card-header bg-light border-0">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa fa-search"></i></span>
+                <input type="text" class="form-control" id="searchInput" placeholder="Search groups by name...">
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Group Name</th>
+                            <th style="width: 100px; text-align: center;">Type</th>
+                            <th style="width: 80px; text-align: center;">Count</th>
+                            <th style="width: 150px; text-align: center;">Created</th>
+                            <th style="width: 180px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupsBody">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fa fa-spinner fa-spin me-2"></i>Loading groups...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="groupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalTitle">
+                    <i class="fa fa-plus-circle me-2"></i>Add IP Group
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="groupForm" onsubmit="handleSaveGroup(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="group_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Group Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control border-primary" id="group_name" 
+                               placeholder="e.g., Telegram, YouTube, Social Media"
+                               required>
+                        <small class="text-muted">A unique name for this IP group</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">IPs / Subnets <span class="text-danger">*</span></label>
+                        <textarea class="form-control border-primary" id="group_content" 
+                                  rows="8" placeholder="10.0.0.0/8&#10;192.168.1.1&#10;8.8.8.8"
+                                  required></textarea>
+                        <small class="text-muted d-block mt-2">
+                            • Enter one IP or subnet per line<br>
+                            • Support CIDR notation: 192.168.0.0/24<br>
+                            • Lines starting with # are comments
+                        </small>
+                    </div>
+
+                    <div id="parseInfo" class="alert alert-info d-none">
+                        <strong>Parse Results:</strong>
+                        <div>IPs: <span id="count-ips">0</span> | Subnets: <span id="count-subnets">0</span> | Invalid: <span id="count-invalid">0</span></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold">
+                        <i class="fa fa-save me-1"></i>Save Group
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa fa-upload me-2"></i>Upload IP List File
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="uploadForm" onsubmit="handleUploadFile(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Group Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control border-info" id="upload_name" 
+                               placeholder="e.g., Telegram, YouTube"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control border-info" id="uploadFile" 
+                               accept=".txt,.csv,.list"
+                               required>
+                        <small class="text-muted d-block mt-2">
+                            • Supported: .txt, .csv, .list<br>
+                            • One IP/subnet per line
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info fw-bold">
+                        <i class="fa fa-upload me-1"></i>Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="previewTitle">Group Details</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Statistics</h6>
+                        <p class="mb-1"><strong>IPs:</strong> <span id="preview-ips">0</span></p>
+                        <p class="mb-1"><strong>Subnets:</strong> <span id="preview-subnets">0</span></p>
+                        <p class="mb-0"><strong>Invalid:</strong> <span id="preview-invalid">0</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Timestamps</h6>
+                        <p class="mb-1"><strong>Created:</strong> <span id="preview-created">-</span></p>
+                        <p class="mb-0"><strong>Updated:</strong> <span id="preview-updated">-</span></p>
+                    </div>
+                </div>
+                <hr>
+                <h6 class="fw-bold mb-2">Content</h6>
+                <div class="ip-list" id="preview-content"></div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-outline-primary" onclick="downloadGroup()">
+                    <i class="fa fa-download me-1"></i>Download
+                </button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+let currentGroupId = null;
+
+// On page load
+$(document).ready(function() {
+    loadGroups();
+    loadStats();
+    setInterval(loadStats, 10000);
+
+    // Search
+    $('#searchInput').on('keyup', function() {
+        const filter = $(this).val().toLowerCase();
+        $('#groupsBody tr').each(function() {
+            const match = $(this).text().toLowerCase().includes(filter);
+            $(this).toggle(match);
+        });
+    });
+
+    // Close modal event
+    $('#groupModal').on('hidden.bs.modal', function() {
+        resetModal();
+    });
+    $('#uploadModal').on('hidden.bs.modal', function() {
+        resetUploadModal();
+    });
+});
+
+// Open modals
+function openAddModal() {
+    resetModal();
+    const modal = new bootstrap.Modal(document.getElementById('groupModal'));
+    modal.show();
+}
+
+function openUploadModal() {
+    resetUploadModal();
+    const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+    modal.show();
+}
+
+// Load groups
+function loadGroups() {
+    fetch('/api/ip-groups')
+        .then(r => r.json())
+        .then(data => {
+            renderGroups(data.groups || []);
+        })
+        .catch(err => {
+            console.error(err);
+            $('#groupsBody').html('<tr><td colspan="5" class="text-center text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Error loading groups</td></tr>');
+        });
+}
+
+// Render groups
+function renderGroups(groups) {
+    const $tbody = $('#groupsBody');
+    $tbody.empty();
+
+    if (!groups || groups.length === 0) {
+        $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4">No groups yet. Click "Add Group" to create one.</td></tr>');
+        return;
+    }
+
+    groups.forEach(group => {
+        const ips = (group.ips && group.ips.length) || 0;
+        const subnets = (group.subnets && group.subnets.length) || 0;
+        const total = ips + subnets;
+        const type = ips > 0 && subnets > 0 ? 'Mixed' : (subnets > 0 ? 'Subnets' : 'IPs');
+        const date = group.created_at ? new Date(group.created_at).toLocaleString() : '-';
+
+        const row = `
+            <tr>
+                <td><strong>${escapeHtml(group.name)}</strong></td>
+                <td style="text-align:center;"><span class="badge bg-secondary">${type}</span></td>
+                <td style="text-align:center;"><span class="badge bg-primary">${total}</span></td>
+                <td style="text-align:center; font-size:13px;">${date}</td>
+                <td>
+                    <div class="btn-actions">
+                        <button class="btn btn-sm btn-outline-info" onclick="viewGroup('${group.id}')">
+                            <i class="fa fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editGroup('${group.id}')">
+                            <i class="fa fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteGroup('${group.id}', '${escapeHtml(group.name)}')">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        $tbody.append(row);
+    });
+}
+
+// Load stats
+function loadStats() {
+    fetch('/api/ip-groups/stats')
+        .then(r => r.json())
+        .then(data => {
+            $('#stat-groups').text(data.total_groups || 0);
+            $('#stat-ips').text(data.total_ips || 0);
+            $('#stat-subnets').text(data.total_subnets || 0);
+            $('#stat-invalid').text(data.total_invalid || 0);
+        })
+        .catch(err => console.error(err));
+}
+
+// View group
+function viewGroup(id) {
+    fetch(`/api/ip-groups/${id}`)
+        .then(r => r.json())
+        .then(group => {
+            currentGroupId = id;
+            showPreview(group);
+        })
+        .catch(err => alert('Error: ' + err.message));
+}
+
+// Show preview
+function showPreview(group) {
+    $('#previewTitle').text(group.name + ' - Details');
+    $('#preview-ips').text((group.ips && group.ips.length) || 0);
+    $('#preview-subnets').text((group.subnets && group.subnets.length) || 0);
+    $('#preview-invalid').text((group.invalid && group.invalid.length) || 0);
+    $('#preview-created').text(group.created_at ? new Date(group.created_at).toLocaleString() : '-');
+    $('#preview-updated').text(group.updated_at ? new Date(group.updated_at).toLocaleString() : '-');
+
+    let content = '';
+    if (group.ips && group.ips.length) {
+        content += '# IPs (' + group.ips.length + ')\n' + group.ips.join('\n') + '\n\n';
+    }
+    if (group.subnets && group.subnets.length) {
+        content += '# Subnets (' + group.subnets.length + ')\n' + group.subnets.join('\n') + '\n\n';
+    }
+    if (group.invalid && group.invalid.length) {
+        content += '# Invalid (' + group.invalid.length + ')\n' + group.invalid.join('\n');
+    }
+    $('#preview-content').text(content || '(empty)');
+
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+// Edit group
+function editGroup(id) {
+    fetch(`/api/ip-groups/${id}`)
+        .then(r => r.json())
+        .then(group => {
+            $('#modalTitle').html('<i class="fa fa-edit me-2"></i>Edit IP Group');
+            $('#group_id').val(group.id);
+            $('#group_name').val(group.name);
+            $('#group_content').val(group.content);
+            const modal = new bootstrap.Modal(document.getElementById('groupModal'));
+            modal.show();
+        })
+        .catch(err => alert('Error: ' + err.message));
+}
+
+// Delete group
+function deleteGroup(id, name) {
+    if (!confirm('Delete "' + name + '"?')) return;
+
+    fetch(`/api/ip-groups/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            showAlert('Group deleted', 'success');
+            loadGroups();
+            loadStats();
+        })
+        .catch(err => showAlert('Error: ' + err.message, 'danger'));
+}
+
+// Save group
+function handleSaveGroup(event) {
+    event.preventDefault();
+
+    const id = $('#group_id').val();
+    const name = $('#group_name').val();
+    const content = $('#group_content').val();
+
+    const url = id ? `/api/ip-groups/${id}` : '/api/ip-groups';
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name, content })
+    })
+        .then(r => r.json())
+        .then(data => {
+            showAlert('Group saved successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('groupModal')).hide();
+            loadGroups();
+            loadStats();
+        })
+        .catch(err => showAlert('Error: ' + err.message, 'danger'));
+}
+
+// Upload file
+function handleUploadFile(event) {
+    event.preventDefault();
+
+    const name = $('#upload_name').val();
+    const file = $('#uploadFile')[0].files[0];
+
+    if (!name || !file) {
+        showAlert('Please enter name and select file', 'warning');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('file', file);
+
+    fetch('/api/ip-groups/upload', {
+        method: 'POST',
+        body: formData
+    })
+        .then(r => r.json())
+        .then(data => {
+            const count = (data.group && data.group.count) || 0;
+            showAlert(`Uploaded! ${count} entries imported`, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+            loadGroups();
+            loadStats();
+        })
+        .catch(err => showAlert('Error: ' + err.message, 'danger'));
+}
+
+// Download
+function downloadGroup() {
+    if (currentGroupId) {
+        window.location.href = `/api/ip-groups/${currentGroupId}/download`;
+    }
+}
+
+// Reset forms
+function resetModal() {
+    $('#modalTitle').html('<i class="fa fa-plus-circle me-2"></i>Add IP Group');
+    $('#groupForm')[0].reset();
+    $('#group_id').val('');
+}
+
+function resetUploadModal() {
+    $('#uploadForm')[0].reset();
+}
+
+// Alert
+function showAlert(msg, type) {
+    // Create container if not exists
+    if (!document.getElementById('toastContainer')) {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    const container = document.getElementById('toastContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show toast-alert shadow-lg`;
+    alert.innerHTML = `
+        ${escapeHtml(msg)}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    container.appendChild(alert);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        alert.classList.add('hide');
+        setTimeout(() => alert.remove(), 300);
+    }, 3000);
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+
+{{ end }}

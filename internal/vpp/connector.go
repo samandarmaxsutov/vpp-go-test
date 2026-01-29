@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 	"vpp-go-test/internal/vpp/abf_mgr"
 	"vpp-go-test/internal/vpp/acl"
@@ -30,6 +31,7 @@ type VPPClient struct {
 	PolicerManager *policer.Manager
 	StartTime      time.Time
 	IfNames        map[uint32]string
+	apiMutex       sync.Mutex // Mutex for VPP API serialization
 }
 
 func ConnectVPP(socketPath string, statsSocketPath string) (*VPPClient, error) {
