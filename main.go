@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"time"
 	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/web"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -45,6 +46,13 @@ func main() {
 	}()
 	// 4. Start Web Server
 	client.StartTime = time.Now()
+
+	// 4.5 Start the Rule Scheduler
+	if client.RuleScheduler != nil {
+		client.RuleScheduler.Start()
+		log.Println("✅ Rule Scheduler started successfully")
+	}
+
 	r := gin.Default()
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("templates/**/*.html")

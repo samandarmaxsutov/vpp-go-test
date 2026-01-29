@@ -186,6 +186,7 @@ type FullBackupConfig struct {
 	IPFIX      IPFIXBackupConfig         `json:"ipfix"`
 	ABF        ABFBackupConfig           `json:"abf"`
 	Routes     StaticRoutingBackupConfig `json:"routes"`
+	TimeGroups map[string]interface{}    `json:"time_groups"`
 }
 
 const (
@@ -631,6 +632,30 @@ func (v *VPPClient) SaveConfiguration() error {
 	}
 
 	// ========================================
+	// 9. TIME GROUPS BACKUP
+	// ========================================
+	fmt.Println("  ⏰ Backing up Time Groups...")
+	timeGroupsBackup := make(map[string]interface{})
+
+	if v.TimeGroupManager != nil {
+		timeGroupsBackup = v.TimeGroupManager.GetBackupData()
+
+		if timeGroupData, ok := timeGroupsBackup["time_groups"]; ok {
+			if tgMap, ok := timeGroupData.(map[string]interface{}); ok {
+				fmt.Printf("  ✅ Time groups backed up: %d groups\n", len(tgMap))
+			}
+		}
+
+		if assignData, ok := timeGroupsBackup["time_group_assignment_map"]; ok {
+			if assignMap, ok := assignData.(map[string]interface{}); ok {
+				fmt.Printf("  ✅ Time group assignments backed up: %d rules\n", len(assignMap))
+			}
+		}
+	} else {
+		fmt.Println("  ⚠️  TimeGroupManager not available")
+	}
+
+	// ========================================
 	// COMBINE AND SAVE
 	// ========================================
 	fullBackup := FullBackupConfig{
@@ -643,6 +668,7 @@ func (v *VPPClient) SaveConfiguration() error {
 		IPFIX:      ipfixBackup,
 		ABF:        abfBackup,
 		Routes:     routesBackup,
+		TimeGroups: timeGroupsBackup,
 	}
 
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
@@ -1260,6 +1286,31 @@ func (v *VPPClient) RestoreConfiguration() error {
 	// }
 
 	// ========================================
+	// PHASE 10: TIME GROUPS RESTORE
+	// ========================================
+	fmt.Println("\n📝 PHASE 10: Restoring Time Groups...")
+
+	if v.TimeGroupManager != nil && len(fullBackup.TimeGroups) > 0 {
+		if err := v.TimeGroupManager.RestoreBackupData(fullBackup.TimeGroups); err != nil {
+			fmt.Printf("  ❌ Failed to restore time groups: %v\n", err)
+		} else {
+			if timeGroupData, ok := fullBackup.TimeGroups["time_groups"]; ok {
+				if tgMap, ok := timeGroupData.(map[string]interface{}); ok {
+					fmt.Printf("  ✅ Time groups restored: %d groups\n", len(tgMap))
+				}
+			}
+
+			if assignData, ok := fullBackup.TimeGroups["time_group_assignment_map"]; ok {
+				if assignMap, ok := assignData.(map[string]interface{}); ok {
+					fmt.Printf("  ✅ Time group assignments restored: %d rules\n", len(assignMap))
+				}
+			}
+		}
+	} else {
+		fmt.Println("  ℹ️  No time groups to restore or TimeGroupManager not available")
+	}
+
+	// ========================================
 	// PRINT COMPREHENSIVE SUMMARY
 	// ========================================
 	fmt.Println("\n" + strings.Repeat("=", 70))
@@ -1299,9 +1350,8 @@ func (v *VPPClient) RestoreConfiguration() error {
 	fmt.Printf("   ├─ Attached:    %d\n", stats.ABFAttached)
 	fmt.Printf("   └─ Failed:      %d\n", stats.ABFFailed)
 
-	fmt.Printf("\n🛣️  STATIC ROUTES:\n")
-	fmt.Printf("   ├─ Added:       %d\n", stats.RoutesAdded)
-	fmt.Printf("   └─ Failed:      %d\n", stats.RoutesFailed)
+	fmt.Printf("\n⏰ TIME GROUPS:\n")
+	fmt.Printf("   └─ Restored from backup\n")
 
 	fmt.Println("\n" + strings.Repeat("=", 70))
 	fmt.Println("✅ RESTORATION COMPLETE!")

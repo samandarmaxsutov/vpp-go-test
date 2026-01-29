@@ -13,12 +13,14 @@ import (
 )
 
 type Manager struct {
-	rpc policer.RPCService
+	rpc       policer.RPCService
+	bindStore *bindingStore
 }
 
 func NewManager(conn api.Connection) *Manager {
 	return &Manager{
-		rpc: policer.NewServiceClient(conn),
+		rpc:       policer.NewServiceClient(conn),
+		bindStore: newBindingStore("./policer_bindings.json"),
 	}
 }
 
@@ -44,7 +46,7 @@ func (m *Manager) AddPolicer(ctx context.Context, name string, cir uint32, cb ui
 		},
 	}
 
-	// DIQQAT: PolicerAddReply dan PolicerIndex ni olish uchun 
+	// DIQQAT: PolicerAddReply dan PolicerIndex ni olish uchun
 	// binapi-da PolicerAddReply qandayligini tekshirish kerak.
 	// Agar PolicerAddReply-da indeks bo'lmasa, Dump orqali topiladi.
 	reply, err := m.rpc.PolicerAdd(ctx, req)
@@ -63,6 +65,21 @@ func (m *Manager) DeletePolicer(ctx context.Context, index uint32) error {
 	}
 
 	reply, err := m.rpc.PolicerDel(ctx, req)
+	if err != nil {
+		return fmt.Errorf("policerni o'chirishda xatolik: %v", err)
+	}
+
+	return api.RetvalToVPPApiError(reply.Retval)
+}
+
+// DeletePolicerByName - Policer ni nomi bo'yicha o'chiradi
+func (m *Manager) DeletePolicerByName(ctx context.Context, name string) error {
+	req := &policer.PolicerAddDel{
+		IsAdd: false,
+		Name:  name,
+	}
+
+	reply, err := m.rpc.PolicerAddDel(ctx, req)
 	if err != nil {
 		return fmt.Errorf("policerni o'chirishda xatolik: %v", err)
 	}
@@ -101,7 +118,15 @@ func (m *Manager) BindToInterface(ctx context.Context, name string, swIfIndex ui
 			SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
 			Apply:     apply,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		if apply {
+			_ = m.bindStore.add(name, swIfIndex, direction)
+		} else {
+			_ = m.bindStore.remove(name, swIfIndex, direction)
+		}
+		return nil
 	}
 
 	// Default: PolicerInput xabarini yuborish
@@ -110,5 +135,20 @@ func (m *Manager) BindToInterface(ctx context.Context, name string, swIfIndex ui
 		SwIfIndex: interface_types.InterfaceIndex(swIfIndex),
 		Apply:     apply,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	if apply {
+		_ = m.bindStore.add(name, swIfIndex, direction)
+	} else {
+		_ = m.bindStore.remove(name, swIfIndex, direction)
+	}
+	return nil
+}
+
+func (m *Manager) GetBindingsForPolicer(name string) []InterfaceBinding {
+	if m.bindStore == nil {
+		return nil
+	}
+	return m.bindStore.get(name)
 }

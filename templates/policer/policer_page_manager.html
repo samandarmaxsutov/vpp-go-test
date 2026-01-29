@@ -17,11 +17,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Index</th>
                             <th>Nomi</th>
                             <th>CIR (kbps)</th>
                             <th>CB (bytes)</th>
-                            <th>Turi</th>
+                            <th>Interfeyslar</th>
+                            <th>Vaqt Guruhi</th>
+                            <th>Status</th>
                             <th class="text-end">Amallar</th>
                         </tr>
                     </thead>
@@ -90,6 +91,13 @@
                         <input type="number" class="form-control" name="cb" placeholder="125000" required>
                         <div class="form-text">Bir vaqtning o'zida o'tishi mumkin bo'lgan maksimal trafik.</div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vaqt Guruhi (Ixtiyoriy)</label>
+                        <select class="form-select" id="policer_time_group_id" name="time_group_id">
+                            <option value="">-- Vaqt cheklovi yo'q --</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Bu Policer faqatgina tanlangan vaqt oynasida qo'llanadi</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
@@ -104,13 +112,21 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadPolicers();
         loadInterfaces();
+        
+        // Load time groups into dropdown
+        if (typeof TimeGroupUtils !== 'undefined') {
+            TimeGroupUtils.loadTimeGroupsIntoSelect('policer_time_group_id');
+        }
 
         // 1. Policer yaratish (O'zgarishsiz qoladi)
         document.getElementById('createPolicerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
+            const policerName = formData.get('name');
+            const timeGroupId = document.getElementById('policer_time_group_id').value;
+            
             const data = {
-                name: formData.get('name'),
+                name: policerName,
                 cir: parseInt(formData.get('cir')),
                 cb: parseInt(formData.get('cb'))
             };
@@ -127,8 +143,22 @@
                     if (res.error) {
                         alert("Xatolik: " + res.error);
                     } else {
-                        alert(res.message);
-                        location.reload();
+                        // Assign time group if selected
+                        if (timeGroupId && typeof TimeGroupUtils !== 'undefined') {
+                            TimeGroupUtils.assignTimeGroupToRule(timeGroupId, 'POLICER', policerName)
+                                .then(() => {
+                                    alert(res.message);
+                                    location.reload();
+                                })
+                                .catch(err => {
+                                    console.error('Time group assignment failed:', err);
+                                    alert(res.message);
+                                    location.reload();
+                                });
+                        } else {
+                            alert(res.message);
+                            location.reload();
+                        }
                     }
                 });
         });
@@ -144,23 +174,36 @@
                     select.innerHTML = '<option value="">-- Tanlang --</option>';
 
                     if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Policerlar topilmadi</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3">Policerlar topilmadi</td></tr>';
                         return;
                     }
 
                     data.forEach((p, idx) => {
-                        // Jadvalga qo'shish
-                        // Eslatma: Agar JSONda policer_index bo'lmasa, massiv indeksidan foydalanamiz
-                        const pIndex = p.policer_index !== undefined ? p.policer_index : idx;
+                        // Time group badge
+                        const timeGroupBadge = p.time_group_name !== '-' 
+                            ? `<span class="badge bg-info" title="${p.status_message}">
+                                <i class="bi bi-clock-history me-1"></i>${p.time_group_name}
+                               </span>`
+                            : '<span class="text-muted">-</span>';
+                        
+                        // Status badge
+                        const statusBadge = p.is_active 
+                            ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Faol</span>'
+                            : '<span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>Nofaol</span>';
 
-                        const row = `<tr>
-                        <td><span class="badge bg-secondary">${pIndex}</span></td>
+                        const bindingsText = (p.bindings && p.bindings.length)
+                            ? p.bindings.map(b => `#${b.sw_if_index} (${b.direction})`).join(', ')
+                            : '<span class="text-muted">-</span>';
+
+                        const row = `<tr class="${!p.is_active ? 'table-secondary' : ''}">
                         <td><strong>${p.name}</strong></td>
                         <td>${p.cir} kbps</td>
                         <td>${p.cb} bytes</td>
-                        <td><span class="badge bg-info text-dark">1R2C</span></td>
+                        <td class="small">${bindingsText}</td>
+                        <td>${timeGroupBadge}</td>
+                        <td>${statusBadge}</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger" onclick="deletePolicer(${pIndex})">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePolicer('${p.name}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -195,10 +238,10 @@
         }
 
         // 4. Policer o'chirish
-        window.deletePolicer = function(index) {
+        window.deletePolicer = function(name) {
             if (!confirm('Haqiqatan ham ushbu policerni o\'chirmoqchimisiz?')) return;
 
-            fetch(`/api/policer/policy/${index}`, {
+            fetch(`/api/policer/policy/${encodeURIComponent(name)}`, {
                     method: 'DELETE'
                 })
                 .then(res => res.json())
