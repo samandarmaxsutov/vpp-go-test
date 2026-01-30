@@ -238,3 +238,5 @@
 {"timestamp":"2026-01-29 11:45:35","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 3","details":"Inside: true, Add: true","status":"SUCCESS"}
 {"timestamp":"2026-01-29 11:45:38","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 2","details":"Inside: true, Add: true","status":"SUCCESS"}
 {"timestamp":"2026-01-29 11:45:42","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 4","details":"Inside: true, Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-29 18:45:26","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 3","details":"Inside: true, Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-30 10:38:48","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
