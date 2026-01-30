@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -45,6 +46,9 @@ func (h *TLSInterceptionHandler) GetConfig(c *gin.Context) {
 
 func (h *TLSInterceptionHandler) UpdateConfig(c *gin.Context) {
 	var config vpp.TLSInterceptionConfig
+	fmt.Println("Updating TLS interception configuration")
+	fmt.Println(c.Request.Body)
+	
 	if err := c.ShouldBindJSON(&config); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -69,16 +73,8 @@ func (h *TLSInterceptionHandler) UpdateConfig(c *gin.Context) {
 }
 
 func (h *TLSInterceptionHandler) Enable(c *gin.Context) {
-	var config *vpp.TLSInterceptionConfig
-
-	if c.Request.ContentLength > 0 {
-		var cfg vpp.TLSInterceptionConfig
-		if err := c.ShouldBindJSON(&cfg); err == nil {
-			config = &cfg
-		}
-	}
-
-	if err := h.manager.Enable(c.Request.Context(), config); err != nil {
+	// Pass nil to use the configuration already loaded in the manager
+	if err := h.manager.Enable(c.Request.Context(), nil); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error":   "Failed to enable TLS interception: " + err.Error(),

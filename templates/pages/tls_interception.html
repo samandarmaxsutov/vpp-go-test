@@ -336,11 +336,31 @@ sudo -H mitmdump --set confdir=/root/.mitmproxy --listen-host 127.0.0.1 --listen
  *  - GET  /api/tls-interception/certificates
  *  - POST /api/tls-interception/certificates/upload  (multipart field: certificate)
  */
-
+/**
+ * Converts a Host IP (192.168.1.50/24) to a Network Subnet (192.168.1.0/24)
+ */
+function getNetworkSubnet(cidr) {
+  if (!cidr || !cidr.includes('/')) return cidr;
+  
+  const [ip, mask] = cidr.split('/');
+  const octets = ip.split('.');
+  
+  // Zero out octets based on common masks
+  if (mask === '24') {
+    return `${octets[0]}.${octets[1]}.${octets[2]}.0/24`;
+  } else if (mask === '16') {
+    return `${octets[0]}.${octets[1]}.0.0/16`;
+  } else if (mask === '8') {
+    return `${octets[0]}.0.0.0/8`;
+  }
+  
+  return cidr; // Return as-is for non-standard masks
+}
 let currentStatus = {};
 let currentConfig = {
   lan_interfaces: [],
   intercept_ports: [],
+  intercept_subnets: [],
   excluded_urls: []
 };
 
@@ -497,15 +517,36 @@ function renderSelectedInterfaces() {
     wrap.appendChild(pill);
   }
 }
-
+function syncSubnetsFromSelectedInterfaces() {
+  const subnets = [];
+  
+  // Loop through every name in our selected list
+  for (const name of currentConfig.lan_interfaces) {
+    // Find the matching hardware info to get the IP
+    const info = availableInterfaces.find(i => String(i.name) === String(name));
+    const firstIp = info?.ip_addresses?.[0];
+    
+    if (firstIp) {
+      subnets.push(getNetworkSubnet(firstIp));
+    }
+  }
+  
+  // Update the global config with deduped subnets
+  currentConfig.intercept_subnets = dedupeStrings(subnets);
+}
 function addSelectedInterface() {
   const sel = document.getElementById('ifaceSelect');
   const val = sel ? sel.value : '';
   if (!val) return showToast('Select an interface first', 'warning');
 
   currentConfig.lan_interfaces = dedupeStrings([...(currentConfig.lan_interfaces || []), val]);
-  setDirty(true);
+  
+  // Update the subnets based on the new list of interfaces
+  syncSubnetsFromSelectedInterfaces();
 
+  console.log(currentConfig);
+
+  setDirty(true);
   if (sel) sel.value = '';
   fillIfaceDropdown();
   renderSelectedInterfaces();
@@ -513,11 +554,14 @@ function addSelectedInterface() {
 
 function removeInterface(name) {
   currentConfig.lan_interfaces = (currentConfig.lan_interfaces || []).filter(x => String(x) !== String(name));
+  
+  // Re-sync subnets so the removed interface's subnet is gone
+  syncSubnetsFromSelectedInterfaces();
+
   setDirty(true);
   fillIfaceDropdown();
   renderSelectedInterfaces();
 }
-
 function renderSelectedPorts() {
   const wrap = document.getElementById('selectedPortsWrap');
   const empty = document.getElementById('noSelectedPorts');
@@ -636,6 +680,7 @@ function setDirty(flag) {
 async function saveConfig() {
   const ifaces = currentConfig.lan_interfaces || [];
   const ports = currentConfig.intercept_ports || [];
+  
   if (ifaces.length === 0) return showToast('Select at least one interface', 'warning');
   if (ports.length === 0) return showToast('Add at least one port', 'warning');
 
@@ -648,10 +693,21 @@ async function saveConfig() {
   }
 
   try {
+    // --- FIX: GENERATE SUBNETS FROM SELECTED INTERFACES ---
+    const derivedSubnets = ifaces.map(name => {
+      const info = availableInterfaces.find(i => String(i.name) === String(name));
+      const firstIp = info?.ip_addresses?.[0];
+      return firstIp ? getNetworkSubnet(firstIp) : null;
+    }).filter(Boolean);
+
     const payload = {
-      lan_interfaces: dedupeStrings(currentConfig.lan_interfaces || []),
-      intercept_ports: dedupePorts(currentConfig.intercept_ports || []),
-      excluded_urls: dedupeStrings(currentConfig.excluded_urls || [])
+      // Include base settings (IDs, names, etc) if they exist in currentConfig
+      ...currentConfig, 
+      lan_interfaces: dedupeStrings(ifaces),
+      intercept_ports: dedupePorts(ports),
+      excluded_urls: dedupeStrings(currentConfig.excluded_urls || []),
+      // Plural key to match updated Go struct
+      intercept_subnets: dedupeStrings(derivedSubnets) 
     };
 
     const res = await fetchJSON('/api/tls-interception/config', {

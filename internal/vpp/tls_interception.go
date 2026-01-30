@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	tlsConfPath     = "/etc/sarhad-guard/tls-interception/tls_conf.conf"
+	tlsConfPath      = "/etc/sarhad-guard/tls-interception/tls_conf.conf"
 	mitmproxyConfDir = "/root/.mitmproxy"
 
 	urlLogsDir = "/etc/sarhad-guard/url_logs"
@@ -53,8 +53,8 @@ type TLSInterceptionConfig struct {
 	Tap1HostIP string `json:"tap1_host_ip"`
 
 	// LAN subnet to intercept (fallback)
-	InterceptSubnet string `json:"intercept_subnet"`
-
+	InterceptSubnet  string   `json:"intercept_subnet"`
+	InterceptSubnets []string `json:"intercept_subnets"`
 	// LAN interfaces in VPP to attach ABF
 	LanInterfaces []string `json:"lan_interfaces"`
 	// Deprecated
@@ -81,8 +81,8 @@ type TLSInterceptionConfig struct {
 
 func DefaultTLSInterceptionConfig() *TLSInterceptionConfig {
 	return &TLSInterceptionConfig{
-		Tap0ID:           0,
-		Tap1ID:           1,
+		Tap0ID:           100,
+		Tap1ID:           101,
 		Tap0HostName:     "vpp-tap0",
 		Tap1HostName:     "vpp-tap1",
 		Tap0VppIP:        "203.0.113.1/30",
@@ -90,6 +90,7 @@ func DefaultTLSInterceptionConfig() *TLSInterceptionConfig {
 		Tap0HostIP:       "203.0.113.2/30",
 		Tap1HostIP:       "203.0.113.6/30",
 		InterceptSubnet:  "192.168.10.0/24",
+		InterceptSubnets: []string{},
 		LanInterfaces:    []string{},
 		LanInterface:     "",
 		ACLIndex:         100,
@@ -266,35 +267,32 @@ func (m *TLSInterceptionManager) UpdateConfig(ctx context.Context, newCfg *TLSIn
 		return fmt.Errorf("config is nil")
 	}
 
-	newCfg.Normalize()
-
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	oldCfg := *m.config // shallow copy ok (slices handled below)
-	oldPorts := append([]int{}, m.config.normalizedInterceptPorts()...)
-	oldLan := append([]string{}, m.config.GetLanInterfaces()...)
-	oldExcl := append([]string{}, m.config.normalizedExcludedURLs()...)
+	// Load the complete, existing config from disk as the base.
+	baseConfig := DefaultTLSInterceptionConfig()
+	_ = loadTLSConfigFromDisk(baseConfig)
 
-	// If enabled: we only allow live updates for LanInterfaces / InterceptPorts / ExcludedURLs.
-	if m.status.IsEnabled {
-		if m.config.Tap0HostName != newCfg.Tap0HostName ||
-			m.config.Tap1HostName != newCfg.Tap1HostName ||
-			m.config.Tap0HostIP != newCfg.Tap0HostIP ||
-			m.config.Tap1HostIP != newCfg.Tap1HostIP ||
-			m.config.Tap0VppIP != newCfg.Tap0VppIP ||
-			m.config.Tap1VppIP != newCfg.Tap1VppIP ||
-			m.config.MitmproxyPort != newCfg.MitmproxyPort {
-			return fmt.Errorf("when inspection is enabled, only lan_interfaces / intercept_ports / excluded_urls can be changed live (disable first for other changes)")
-		}
-	}
+	// Preserve old values for delta calculation
+	oldPorts := baseConfig.normalizedInterceptPorts()
+	oldLan := baseConfig.GetLanInterfaces()
 
-	m.config = newCfg
+	// Normalize the incoming UI config to clean up its data.
+	newCfg.Normalize()
+
+	// Merge only the UI-managed fields from the new config into the base config.
+	baseConfig.InterceptSubnet = newCfg.InterceptSubnet
+	baseConfig.LanInterfaces = newCfg.LanInterfaces
+	baseConfig.InterceptPorts = newCfg.InterceptPorts
+	baseConfig.ExcludedURLs = newCfg.ExcludedURLs
+	baseConfig.InterceptHTTP = newCfg.InterceptHTTP
+	baseConfig.InterceptHTTPS = newCfg.InterceptHTTPS
+
+	// The merged config is the new source of truth.
+	baseConfig.Normalize()
+	m.config = baseConfig
 	_ = saveTLSConfigToDisk(m.config)
-
-	// Always apply excludes (logger reads from disk, but keep consistent)
-	_ = oldCfg
-	_ = oldExcl
 
 	// Apply live if enabled
 	if m.status.IsEnabled {
@@ -453,6 +451,7 @@ func (m *TLSInterceptionManager) GetSimpleStatus() TLSInterceptionStatusSimple {
 }
 
 func (m *TLSInterceptionManager) detectExistingResources() {
+	fmt.Println("\n🧐 Detecting existing TLS interception resources...")
 	interfaces, err := m.vppClient.GetInterfaces()
 	if err != nil {
 		m.status.Tap0Created = false
@@ -471,6 +470,7 @@ func (m *TLSInterceptionManager) detectExistingResources() {
 
 	m.status.MitmproxyRunning, m.status.MitmproxyPID = m.checkMitmproxyRunning()
 	m.status.KernelConfigured = m.checkKernelConfigured()
+	fmt.Println("  kernel configured:", m.status.KernelConfigured)
 
 	m.status.ABFConfigured, m.status.AttachedInterfaces = m.checkABFAndAttachmentsWithInterfaces(interfaces)
 
@@ -493,22 +493,32 @@ func (m *TLSInterceptionManager) findInterfaceByIPFromList(interfaces []Interfac
 }
 
 func (m *TLSInterceptionManager) checkKernelConfigured() bool {
+	fmt.Println("  🔍 Checking kernel networking configuration...")
 	out, err := exec.Command("sysctl", "-n", "net.ipv4.ip_forward").Output()
 	if err != nil || strings.TrimSpace(string(out)) != "1" {
+		fmt.Println("ipforwarding check is failed:", err, string(out))
 		return false
 	}
 
 	out, err = exec.Command("iptables", "-t", "nat", "-S", "PREROUTING").Output()
 	if err != nil {
+		fmt.Println("iptables check is failed:", err, string(out))
 		return false
 	}
 
 	rules := string(out)
 	// must have at least one redirect on tap0HostName to mitmproxy port
 	proxyPort := fmt.Sprintf("%d", m.config.MitmproxyPort)
-	return strings.Contains(rules, "-i "+m.config.Tap0HostName) &&
-		strings.Contains(rules, "REDIRECT") &&
-		strings.Contains(rules, "--to-port "+proxyPort)
+
+	// Note: iptables -S may canonicalize --to-port to --to-ports
+	hasTapInterface := strings.Contains(rules, "-i "+m.config.Tap0HostName)
+	hasRedirectTarget := strings.Contains(rules, "REDIRECT")
+	hasToPort := strings.Contains(rules, "--to-port "+proxyPort) || strings.Contains(rules, "--to-ports "+proxyPort)
+
+	isConfigured := hasTapInterface && hasRedirectTarget && hasToPort
+	fmt.Printf("  kernel configured: %v\n", isConfigured)
+
+	return isConfigured
 }
 
 func (m *TLSInterceptionManager) checkABFAndAttachmentsWithInterfaces(interfaces []InterfaceInfo) (bool, []string) {
@@ -588,10 +598,37 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// If a new config is provided by the UI, load the existing full config,
+	// merge the UI-specific fields, and save it back.
 	if config != nil {
+		// Load the full configuration from disk first to not lose static values.
+		existingConfig := DefaultTLSInterceptionConfig()
+		_ = loadTLSConfigFromDisk(existingConfig)
+
+		// Normalize the incoming UI config to clean up its data.
 		config.Normalize()
-		m.config = config
-		_ = saveTLSConfigToDisk(m.config)
+
+		// Now, apply ONLY the changes from the UI request onto the existing config.
+		existingConfig.InterceptSubnet = config.InterceptSubnet
+		existingConfig.LanInterfaces = config.LanInterfaces
+		existingConfig.InterceptPorts = config.InterceptPorts
+		existingConfig.ExcludedURLs = config.ExcludedURLs
+		existingConfig.InterceptHTTP = config.InterceptHTTP
+		existingConfig.InterceptHTTPS = config.InterceptHTTPS
+		// Other fields like Tap IPs, proxy ports etc., are preserved from existingConfig.
+
+		// Re-normalize the merged config, make it active, and save it.
+		existingConfig.Normalize()
+		m.config = existingConfig
+		if err := saveTLSConfigToDisk(m.config); err != nil {
+			m.status.LastError = fmt.Sprintf("Failed to save merged config: %v", err)
+			return fmt.Errorf("%s", m.status.LastError)
+		}
+	} else {
+		// If no config is passed, ensure the latest from disk is loaded.
+		cfg := DefaultTLSInterceptionConfig()
+		_ = loadTLSConfigFromDisk(cfg)
+		m.config = cfg
 	}
 
 	fmt.Println("\n" + strings.Repeat("=", 70))
@@ -691,7 +728,7 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 		}
 		m.status.MitmproxyRunning = true
 		fmt.Println("  ✅ mitmproxy started")
-		fmt.Printf("  ✅ mitmproxy PID: %d status %d\n", m.status.MitmproxyPID, m.status.IsEnabled)
+		fmt.Printf("  ✅ mitmproxy PID: %d status %v\n", m.status.MitmproxyPID, m.status.IsEnabled)
 	}
 
 	m.status.ConfiguredAt = time.Now()
@@ -705,7 +742,6 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 	}
 
 	m.status.LastError = ""
-
 
 	// ensure iptables ports reflect config (covers upgrades)
 	_ = m.applyPortDelta([]int{}, m.config.normalizedInterceptPorts())
@@ -762,34 +798,40 @@ func (m *TLSInterceptionManager) Disable(ctx context.Context) error {
 	m.status.LastError = ""
 	fmt.Println("✅ TRAFFIC INSPECTION DISABLED")
 
-
 	return nil
 }
 
 // ---------------- VPP methods ----------------
 
 func (m *TLSInterceptionManager) createTAPInterfaces(ctx context.Context) error {
-	tap0Idx, err := m.vppClient.CreateTapWithHostIP(
+	// Create tap0
+	tap0Idx, err := m.vppClient.CreateTap(
 		m.config.Tap0ID,
 		m.config.Tap0HostName,
-		m.config.Tap0HostIP,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tap0: %v", err)
 	}
 	m.tap0SwIfIndex = tap0Idx
+	if err := m.runCommand("ip", "addr", "add", m.config.Tap0HostIP, "dev", m.config.Tap0HostName); err != nil {
+		// Even if this fails, the interface might exist, log and continue
+		fmt.Printf("  ⚠️  Failed to set IP for %s: %v (continuing)\n", m.config.Tap0HostName, err)
+	}
 	fmt.Printf("  ✅ Created %s (VPP index: %d, Host IP: %s)\n",
 		m.config.Tap0HostName, tap0Idx, m.config.Tap0HostIP)
 
-	tap1Idx, err := m.vppClient.CreateTapWithHostIP(
+	// Create tap1
+	tap1Idx, err := m.vppClient.CreateTap(
 		m.config.Tap1ID,
 		m.config.Tap1HostName,
-		m.config.Tap1HostIP,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tap1: %v", err)
 	}
 	m.tap1SwIfIndex = tap1Idx
+	if err := m.runCommand("ip", "addr", "add", m.config.Tap1HostIP, "dev", m.config.Tap1HostName); err != nil {
+		fmt.Printf("  ⚠️  Failed to set IP for %s: %v (continuing)\n", m.config.Tap1HostName, err)
+	}
 	fmt.Printf("  ✅ Created %s (VPP index: %d, Host IP: %s)\n",
 		m.config.Tap1HostName, tap1Idx, m.config.Tap1HostIP)
 

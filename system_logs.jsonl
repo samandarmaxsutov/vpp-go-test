@@ -242,3 +242,41 @@
 {"timestamp":"2026-01-30 10:38:48","user":"admin","ip":"127.0.0.1","type":"auth","action":"Login","target":"System","status":"SUCCESS"}
 {"timestamp":"2026-01-30 11:59:27","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 10","status":"SUCCESS"}
 {"timestamp":"2026-01-30 11:59:30","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap1","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:17:43","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 0","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:17:51","user":"admin","ip":"127.0.0.1","type":"config","action":"ATTACH_ABF_INTERFACE","target":"Policy: 10 -\u003e Iface: 3","details":"Priority: 10, IPv6: false, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:17:54","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 203.0.113.2, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:18:03","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 1","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:18:08","user":"admin","ip":"127.0.0.1","type":"config","action":"SET_NAT_INTERFACE","target":"SwIfIndex: 3","details":"Inside: true, Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:18:14","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap1","details":"Index: 10","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:18:16","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:23:03","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:23:11","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 203.0.113.2, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:23:27","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 0","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:23:31","user":"admin","ip":"127.0.0.1","type":"config","action":"ATTACH_ABF_INTERFACE","target":"Policy: 10 -\u003e Iface: 3","details":"Priority: 10, IPv6: false, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:23:40","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 203.0.113.2, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:23:47","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 1","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:25:28","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 10","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:25:30","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap1","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:25:34","user":"admin","ip":"127.0.0.1","type":"config","action":"ATTACH_ABF_INTERFACE","target":"Policy: 10 -\u003e Iface: 3","details":"Priority: 10, IPv6: false, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:25:42","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 0","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:25:44","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 1","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:29:22","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:34:21","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:37:33","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap101","details":"Index: 10","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:37:36","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap100","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:41:10","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap101","details":"Index: 10","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:41:12","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap100","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:56:11","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 0.0.0.0, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 15:56:17","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:03:20","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:16:18","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 0.0.0.0, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:16:21","user":"admin","ip":"127.0.0.1","type":"config","action":"ATTACH_ABF_INTERFACE","target":"Policy: 10 -\u003e Iface: 3","details":"Priority: 10, IPv6: false, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:16:24","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 0.0.0.0, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:16:32","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap0","details":"Index: 10","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:16:34","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"tap1","details":"Index: 11","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:18:06","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 0.0.0.0, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:18:43","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 12","details":"ACL: 1, NextHop: 203.0.113.2, Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:18:47","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 0.0.0.0, Add: false","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:18:56","user":"admin","ip":"127.0.0.1","type":"config","action":"ATTACH_ABF_INTERFACE","target":"Policy: 12 -\u003e Iface: 3","details":"Priority: 10, IPv6: false, Add: true","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:19:43","user":"admin","ip":"127.0.0.1","type":"config","action":"DELETE","target":"ACL 0","status":"SUCCESS"}
+{"timestamp":"2026-01-30 16:20:14","user":"admin","ip":"127.0.0.1","type":"config","action":"CREATE_ABF_POLICY","target":"ID: 10","details":"ACL: 1, NextHop: 0.0.0.0, Add: false","status":"SUCCESS"}
