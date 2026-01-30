@@ -476,6 +476,8 @@ func (m *TLSInterceptionManager) detectExistingResources() {
 
 	m.status.IsEnabled = m.status.Tap0Created && m.status.Tap1Created &&
 		m.status.MitmproxyRunning && m.status.KernelConfigured && m.status.ABFConfigured
+	fmt.Printf(" Tap0Created: %v, Tap1Created: %v, MitmproxyRunning: %v, KernelConfigured: %v, ABFConfigured: %v, IsEnabled: %v\n",
+		m.status.Tap0Created, m.status.Tap1Created, m.status.MitmproxyRunning, m.status.KernelConfigured, m.status.ABFConfigured, m.status.IsEnabled)
 }
 
 func (m *TLSInterceptionManager) findInterfaceByIPFromList(interfaces []InterfaceInfo, targetIP string) (uint32, bool) {
@@ -582,28 +584,6 @@ func (m *TLSInterceptionManager) getInterfaceSubnet(interfaces []InterfaceInfo, 
 	return ""
 }
 
-// Logs: tail today's urls_DD_MM_YYYY.log
-func (m *TLSInterceptionManager) GetInspectionLogs(lines int) ([]string, error) {
-	if lines <= 0 {
-		lines = 50
-	}
-	logFile := filepath.Join(urlLogsDir, fmt.Sprintf("urls_%s.log", time.Now().Format("02_01_2006")))
-	if _, err := os.Stat(logFile); os.IsNotExist(err) {
-		return []string{"No logs yet for today"}, nil
-	}
-
-	out, err := exec.Command("tail", "-n", fmt.Sprintf("%d", lines), logFile).Output()
-	if err != nil {
-		return nil, err
-	}
-
-	txt := strings.TrimSpace(string(out))
-	if txt == "" {
-		return []string{"No logs yet for today"}, nil
-	}
-	return strings.Split(txt, "\n"), nil
-}
-
 func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSInterceptionConfig) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -705,16 +685,27 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 		fmt.Printf("  ✅ mitmproxy already running (PID: %d)\n", pid)
 	} else {
 		if err := m.startMitmproxy(); err != nil {
-			fmt.Printf("  ⚠️  mitmproxy start failed: %v\n", err)
-		} else {
-			m.status.MitmproxyRunning = true
-			fmt.Println("  ✅ mitmproxy started")
+			m.status.MitmproxyRunning = false
+			m.status.LastError = fmt.Sprintf("mitmproxy start failed: %v", err)
+			return fmt.Errorf("%s", m.status.LastError)
 		}
+		m.status.MitmproxyRunning = true
+		fmt.Println("  ✅ mitmproxy started")
+		fmt.Printf("  ✅ mitmproxy PID: %d status %d\n", m.status.MitmproxyPID, m.status.IsEnabled)
 	}
 
-	m.status.IsEnabled = true
 	m.status.ConfiguredAt = time.Now()
+	m.detectExistingResources()
+
+	if !m.status.IsEnabled {
+		if m.status.LastError == "" {
+			m.status.LastError = "inspection did not become active "
+		}
+		return fmt.Errorf("%s", m.status.LastError)
+	}
+
 	m.status.LastError = ""
+
 
 	// ensure iptables ports reflect config (covers upgrades)
 	_ = m.applyPortDelta([]int{}, m.config.normalizedInterceptPorts())
@@ -766,8 +757,11 @@ func (m *TLSInterceptionManager) Disable(ctx context.Context) error {
 	m.status.Tap0Created = false
 	m.status.Tap1Created = false
 
+	m.detectExistingResources()
 	m.status.IsEnabled = false
+	m.status.LastError = ""
 	fmt.Println("✅ TRAFFIC INSPECTION DISABLED")
+
 
 	return nil
 }

@@ -1,6 +1,25 @@
 {{ template "base" . }}
 
 {{ define "tls_interception_page" }}
+<style>
+  .ti-subtitle { color: #6c757d; font-size: .95rem; }
+  .ti-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:1rem 1.25rem; }
+  .ti-inline-help { color:#6c757d; font-size:.9rem; }
+  .ti-section-title { font-weight:700; display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem; }
+  .ti-section-title i { opacity:.85; }
+  .ti-pill {
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.45rem .65rem; border:1px solid rgba(0,0,0,.08);
+    border-radius:999px; background:#fff; margin:.25rem .25rem 0 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  }
+  .ti-pill .btn-close { font-size:.7rem; }
+  .ti-muted { color:#6c757d; font-size:.9rem; }
+  .ti-pre { background:#0b1220; color:#e9ecef; border-radius:.75rem; padding:.9rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.85rem; white-space:pre-wrap; }
+  .ti-actions { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+  .ti-badge-soft { background: rgba(255,193,7,.15); color: #8a6d00; border:1px solid rgba(255,193,7,.25); }
+</style>
+
 <div class="container-fluid py-4">
   <!-- Header -->
   <div class="row mb-4">
@@ -8,17 +27,13 @@
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
           <h3 class="mb-1"><i class="bi bi-shield-lock me-2"></i>Traffic Inspection</h3>
-          <div class="ti-subtitle">Inspect and filter HTTP/HTTPS (and custom ports) traffic from selected interfaces</div>
+          <div class="ti-subtitle">Inspect HTTP/HTTPS (and custom TCP ports) from selected LAN interfaces</div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
-          <span id="dirtyBadge" class="badge text-bg-warning" style="display:none;">
+        <div class="ti-actions">
+          <span id="dirtyBadge" class="badge ti-badge-soft" style="display:none;">
             <i class="bi bi-exclamation-triangle me-1"></i>Unsaved changes
           </span>
-
-          <button class="btn btn-outline-secondary" id="refreshBtn" onclick="refreshStatus(true)">
-            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
-          </button>
 
           <button id="toggleBtn" class="btn btn-success" onclick="toggleInspection()">
             <i class="bi bi-play-circle me-1"></i> Enable
@@ -33,9 +48,7 @@
     <div class="col-md-3">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
-          <div id="statusIndicator" class="fs-1 mb-2">
-            <i class="bi bi-circle-fill text-secondary"></i>
-          </div>
+          <div id="statusIndicator" class="fs-1 mb-2"><i class="bi bi-circle-fill text-secondary"></i></div>
           <h6 class="text-muted mb-0">Inspection Status</h6>
           <span id="statusText" class="fw-bold">Disabled</span>
         </div>
@@ -45,9 +58,7 @@
     <div class="col-md-3">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
-          <div id="proxyIndicator" class="fs-1 mb-2">
-            <i class="bi bi-circle-fill text-secondary"></i>
-          </div>
+          <div id="proxyIndicator" class="fs-1 mb-2"><i class="bi bi-circle-fill text-secondary"></i></div>
           <h6 class="text-muted mb-0">Proxy Status</h6>
           <span id="proxyText" class="fw-bold">Stopped</span>
         </div>
@@ -57,9 +68,7 @@
     <div class="col-md-3">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
-          <div class="fs-1 mb-2">
-            <i class="bi bi-ethernet text-primary"></i>
-          </div>
+          <div class="fs-1 mb-2"><i class="bi bi-ethernet text-primary"></i></div>
           <h6 class="text-muted mb-0">Active Interfaces</h6>
           <span id="interfaceCount" class="fw-bold">0</span>
         </div>
@@ -69,9 +78,7 @@
     <div class="col-md-3">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
-          <div class="fs-1 mb-2">
-            <i class="bi bi-plug text-info"></i>
-          </div>
+          <div class="fs-1 mb-2"><i class="bi bi-plug text-info"></i></div>
           <h6 class="text-muted mb-0">Active Ports</h6>
           <span id="activePortsText" class="fw-bold">None</span>
         </div>
@@ -79,7 +86,6 @@
     </div>
   </div>
 
-  <!-- Main -->
   <div class="row">
     <!-- Left: Config -->
     <div class="col-lg-8">
@@ -87,14 +93,14 @@
         <div class="card-header bg-transparent ti-card-header">
           <div>
             <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Configuration</h5>
-            <div class="ti-inline-help">Changes apply to the running engine when you click <b>Apply changes</b>.</div>
+            <div class="ti-inline-help">Apply changes updates ABF/ACL + iptables live (no full restart).</div>
           </div>
 
           <div class="d-flex gap-2">
             <button class="btn btn-outline-secondary btn-sm" onclick="reloadConfig()">
               <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
             </button>
-            <button class="btn btn-primary btn-sm" id="applyBtn" onclick="saveConfig(false)" disabled>
+            <button class="btn btn-primary btn-sm" id="applyBtn" onclick="saveConfig()" disabled>
               <i class="bi bi-check2-circle me-1"></i> Apply changes
             </button>
           </div>
@@ -103,10 +109,7 @@
         <div class="card-body">
           <!-- Interfaces -->
           <div class="mb-4">
-            <div class="ti-section-title">
-              <i class="bi bi-diagram-3"></i>
-              Interfaces to inspect
-            </div>
+            <div class="ti-section-title"><i class="bi bi-diagram-3"></i>Interfaces to inspect</div>
 
             <div class="row g-2 align-items-end">
               <div class="col-md-9">
@@ -115,7 +118,7 @@
                   <option value="">Loading interfaces…</option>
                 </select>
                 <div class="ti-inline-help mt-1">
-                  Dropdown shows <b>Tag</b> (if exists) + interface name + first IP. List excludes already selected interfaces.
+                  Shows <b>tag</b> (if exists) + interface name + first IP. List excludes already-selected interfaces.
                 </div>
               </div>
               <div class="col-md-3">
@@ -126,11 +129,9 @@
             </div>
 
             <div class="mt-3">
-              <div class="small text-muted mb-1">Selected interfaces (will be intercepted):</div>
+              <div class="small text-muted mb-1">Selected interfaces:</div>
               <div id="selectedInterfacesWrap"></div>
-              <div id="noSelectedInterfaces" class="text-muted" style="display:none;">
-                No interfaces selected yet.
-              </div>
+              <div id="noSelectedInterfaces" class="text-muted" style="display:none;">No interfaces selected yet.</div>
             </div>
           </div>
 
@@ -138,10 +139,7 @@
 
           <!-- Ports -->
           <div class="mb-4">
-            <div class="ti-section-title">
-              <i class="bi bi-funnel"></i>
-              Ports to intercept
-            </div>
+            <div class="ti-section-title"><i class="bi bi-funnel"></i>Ports to intercept</div>
 
             <div class="row g-2 align-items-end">
               <div class="col-md-6">
@@ -162,13 +160,11 @@
             </div>
 
             <div class="mt-3">
-              <div class="small text-muted mb-1">Selected ports (traffic will be redirected to mitmproxy):</div>
+              <div class="small text-muted mb-1">Selected ports:</div>
               <div id="selectedPortsWrap"></div>
-              <div id="noSelectedPorts" class="text-muted" style="display:none;">
-                No ports selected yet.
-              </div>
+              <div id="noSelectedPorts" class="text-muted" style="display:none;">No ports selected yet.</div>
               <div class="ti-inline-help mt-2">
-                Tip: add any TCP ports you want (e.g. <code>8000</code>, <code>5000</code>, <code>8080</code>). Backend will update iptables REDIRECT rules live when you apply.
+                You can intercept any TCP ports (e.g. <code>8000</code>, <code>5000</code>, <code>8080</code>).
               </div>
             </div>
           </div>
@@ -177,17 +173,14 @@
 
           <!-- Excluded URLs -->
           <div class="mb-2">
-            <div class="ti-section-title">
-              <i class="bi bi-slash-circle"></i>
-              Excluded URL patterns (do not write to logs)
-            </div>
+            <div class="ti-section-title"><i class="bi bi-slash-circle"></i>Excluded URL patterns</div>
 
             <div class="row g-2 align-items-end">
               <div class="col-md-9">
                 <label class="form-label small mb-1">Add pattern</label>
                 <input type="text" class="form-control" id="excludeInput" placeholder="e.g. google-analytics.com, /metrics, healthcheck">
                 <div class="ti-inline-help mt-1">
-                  Use simple substrings (recommended). Backend matches these against the full URL (and/or host) and skips logging.
+                  Simple substring match against host + full URL to reduce noise in the URL logs.
                 </div>
               </div>
               <div class="col-md-3">
@@ -200,9 +193,7 @@
             <div class="mt-3">
               <div class="small text-muted mb-1">Active exclusions:</div>
               <div id="excludeWrap"></div>
-              <div id="noExcludes" class="text-muted" style="display:none;">
-                No exclusions configured.
-              </div>
+              <div id="noExcludes" class="text-muted" style="display:none;">No exclusions configured.</div>
             </div>
 
             <div class="mt-3">
@@ -218,53 +209,19 @@
 
         </div>
       </div>
-
-      <!-- Optional: Logs -->
-      <div class="card border-0 shadow-sm mt-3">
-        <div class="card-header bg-transparent ti-card-header">
-          <div>
-            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Recent inspection logs</h5>
-            <div class="ti-inline-help">Shows recent lines from the backend inspection log endpoint.</div>
-          </div>
-          <div class="d-flex gap-2">
-            <select class="form-select form-select-sm" id="logsLines" style="width:auto;">
-              <option value="50">Last 50</option>
-              <option value="100">Last 100</option>
-              <option value="200">Last 200</option>
-            </select>
-            <button class="btn btn-outline-secondary btn-sm" onclick="loadLogs()">
-              <i class="bi bi-arrow-down-circle me-1"></i> Load
-            </button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div id="logsBox" class="ti-pre">Click “Load” to view logs…</div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Right: Runtime / Info -->
+    <!-- Right: Runtime + CA -->
     <div class="col-lg-4">
-
       <div class="card border-0 shadow-sm mb-3">
         <div class="card-header bg-transparent">
-          <h5 class="mb-0"><i class="bi bi-check2-circle me-2"></i>Active inspection (runtime)</h5>
+          <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Runtime</h5>
         </div>
         <div class="card-body">
-          <div class="ti-kv mb-3">
-            <div class="ti-muted">Enabled</div>
-            <div id="rtEnabled">—</div>
-
-            <div class="ti-muted">Proxy</div>
-            <div id="rtProxy">—</div>
-
-            <div class="ti-muted">Interfaces</div>
-            <div id="rtIfaces">—</div>
-
-            <div class="ti-muted">Ports</div>
-            <div id="rtPorts">—</div>
-          </div>
+          <div class="mb-2"><span class="ti-muted">Enabled:</span> <span id="rtEnabled">—</span></div>
+          <div class="mb-2"><span class="ti-muted">Proxy:</span> <span id="rtProxy">—</span></div>
+          <div class="mb-2"><span class="ti-muted">Interfaces:</span> <span id="rtIfaces">—</span></div>
+          <div class="mb-3"><span class="ti-muted">Ports:</span> <span id="rtPorts">—</span></div>
 
           <div id="runtimeWarning" class="alert alert-warning mb-0" style="display:none;">
             <i class="bi bi-exclamation-triangle me-2"></i>
@@ -275,24 +232,78 @@
 
       <div class="card border-0 shadow-sm mb-3">
         <div class="card-header bg-transparent">
-          <h5 class="mb-0"><i class="bi bi-file-earmark-lock me-2"></i>CA certificate (fixed path)</h5>
+          <h5 class="mb-0"><i class="bi bi-file-earmark-lock me-2"></i>CA certificate</h5>
         </div>
         <div class="card-body">
           <div class="ti-inline-help mb-2">
-            Upload UI is removed. Project runs with sudo, so mitmproxy CA is expected under:
+            Upload a ready-to-use PEM that contains <b>certificate + private key</b>.
+            Backend will store it at the fixed location used by mitmproxy.
           </div>
-          <div class="ti-pre mb-3">/root/.mitmproxy</div>
 
-          <div class="ti-inline-help mb-2"><b>How to generate CA (recommended):</b></div>
-          <div class="ti-pre mb-3">sudo -H mkdir -p /root/.mitmproxy
+          <div class="ti-pre mb-3">/root/.mitmproxy/mitmproxy-ca.pem</div>
+
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="ti-muted">Current status:</span>
+            <span id="caStatusBadge" class="badge text-bg-secondary">Loading…</span>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small mb-1">Upload CA bundle (PEM)</label>
+            <input class="form-control" type="file" id="caFile" accept=".pem,.crt,.key,.txt">
+            <div class="ti-inline-help mt-1">Field name: <code>certificate</code></div>
+          </div>
+
+          <button class="btn btn-outline-primary w-100" id="uploadCaBtn" onclick="uploadCA()">
+            <i class="bi bi-upload me-1"></i> Upload CA
+          </button>
+
+          <hr class="my-3">
+
+          <!-- Interactive docs -->
+          <div class="accordion" id="tlsDocs">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="hGen">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cGen">
+                  Create a mitmproxy CA (recommended)
+                </button>
+              </h2>
+              <div id="cGen" class="accordion-collapse collapse" data-bs-parent="#tlsDocs">
+                <div class="accordion-body">
+                  <div class="ti-inline-help mb-2">Run once to generate default CA files:</div>
+                  <div class="ti-pre">sudo -H mkdir -p /root/.mitmproxy
 sudo -H mitmdump --set confdir=/root/.mitmproxy --listen-host 127.0.0.1 --listen-port 8080
-# wait 2-3 seconds, then press Ctrl+C
-# files will appear in /root/.mitmproxy (CA cert/key)</div>
+# wait 2–3 seconds, then Ctrl+C
+# files appear in /root/.mitmproxy</div>
+                  <div class="ti-inline-help mt-2">
+                    Then you can export/import the CA cert to client devices as needed.
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <div class="ti-inline-help mb-2"><b>If you already have a CA:</b></div>
-          <div class="ti-inline-help">
-            Place the expected PEM files in <code>/root/.mitmproxy</code> using the filenames your backend expects.
-            (Example: mitmproxy default creates <code>mitmproxy-ca.pem</code> (key) and <code>mitmproxy-ca-cert.pem</code> (cert).)
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="hOwn">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cOwn">
+                  Use an enterprise CA / purchased CA (placeholder)
+                </button>
+              </h2>
+              <div id="cOwn" class="accordion-collapse collapse" data-bs-parent="#tlsDocs">
+                <div class="accordion-body">
+                  <div class="ti-inline-help mb-2">
+                    Put your organization steps here (placeholder). Example:
+                  </div>
+                  <ul class="small mb-2">
+                    <li>Generate key + cert via internal PKI</li>
+                    <li>Export as single PEM bundle (cert + key)</li>
+                    <li>Upload using the button above</li>
+                  </ul>
+                  <div class="ti-inline-help">
+                    File must contain <code>BEGIN CERTIFICATE</code> and <code>PRIVATE KEY</code>.
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -303,9 +314,9 @@ sudo -H mitmdump --set confdir=/root/.mitmproxy --listen-host 127.0.0.1 --listen
         </div>
         <div class="card-body">
           <ul class="mb-0 small">
-            <li>Choose interfaces with IP addresses (LAN-facing). TAP interfaces are hidden.</li>
-            <li>Apply changes to update ABF/ACL and iptables live (no full engine restart).</li>
-            <li>Use exclusions to reduce noise (analytics, health checks, metrics).</li>
+            <li>Select LAN-facing interfaces (TAP interfaces are hidden).</li>
+            <li>If enable fails, check the warning panel and mitmproxy error log.</li>
+            <li>Exclusions reduce noise (analytics, health checks, metrics).</li>
           </ul>
         </div>
       </div>
@@ -316,35 +327,36 @@ sudo -H mitmdump --set confdir=/root/.mitmproxy --listen-host 127.0.0.1 --listen
 
 <script>
 /**
- * Assumed backend endpoints (matching your existing routes):
- *  - GET  /api/interfaces                          -> []InterfaceInfo
- *  - GET  /api/tls-interception/config             -> {success, data:{lan_interfaces, intercept_ports, exclude_urls, ...}}
- *  - PUT  /api/tls-interception/config             -> apply to running engine (no restart)
- *  - GET  /api/tls-interception/simple-status      -> {success, data:{enabled, mitmproxy_running, attached_interfaces, active_ports, error_message}}
- *  - POST /api/tls-interception/enable|disable
- *  - GET  /api/tls-interception/logs?lines=N
+ * Backend endpoints:
+ *  - GET  /api/interfaces
+ *  - GET  /api/tls-interception/config
+ *  - PUT  /api/tls-interception/config
+ *  - GET  /api/tls-interception/simple-status
+ *  - POST /api/tls-interception/enable | /disable
+ *  - GET  /api/tls-interception/certificates
+ *  - POST /api/tls-interception/certificates/upload  (multipart field: certificate)
  */
 
 let currentStatus = {};
 let currentConfig = {
   lan_interfaces: [],
   intercept_ports: [],
-  exclude_urls: []
+  excluded_urls: []
 };
 
 let availableInterfaces = [];
 let isDirty = false;
 let isRefreshing = false;
+let isActionBusy = false;
 
 document.addEventListener('DOMContentLoaded', async function() {
   await reloadAll();
-  // status auto-refresh only (does not overwrite your form if you’re editing)
   setInterval(() => refreshStatus(false), 5000);
+  setInterval(() => loadCertInfo(false), 15000);
 });
 
 async function reloadAll() {
-  await Promise.allSettled([reloadConfig(), refreshStatus(true)]);
-  await loadInterfaces();
+  await Promise.allSettled([reloadConfig(), refreshStatus(true), loadInterfaces(), loadCertInfo(true)]);
   renderAll();
 }
 
@@ -354,7 +366,6 @@ async function reloadConfig() {
     if (result && result.success) {
       currentConfig = normalizeConfig(result.data || {});
       setDirty(false);
-      // we re-render after interfaces load too; but safe now:
       renderSelectedInterfaces();
       renderSelectedPorts();
       renderExcludes();
@@ -363,7 +374,6 @@ async function reloadConfig() {
       showToast('Failed to load config', 'danger');
     }
   } catch (e) {
-    console.error(e);
     showToast('Failed to load config: ' + e.message, 'danger');
   }
 }
@@ -371,7 +381,6 @@ async function reloadConfig() {
 async function loadInterfaces() {
   try {
     const data = await fetchJSON('/api/interfaces');
-    // /api/interfaces may return raw [] or {success,data:[]}
     let list = Array.isArray(data) ? data : (data && data.data ? data.data : []);
     availableInterfaces = (list || []).filter(iface =>
       iface &&
@@ -384,7 +393,6 @@ async function loadInterfaces() {
     fillIfaceDropdown();
     renderSelectedInterfaces();
   } catch (e) {
-    console.error(e);
     availableInterfaces = [];
     fillIfaceDropdown();
   }
@@ -399,8 +407,6 @@ async function refreshStatus(force) {
       currentStatus = result.data || {};
       updateStatusUI(currentStatus);
     }
-  } catch (e) {
-    // ignore noisy refresh errors
   } finally {
     isRefreshing = false;
   }
@@ -408,19 +414,21 @@ async function refreshStatus(force) {
 
 function normalizeConfig(cfg) {
   const out = {...cfg};
-  // ensure arrays
   out.lan_interfaces = Array.isArray(out.lan_interfaces) ? out.lan_interfaces : (out.lan_interface ? [out.lan_interface] : []);
   out.intercept_ports = Array.isArray(out.intercept_ports) ? out.intercept_ports : derivePortsFromLegacy(out);
-  out.exclude_urls = Array.isArray(out.exclude_urls) ? out.exclude_urls : [];
-  // de-dupe
+
+  // FIX: backend uses "excluded_urls"
+  if (Array.isArray(out.excluded_urls)) out.excluded_urls = out.excluded_urls;
+  else if (Array.isArray(out.exclude_urls)) out.excluded_urls = out.exclude_urls; // tolerate old key
+  else out.excluded_urls = [];
+
   out.lan_interfaces = dedupeStrings(out.lan_interfaces);
   out.intercept_ports = dedupePorts(out.intercept_ports);
-  out.exclude_urls = dedupeStrings(out.exclude_urls);
+  out.excluded_urls = dedupeStrings(out.excluded_urls);
   return out;
 }
 
 function derivePortsFromLegacy(cfg) {
-  // Backwards compatibility if backend still returns intercept_http/intercept_https
   const ports = [];
   if (cfg.intercept_http !== false) ports.push(80);
   if (cfg.intercept_https !== false) ports.push(443);
@@ -470,65 +478,35 @@ function renderSelectedInterfaces() {
   const selected = currentConfig.lan_interfaces || [];
   wrap.innerHTML = '';
 
-  if (selected.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
+  if (selected.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
   for (const ifaceName of selected) {
     const iface = availableInterfaces.find(i => String(i.name) === String(ifaceName));
     const displayName = iface ? (iface.tag ? `${iface.tag} (${iface.name})` : iface.name) : ifaceName;
-    const ip = iface && iface.ip_addresses && iface.ip_addresses[0] ? iface.ip_addresses[0] : '';
-    const subnet = ip ? approxSubnet(ip) : '';
+    const ip = iface?.ip_addresses?.[0] || '';
 
     const pill = document.createElement('span');
     pill.className = 'ti-pill';
     pill.innerHTML = `
       <i class="bi bi-ethernet text-primary"></i>
-      <span>
-        <b>${escapeHtml(displayName)}</b>
-        ${ip ? `<span class="ti-muted">— ${escapeHtml(ip)}</span>` : ''}
-        ${subnet ? `<span class="ti-muted ms-1">(subnet ${escapeHtml(subnet)})</span>` : ''}
-      </span>
+      <span><b>${escapeHtml(displayName)}</b>${ip ? ` <span class="ti-muted">— ${escapeHtml(ip)}</span>` : ''}</span>
       <button type="button" class="btn-close ms-2" aria-label="Remove"></button>
     `;
-    pill.querySelector('.btn-close').addEventListener('click', () => {
-      removeInterface(ifaceName);
-    });
+    pill.querySelector('.btn-close').addEventListener('click', () => removeInterface(ifaceName));
     wrap.appendChild(pill);
-  }
-}
-
-function approxSubnet(ipWithMask) {
-  // UI-only preview (backend does the real subnet logic)
-  try {
-    const [ip, mask] = String(ipWithMask).split('/');
-    const parts = ip.split('.');
-    if (parts.length !== 4) return '';
-    const m = mask || '24';
-    return `${parts[0]}.${parts[1]}.${parts[2]}.0/${m}`;
-  } catch {
-    return '';
   }
 }
 
 function addSelectedInterface() {
   const sel = document.getElementById('ifaceSelect');
   const val = sel ? sel.value : '';
-  if (!val) {
-    showToast('Select an interface first', 'warning');
-    return;
-  }
-  if (!currentConfig.lan_interfaces) currentConfig.lan_interfaces = [];
-  if (currentConfig.lan_interfaces.includes(val)) return;
+  if (!val) return showToast('Select an interface first', 'warning');
 
-  currentConfig.lan_interfaces.push(val);
-  currentConfig.lan_interfaces = dedupeStrings(currentConfig.lan_interfaces);
+  currentConfig.lan_interfaces = dedupeStrings([...(currentConfig.lan_interfaces || []), val]);
   setDirty(true);
 
-  // update UI
-  sel.value = '';
+  if (sel) sel.value = '';
   fillIfaceDropdown();
   renderSelectedInterfaces();
 }
@@ -548,10 +526,7 @@ function renderSelectedPorts() {
   const ports = (currentConfig.intercept_ports || []).slice().sort((a,b)=>a-b);
   wrap.innerHTML = '';
 
-  if (ports.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
+  if (ports.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
   for (const p of ports) {
@@ -563,38 +538,23 @@ function renderSelectedPorts() {
       <span><b>${escapeHtml(label)}</b></span>
       <button type="button" class="btn-close ms-2" aria-label="Remove"></button>
     `;
-    pill.querySelector('.btn-close').addEventListener('click', () => {
-      removePort(p);
-    });
+    pill.querySelector('.btn-close').addEventListener('click', () => removePort(p));
     wrap.appendChild(pill);
   }
 }
 
-function quickAddPort(p) {
-  addPort(p);
-}
+function quickAddPort(p) { addPort(p); }
 
 function addPortFromInput() {
   const input = document.getElementById('portInput');
-  const val = input ? input.value : '';
-  const p = parseInt(val, 10);
-  if (!Number.isFinite(p)) {
-    showToast('Enter a valid port number', 'warning');
-    return;
-  }
-  if (p < 1 || p > 65535) {
-    showToast('Port must be between 1 and 65535', 'warning');
-    return;
-  }
+  const p = parseInt(input?.value || '', 10);
+  if (!Number.isFinite(p) || p < 1 || p > 65535) return showToast('Enter a valid port (1..65535)', 'warning');
   addPort(p);
   if (input) input.value = '';
 }
 
 function addPort(p) {
-  if (!currentConfig.intercept_ports) currentConfig.intercept_ports = [];
-  if (currentConfig.intercept_ports.includes(p)) return;
-  currentConfig.intercept_ports.push(p);
-  currentConfig.intercept_ports = dedupePorts(currentConfig.intercept_ports);
+  currentConfig.intercept_ports = dedupePorts([...(currentConfig.intercept_ports || []), p]);
   setDirty(true);
   renderSelectedPorts();
 }
@@ -610,13 +570,10 @@ function renderExcludes() {
   const empty = document.getElementById('noExcludes');
   if (!wrap || !empty) return;
 
-  const list = currentConfig.exclude_urls || [];
+  const list = currentConfig.excluded_urls || [];
   wrap.innerHTML = '';
 
-  if (list.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
+  if (list.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
   for (const s of list) {
@@ -627,20 +584,15 @@ function renderExcludes() {
       <span><b>${escapeHtml(s)}</b></span>
       <button type="button" class="btn-close ms-2" aria-label="Remove"></button>
     `;
-    pill.querySelector('.btn-close').addEventListener('click', () => {
-      removeExclude(s);
-    });
+    pill.querySelector('.btn-close').addEventListener('click', () => removeExclude(s));
     wrap.appendChild(pill);
   }
 }
 
 function addExcludeFromInput() {
   const input = document.getElementById('excludeInput');
-  const val = input ? input.value.trim() : '';
-  if (!val) {
-    showToast('Enter a pattern first', 'warning');
-    return;
-  }
+  const val = (input?.value || '').trim();
+  if (!val) return showToast('Enter a pattern first', 'warning');
   addExclude(val);
   if (input) input.value = '';
 }
@@ -649,33 +601,26 @@ function addExcludesFromBulk() {
   const ta = document.getElementById('excludeBulk');
   const raw = ta ? ta.value : '';
   const lines = raw.split('\n').map(x => x.trim()).filter(Boolean);
-  if (lines.length === 0) {
-    showToast('No lines to add', 'warning');
-    return;
-  }
+  if (lines.length === 0) return showToast('No lines to add', 'warning');
+
   let added = 0;
-  for (const line of lines) {
-    if (addExclude(line, true)) added++;
-  }
+  for (const line of lines) if (addExclude(line, true)) added++;
   if (ta) ta.value = '';
-  if (added > 0) {
-    showToast(`Added ${added} exclusion(s)`, 'success');
-  }
+  if (added > 0) showToast(`Added ${added} exclusion(s)`, 'success');
   renderExcludes();
 }
 
 function addExclude(s, silent=false) {
-  if (!currentConfig.exclude_urls) currentConfig.exclude_urls = [];
-  if (currentConfig.exclude_urls.includes(s)) return false;
-  currentConfig.exclude_urls.push(s);
-  currentConfig.exclude_urls = dedupeStrings(currentConfig.exclude_urls);
+  const list = currentConfig.excluded_urls || [];
+  if (list.includes(s)) return false;
+  currentConfig.excluded_urls = dedupeStrings([...list, s]);
   setDirty(true);
   if (!silent) renderExcludes();
   return true;
 }
 
 function removeExclude(s) {
-  currentConfig.exclude_urls = (currentConfig.exclude_urls || []).filter(x => String(x) !== String(s));
+  currentConfig.excluded_urls = (currentConfig.excluded_urls || []).filter(x => String(x) !== String(s));
   setDirty(true);
   renderExcludes();
 }
@@ -685,25 +630,18 @@ function setDirty(flag) {
   const badge = document.getElementById('dirtyBadge');
   const applyBtn = document.getElementById('applyBtn');
   if (badge) badge.style.display = isDirty ? 'inline-block' : 'none';
-  if (applyBtn) applyBtn.disabled = !isDirty;
+  if (applyBtn) applyBtn.disabled = !isDirty || isActionBusy;
 }
 
-async function saveConfig(isAutoForEnable) {
-  // Validate
+async function saveConfig() {
   const ifaces = currentConfig.lan_interfaces || [];
-  if (ifaces.length === 0) {
-    showToast('Please select at least one interface to inspect', 'warning');
-    return false;
-  }
   const ports = currentConfig.intercept_ports || [];
-  if (ports.length === 0) {
-    showToast('Please add at least one port to intercept', 'warning');
-    return false;
-  }
+  if (ifaces.length === 0) return showToast('Select at least one interface', 'warning');
+  if (ports.length === 0) return showToast('Add at least one port', 'warning');
 
-  // Apply button state
   const applyBtn = document.getElementById('applyBtn');
   const oldHtml = applyBtn ? applyBtn.innerHTML : '';
+  isActionBusy = true;
   if (applyBtn) {
     applyBtn.disabled = true;
     applyBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Applying…`;
@@ -711,10 +649,9 @@ async function saveConfig(isAutoForEnable) {
 
   try {
     const payload = {
-      ...currentConfig,
       lan_interfaces: dedupeStrings(currentConfig.lan_interfaces || []),
       intercept_ports: dedupePorts(currentConfig.intercept_ports || []),
-      exclude_urls: dedupeStrings(currentConfig.exclude_urls || [])
+      excluded_urls: dedupeStrings(currentConfig.excluded_urls || [])
     };
 
     const res = await fetchJSON('/api/tls-interception/config', {
@@ -727,22 +664,20 @@ async function saveConfig(isAutoForEnable) {
       currentConfig = normalizeConfig(res.data || payload);
       setDirty(false);
       showToast('Configuration applied', 'success');
-      // Status refresh to reflect applied ports/interfaces
       await refreshStatus(true);
-      // Dropdown may change now
       fillIfaceDropdown();
       renderSelectedInterfaces();
       renderSelectedPorts();
       renderExcludes();
       return true;
-    } else {
-      showToast('Failed to apply: ' + (res && res.error ? res.error : 'unknown error'), 'danger');
-      return false;
     }
+    showToast('Failed to apply: ' + (res?.error || 'unknown error'), 'danger');
+    return false;
   } catch (e) {
     showToast('Failed to apply: ' + e.message, 'danger');
     return false;
   } finally {
+    isActionBusy = false;
     if (applyBtn) {
       applyBtn.innerHTML = oldHtml;
       applyBtn.disabled = !isDirty;
@@ -751,29 +686,23 @@ async function saveConfig(isAutoForEnable) {
 }
 
 async function toggleInspection() {
+  if (isActionBusy) return;
+  isActionBusy = true;
+
+  const toggleBtn = document.getElementById('toggleBtn');
   const isEnabled = !!currentStatus.enabled;
   const endpoint = isEnabled ? '/api/tls-interception/disable' : '/api/tls-interception/enable';
-  const toggleBtn = document.getElementById('toggleBtn');
 
-  // If enabling and there are unsaved changes, apply first
+  // enabling: auto-apply if dirty
   if (!isEnabled && isDirty) {
-    const ok = await saveConfig(true);
-    if (!ok) return;
+    const ok = await saveConfig();
+    if (!ok) { isActionBusy = false; return; }
   }
 
-  // If enabling and config seems empty, force validation
-  if (!isEnabled && !isDirty) {
-    // still validate config before enabling (helps prevent confusing enable failures)
-    const ifaces = currentConfig.lan_interfaces || [];
-    const ports = currentConfig.intercept_ports || [];
-    if (ifaces.length === 0) {
-      showToast('Please select at least one interface to inspect', 'warning');
-      return;
-    }
-    if (ports.length === 0) {
-      showToast('Please add at least one port to intercept', 'warning');
-      return;
-    }
+  // basic validation before enabling
+  if (!isEnabled) {
+    if ((currentConfig.lan_interfaces || []).length === 0) { showToast('Select at least one interface', 'warning'); isActionBusy=false; return; }
+    if ((currentConfig.intercept_ports || []).length === 0) { showToast('Add at least one port', 'warning'); isActionBusy=false; return; }
   }
 
   const old = toggleBtn ? toggleBtn.innerHTML : '';
@@ -784,24 +713,39 @@ async function toggleInspection() {
 
   try {
     const res = await fetchJSON(endpoint, { method: 'POST' });
-    if (res && res.success) {
-      showToast(isEnabled ? 'Inspection disabled' : 'Inspection enabled', 'success');
+    if (!res || !res.success) {
+      showToast('Operation failed: ' + (res?.error || 'unknown error'), 'danger');
       await refreshStatus(true);
-    } else {
-      showToast('Operation failed: ' + (res && res.error ? res.error : 'unknown error'), 'danger');
+      return;
     }
+
+    // Wait a bit for system to settle (especially enable)
+    await waitForDesiredState(!isEnabled);
+
+    showToast(isEnabled ? 'Inspection disabled' : 'Inspection enabled', 'success');
   } catch (e) {
     showToast('Operation failed: ' + e.message, 'danger');
   } finally {
+    isActionBusy = false;
     if (toggleBtn) {
       toggleBtn.disabled = false;
-      toggleBtn.innerHTML = old || (isEnabled ? '<i class="bi bi-play-circle me-1"></i> Enable' : '<i class="bi bi-stop-circle me-1"></i> Disable');
+      toggleBtn.innerHTML = old;
     }
+    await refreshStatus(true);
+    setDirty(isDirty);
   }
 }
 
+async function waitForDesiredState(shouldBeEnabled) {
+  for (let i=0; i<10; i++) {
+    await refreshStatus(true);
+    if (!!currentStatus.enabled === !!shouldBeEnabled) return true;
+    await sleep(400);
+  }
+  return false;
+}
+
 function updateStatusUI(status) {
-  // top cards
   const statusIndicator = document.getElementById('statusIndicator');
   const statusText = document.getElementById('statusText');
   const proxyIndicator = document.getElementById('proxyIndicator');
@@ -818,14 +762,14 @@ function updateStatusUI(status) {
   if (enabled) {
     if (statusIndicator) statusIndicator.innerHTML = '<i class="bi bi-circle-fill text-success"></i>';
     if (statusText) statusText.textContent = 'Active';
-    if (toggleBtn) {
+    if (toggleBtn && !isActionBusy) {
       toggleBtn.className = 'btn btn-danger';
       toggleBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i> Disable';
     }
   } else {
     if (statusIndicator) statusIndicator.innerHTML = '<i class="bi bi-circle-fill text-secondary"></i>';
     if (statusText) statusText.textContent = 'Disabled';
-    if (toggleBtn) {
+    if (toggleBtn && !isActionBusy) {
       toggleBtn.className = 'btn btn-success';
       toggleBtn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Enable';
     }
@@ -839,12 +783,9 @@ function updateStatusUI(status) {
     if (proxyText) proxyText.textContent = 'Stopped';
   }
 
-  if (activePortsText) {
-    activePortsText.textContent = ports.length ? ports.join(', ') : 'None';
-  }
+  if (activePortsText) activePortsText.textContent = ports.length ? ports.join(', ') : 'None';
   if (interfaceCount) interfaceCount.textContent = String(ifaces.length);
 
-  // right runtime panel
   const rtEnabled = document.getElementById('rtEnabled');
   const rtProxy = document.getElementById('rtProxy');
   const rtIfaces = document.getElementById('rtIfaces');
@@ -855,10 +796,8 @@ function updateStatusUI(status) {
   if (rtIfaces) rtIfaces.textContent = ifaces.length ? ifaces.join(', ') : '—';
   if (rtPorts) rtPorts.textContent = ports.length ? ports.join(', ') : '—';
 
-  // warnings
   const warn = document.getElementById('runtimeWarning');
   const warnText = document.getElementById('runtimeWarningText');
-
   let msg = '';
   if (enabled && !proxy) msg = 'Proxy is not running. Traffic may not be inspected.';
   if (status.error_message) msg = status.error_message;
@@ -873,22 +812,63 @@ function updateStatusUI(status) {
   }
 }
 
-async function loadLogs() {
-  const box = document.getElementById('logsBox');
-  const linesSel = document.getElementById('logsLines');
-  const lines = linesSel ? parseInt(linesSel.value, 10) : 50;
-
-  if (box) box.textContent = 'Loading…';
+// ---- CA upload ----
+async function loadCertInfo(showErrors) {
   try {
-    const res = await fetchJSON(`/api/tls-interception/logs?lines=${encodeURIComponent(lines)}`);
-    if (res && res.success) {
-      const arr = res.data || [];
-      box.textContent = Array.isArray(arr) ? arr.join('\n') : String(arr);
-    } else {
-      box.textContent = 'Failed to load logs';
+    const res = await fetchJSON('/api/tls-interception/certificates');
+    if (!res || !res.success) {
+      if (showErrors) showToast('Failed to load certificate info', 'danger');
+      return;
+    }
+    const info = res.data || {};
+    const badge = document.getElementById('caStatusBadge');
+    const ok = !!info.ca_bundle_exists || !!info.ca_key_exists;
+    if (badge) {
+      badge.className = 'badge ' + (ok ? 'text-bg-success' : 'text-bg-secondary');
+      badge.textContent = ok ? 'CA bundle present' : 'Missing';
     }
   } catch (e) {
-    box.textContent = 'Failed to load logs: ' + e.message;
+    if (showErrors) showToast('Failed to load certificate info: ' + e.message, 'danger');
+  }
+}
+
+async function uploadCA() {
+  const input = document.getElementById('caFile');
+  const btn = document.getElementById('uploadCaBtn');
+  const file = input?.files?.[0];
+  if (!file) return showToast('Choose a PEM file first', 'warning');
+
+  if (file.size > 10 * 1024 * 1024) return showToast('File too large (max 10MB)', 'warning');
+
+  const old = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Uploading…`;
+  }
+
+  try {
+    const fd = new FormData();
+    fd.append('certificate', file);
+
+    const r = await fetch('/api/tls-interception/certificates/upload', { method: 'POST', body: fd });
+    const text = await r.text();
+    let res;
+    try { res = JSON.parse(text); } catch { res = { success: false, error: text }; }
+
+    if (res && res.success) {
+      showToast('CA uploaded successfully', 'success');
+      if (input) input.value = '';
+      await loadCertInfo(true);
+    } else {
+      showToast('Upload failed: ' + (res?.error || 'unknown error'), 'danger');
+    }
+  } catch (e) {
+    showToast('Upload failed: ' + e.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = old;
+    }
   }
 }
 
@@ -896,12 +876,7 @@ async function loadLogs() {
 async function fetchJSON(url, options) {
   const r = await fetch(url, options);
   const text = await r.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    // sometimes endpoints return plain string; wrap
-    return text;
-  }
+  try { return JSON.parse(text); } catch { return text; }
 }
 
 function dedupeStrings(arr) {
@@ -951,5 +926,7 @@ function showToast(message, type) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
 }
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 </script>
 {{ end }}
