@@ -184,6 +184,21 @@ func (c *TLSInterceptionConfig) Normalize() {
 	c.LanInterfaces = lan
 	c.LanInterface = ""
 
+	// normalize InterceptSubnets
+	var subnets []string
+	seenSubnets := map[string]bool{}
+	for _, s := range c.InterceptSubnets {
+		t := strings.TrimSpace(s)
+		if t == "" {
+			continue
+		}
+		if !seenSubnets[t] {
+			seenSubnets[t] = true
+			subnets = append(subnets, t)
+		}
+	}
+	c.InterceptSubnets = subnets
+
 	// normalize ports/excludes
 	c.InterceptPorts = c.normalizedInterceptPorts()
 	c.ExcludedURLs = c.normalizedExcludedURLs()
@@ -283,6 +298,7 @@ func (m *TLSInterceptionManager) UpdateConfig(ctx context.Context, newCfg *TLSIn
 
 	// Merge only the UI-managed fields from the new config into the base config.
 	baseConfig.InterceptSubnet = newCfg.InterceptSubnet
+	baseConfig.InterceptSubnets = newCfg.InterceptSubnets
 	baseConfig.LanInterfaces = newCfg.LanInterfaces
 	baseConfig.InterceptPorts = newCfg.InterceptPorts
 	baseConfig.ExcludedURLs = newCfg.ExcludedURLs
@@ -451,7 +467,7 @@ func (m *TLSInterceptionManager) GetSimpleStatus() TLSInterceptionStatusSimple {
 }
 
 func (m *TLSInterceptionManager) detectExistingResources() {
-	fmt.Println("\n🧐 Detecting existing TLS interception resources...")
+	// fmt.Println("\n🧐 Detecting existing TLS interception resources...")
 	interfaces, err := m.vppClient.GetInterfaces()
 	if err != nil {
 		m.status.Tap0Created = false
@@ -470,14 +486,14 @@ func (m *TLSInterceptionManager) detectExistingResources() {
 
 	m.status.MitmproxyRunning, m.status.MitmproxyPID = m.checkMitmproxyRunning()
 	m.status.KernelConfigured = m.checkKernelConfigured()
-	fmt.Println("  kernel configured:", m.status.KernelConfigured)
+	// fmt.Println("  kernel configured:", m.status.KernelConfigured)
 
 	m.status.ABFConfigured, m.status.AttachedInterfaces = m.checkABFAndAttachmentsWithInterfaces(interfaces)
 
 	m.status.IsEnabled = m.status.Tap0Created && m.status.Tap1Created &&
 		m.status.MitmproxyRunning && m.status.KernelConfigured && m.status.ABFConfigured
-	fmt.Printf(" Tap0Created: %v, Tap1Created: %v, MitmproxyRunning: %v, KernelConfigured: %v, ABFConfigured: %v, IsEnabled: %v\n",
-		m.status.Tap0Created, m.status.Tap1Created, m.status.MitmproxyRunning, m.status.KernelConfigured, m.status.ABFConfigured, m.status.IsEnabled)
+	// fmt.Printf(" Tap0Created: %v, Tap1Created: %v, MitmproxyRunning: %v, KernelConfigured: %v, ABFConfigured: %v, IsEnabled: %v\n",
+	// 	m.status.Tap0Created, m.status.Tap1Created, m.status.MitmproxyRunning, m.status.KernelConfigured, m.status.ABFConfigured, m.status.IsEnabled)
 }
 
 func (m *TLSInterceptionManager) findInterfaceByIPFromList(interfaces []InterfaceInfo, targetIP string) (uint32, bool) {
@@ -493,16 +509,16 @@ func (m *TLSInterceptionManager) findInterfaceByIPFromList(interfaces []Interfac
 }
 
 func (m *TLSInterceptionManager) checkKernelConfigured() bool {
-	fmt.Println("  🔍 Checking kernel networking configuration...")
+	// fmt.Println("  🔍 Checking kernel networking configuration...")
 	out, err := exec.Command("sysctl", "-n", "net.ipv4.ip_forward").Output()
 	if err != nil || strings.TrimSpace(string(out)) != "1" {
-		fmt.Println("ipforwarding check is failed:", err, string(out))
+		// fmt.Println("ipforwarding check is failed:", err, string(out))
 		return false
 	}
 
 	out, err = exec.Command("iptables", "-t", "nat", "-S", "PREROUTING").Output()
 	if err != nil {
-		fmt.Println("iptables check is failed:", err, string(out))
+		// fmt.Println("iptables check is failed:", err, string(out))
 		return false
 	}
 
@@ -516,7 +532,7 @@ func (m *TLSInterceptionManager) checkKernelConfigured() bool {
 	hasToPort := strings.Contains(rules, "--to-port "+proxyPort) || strings.Contains(rules, "--to-ports "+proxyPort)
 
 	isConfigured := hasTapInterface && hasRedirectTarget && hasToPort
-	fmt.Printf("  kernel configured: %v\n", isConfigured)
+	// fmt.Printf("  kernel configured: %v\n", isConfigured)
 
 	return isConfigured
 }
@@ -595,6 +611,7 @@ func (m *TLSInterceptionManager) getInterfaceSubnet(interfaces []InterfaceInfo, 
 }
 
 func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSInterceptionConfig) error {
+	fmt.Println(" SUBNET enable is called  in actuallllllllllllllllllllllllllllllllllllllllllllllllllllllll")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -619,6 +636,7 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 
 		// Re-normalize the merged config, make it active, and save it.
 		existingConfig.Normalize()
+		fmt.Println("SUBNET :  enabling with merged config:", existingConfig)
 		m.config = existingConfig
 		if err := saveTLSConfigToDisk(m.config); err != nil {
 			m.status.LastError = fmt.Sprintf("Failed to save merged config: %v", err)
@@ -631,9 +649,9 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 		m.config = cfg
 	}
 
-	fmt.Println("\n" + strings.Repeat("=", 70))
-	fmt.Println("🔐 ENABLING TRAFFIC INSPECTION...")
-	fmt.Println(strings.Repeat("=", 70))
+	// fmt.Println("\n" + strings.Repeat("=", 70))
+	// fmt.Println("🔐 ENABLING TRAFFIC INSPECTION...")
+	// fmt.Println(strings.Repeat("=", 70))
 
 	interfaces, err := m.vppClient.GetInterfaces()
 	if err != nil {
@@ -681,19 +699,12 @@ func (m *TLSInterceptionManager) Enable(ctx context.Context, config *TLSIntercep
 	}
 
 	fmt.Println("\n📝 Step 3: Creating ACL and ABF policy (per interface)...")
-	abfExists, _ := m.checkABFAndAttachmentsWithInterfaces(interfaces)
-	if abfExists {
-		m.status.ABFConfigured = true
-		fmt.Println("  ✅ ABF policy already exists")
-		_ = m.syncInterfaceABFConfigs(ctx)
-	} else {
-		if err := m.configureABF(ctx); err != nil {
-			m.status.LastError = fmt.Sprintf("ABF config failed: %v", err)
-			return err
-		}
-		m.status.ABFConfigured = true
-		fmt.Println("  ✅ ACL and ABF configured")
+	if err := m.configureABF(ctx); err != nil {
+		m.status.LastError = fmt.Sprintf("ABF config failed: %v", err)
+		return err
 	}
+	m.status.ABFConfigured = true
+	fmt.Println("  ✅ ACL and ABF configured")
 
 	fmt.Println("\n📝 Step 3.5: Configuring NAT44 for tap1 (inside interface)...")
 	if err := m.configureTap1NAT(ctx); err != nil {
@@ -849,42 +860,20 @@ func (m *TLSInterceptionManager) configureVPPIPs(ctx context.Context) error {
 }
 
 func (m *TLSInterceptionManager) configureABF(ctx context.Context) error {
-	lanInterfaces := m.config.GetLanInterfaces()
-	if len(lanInterfaces) == 0 {
-		return fmt.Errorf("no LAN interfaces configured")
+	// Sync existing configurations first to know what is already there
+	if err := m.syncInterfaceABFConfigs(ctx); err != nil {
+		return fmt.Errorf("failed to sync ABF configs: %v", err)
 	}
 
-	m.interfaceABFConfigs = nil
-
-	nextHopIP := strings.Split(m.config.Tap0HostIP, "/")[0]
-	nhAddr, err := parseIPToAddress(nextHopIP)
-	if err != nil {
-		return fmt.Errorf("failed to parse next-hop IP: %v", err)
+	// Calculate current vs target
+	var currentInterfaces []string
+	for _, cfg := range m.interfaceABFConfigs {
+		currentInterfaces = append(currentInterfaces, cfg.InterfaceName)
 	}
+	targetInterfaces := m.config.GetLanInterfaces()
 
-	fibPaths := []fib_types.FibPath{
-		{
-			SwIfIndex: m.tap0SwIfIndex,
-			Proto:     fib_types.FIB_API_PATH_NH_PROTO_IP4,
-			Nh: fib_types.FibPathNh{
-				Address: nhAddr,
-			},
-			Weight: 1,
-		},
-	}
-
-	allInterfaces, err := m.vppClient.GetInterfaces()
-	if err != nil {
-		return fmt.Errorf("failed to get interfaces for subnet detection: %v", err)
-	}
-
-	for i, lanIface := range lanInterfaces {
-		if err := m.addSingleInterfaceABFWithIndex(ctx, lanIface, allInterfaces, fibPaths, nextHopIP, uint32(i)); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	// Apply delta (reconcile)
+	return m.applyInterfaceDelta(ctx, currentInterfaces, targetInterfaces)
 }
 
 // Incremental add for live update
@@ -902,12 +891,14 @@ func (m *TLSInterceptionManager) addSingleInterfaceABF(ctx context.Context, lanI
 
 	fibPaths := []fib_types.FibPath{
 		{
-			SwIfIndex: m.tap0SwIfIndex,
-			Proto:     fib_types.FIB_API_PATH_NH_PROTO_IP4,
+			SwIfIndex:  0xffffffff,
+			Proto:      fib_types.FIB_API_PATH_NH_PROTO_IP4,
+			Type:       fib_types.FIB_API_PATH_TYPE_NORMAL,
+			Preference: 1,
+			Weight:     1,
 			Nh: fib_types.FibPathNh{
 				Address: nhAddr,
 			},
-			Weight: 1,
 		},
 	}
 
@@ -950,26 +941,35 @@ func (m *TLSInterceptionManager) addSingleInterfaceABFWithIndex(
 	}
 
 	interfaceSubnet := m.getInterfaceSubnet(allInterfaces, lanIface)
-	if interfaceSubnet == "" {
-		interfaceSubnet = m.config.InterceptSubnet
-		fmt.Printf("  ⚠️  Interface %s has no IP, using fallback subnet: %s\n", lanIface, interfaceSubnet)
+	fmt.Println(" SUBNET:   🔍 Detected subnet for interface", lanIface, "is", interfaceSubnet)
+
+	var subnets []string
+	if interfaceSubnet != "" {
+		subnets = []string{interfaceSubnet}
+	} else if len(m.config.InterceptSubnets) > 0 {
+		subnets = m.config.InterceptSubnets
+		fmt.Printf("  ⚠️  Interface %s has no IP, using fallback subnets: %v\n", lanIface, subnets)
+	} else {
+		subnets = []string{m.config.InterceptSubnet}
+		fmt.Printf("  ⚠️  Interface %s has no IP, using fallback subnet: %s\n", lanIface, subnets[0])
 	}
 
 	// ACL rules: allow DNS + allow all TCP (iptables will decide which ports to send to mitmproxy)
-	aclRules := []ACLRuleSimple{
-		{
+	var aclRules []ACLRuleSimple
+	for _, s := range subnets {
+		aclRules = append(aclRules, ACLRuleSimple{
 			Action:    "permit",
 			Protocol:  "udp",
-			SrcPrefix: interfaceSubnet,
+			SrcPrefix: s,
 			DstPrefix: "0.0.0.0/0",
 			DstPort:   53,
-		},
-		{
+		})
+		aclRules = append(aclRules, ACLRuleSimple{
 			Action:    "permit",
 			Protocol:  "tcp",
-			SrcPrefix: interfaceSubnet,
+			SrcPrefix: s,
 			DstPrefix: "0.0.0.0/0",
-		},
+		})
 	}
 
 	tagNum := m.config.ACLIndex + offset
@@ -1612,6 +1612,7 @@ func (v *VPPClient) CreateSimpleACL(ctx context.Context, tag string, simpleRules
 
 	for _, rule := range simpleRules {
 		srcPrefix, err := parsePrefixForACL(rule.SrcPrefix)
+		fmt.Println(" SUBNET:   🔍 Detected SRC PREFIX:", rule.SrcPrefix, srcPrefix)
 		if err != nil {
 			return 0, fmt.Errorf("invalid src prefix: %v", err)
 		}

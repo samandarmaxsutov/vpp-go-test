@@ -46,9 +46,9 @@ func (h *TLSInterceptionHandler) GetConfig(c *gin.Context) {
 
 func (h *TLSInterceptionHandler) UpdateConfig(c *gin.Context) {
 	var config vpp.TLSInterceptionConfig
-	fmt.Println("Updating TLS interception configuration")
+	fmt.Println("  SUBNET REQUEST BODY:")
 	fmt.Println(c.Request.Body)
-	
+
 	if err := c.ShouldBindJSON(&config); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -73,6 +73,7 @@ func (h *TLSInterceptionHandler) UpdateConfig(c *gin.Context) {
 }
 
 func (h *TLSInterceptionHandler) Enable(c *gin.Context) {
+	fmt.Println(" SUBNET enable is called ")
 	// Pass nil to use the configuration already loaded in the manager
 	if err := h.manager.Enable(c.Request.Context(), nil); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
