@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +47,8 @@ func (h *LogHandler) GetLogs(c *gin.Context) {
 		filePath = "/etc/sarhad-guard/auth_logs/auth_logs.log"
 	} else if logType == "url" {
 		// URL logs from mitmproxy TLS interception
-		filePath = "/etc/sarhad-guard/url_logs/url_logs.jsonl"
+		currentDate := time.Now().Format("02_01_2006")
+		filePath = filepath.Join("/etc/sarhad-guard/url_logs", fmt.Sprintf("urls_%s.log", currentDate))
 	} else {
 		filePath = filepath.Join(wd, fmt.Sprintf("%s_logs.jsonl", logType))
 	}
