@@ -18,7 +18,6 @@ import (
 
 type LogHandler struct{}
 
-// Old VPP syslog-like ACL line: [timestamp] vpp[PID]: acl_plugin: ...
 var vppRegex = regexp.MustCompile(`^\[(.*?)\]\s+vpp\[\d+\]:\s+(.*)$`)
 
 func (h *LogHandler) GetLogs(c *gin.Context) {
@@ -28,17 +27,14 @@ func (h *LogHandler) GetLogs(c *gin.Context) {
 	var filePath string
 
 	if logType == "acl" {
-		// 0) default on-disk ACL csv log location
 		defaultACLPath := "/etc/sarhad-guard/acl_logs/acl_logs.log"
 
-		// 1) explicit query override (full path)
 		if p := strings.TrimSpace(c.Query("path")); p != "" {
 			filePath = p
 		} else if p := strings.TrimSpace(os.Getenv("SARHAD_ACL_LOG_PATH")); p != "" {
-			// 2) env var override
+		
 			filePath = p
 		} else {
-			// 3) new default (your real path)
 			filePath = defaultACLPath
 		}
 	} else if logType == "config" {
@@ -46,7 +42,6 @@ func (h *LogHandler) GetLogs(c *gin.Context) {
 	} else if logType == "auth" {
 		filePath = "/etc/sarhad-guard/auth_logs/auth_logs.log"
 	} else if logType == "url" {
-		// URL logs from mitmproxy TLS interception
 		currentDate := time.Now().Format("02_01_2006")
 		filePath = filepath.Join("/etc/sarhad-guard/url_logs", fmt.Sprintf("urls_%s.log", currentDate))
 	} else {
@@ -234,15 +229,3 @@ func parseIntSafe(s string) int64 {
 	}
 	return v
 }
-
-// If/when you confirm your action mapping, you can use this.
-// func mapACLAction(code string) string {
-// 	switch strings.TrimSpace(code) {
-// 	case "0":
-// 		return "DROP"
-// 	case "1":
-// 		return "PERMIT"
-// 	default:
-// 		return "UNKNOWN"
-// 	}
-// }

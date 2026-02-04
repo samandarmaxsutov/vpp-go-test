@@ -9,47 +9,42 @@ import (
 )
 
 func main() {
-	// 1. Initial Connect
-	client, err := vpp.ConnectVPP("/run/vpp/api.sock", "/dev/shm/vpp/stats.sock")
+	client, err := vpp.ConnectVPP("/run/sarhad-guard/api.sock", "/dev/shm/sarhad-guard/stats.sock")
 	if err != nil {
-		log.Printf("⚠️ VPP not running on start: %v", err)
-		// We don't exit; the watcher below will connect when VPP starts
+		log.Printf("Sarhad-FW not running on start: %v", err)
+
 	}
 
-	// 2. Start the Auto-Reconnection & Restore Watcher
 	go func() {
 		for {
 			if !client.IsConnected() {
-				log.Println("🚨 VPP connection lost. Retrying...")
+				log.Println(" Sarhad-FW  connection lost. Retrying...")
 
-				// Try to connect
-				newClient, err := vpp.ConnectVPP("/run/vpp/api.sock", "/dev/shm/vpp/stats.sock")
+				newClient, err := vpp.ConnectVPP("/run/sarhad-guard/api.sock", "/dev/shm/sarhad-guard/stats.sock")
 				if err == nil {
-					// Update the core connection pointers
 					client.Conn = newClient.Conn
 					client.Stats = newClient.Stats
 
-					// CRITICAL: Refresh all sub-managers so they don't have broken pipes
 					client.RefreshManagers()
 
-					log.Println("✅ VPP Reconnected and Managers Refreshed!")
+					log.Println("Sarhad-FW Reconnected and Managers Refreshed!")
 
 					time.Sleep(3 * time.Second)
 					if err := client.RestoreConfiguration(); err != nil {
-						log.Printf("❌ Auto-Restore failed: %v", err)
+						log.Printf("Auto-Restore failed: %v", err)
 					}
 				}
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}()
-	// 4. Start Web Server
+
 	client.StartTime = time.Now()
 	r := gin.Default()
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("templates/**/*.html")
 	web.SetupRoutes(r, client)
 
-	log.Println("VPP Management Web server running on :8000")
+	log.Println("Sarhad-FW Management Web server running on :8000")
 	r.Run(":8000")
 }
