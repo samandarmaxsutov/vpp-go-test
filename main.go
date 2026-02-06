@@ -51,5 +51,11 @@ func main() {
 	web.SetupRoutes(r, client)
 
 	log.Println("VPP Management Web server running on :8000")
-	r.Run(":8000")
+	// r.Run(":8000")
+	
+	// Usage: r.RunTLS(addr, certFile, keyFile)
+    err = r.RunTLS(":8443", "server.crt", "server.key")
+    if err != nil {
+        log.Fatalf("Failed to start HTTPS server: %v", err)
+    }
 }

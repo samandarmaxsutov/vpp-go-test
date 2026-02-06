@@ -23,7 +23,7 @@ var vppRegex = regexp.MustCompile(`^\[(.*?)\]\s+vpp\[\d+\]:\s+(.*)$`)
 
 func (h *LogHandler) GetLogs(c *gin.Context) {
 	logType := c.DefaultQuery("type", "system")
-	wd, _ := os.Getwd()
+	// wd, _ := os.Getwd()
 
 	var filePath string
 
@@ -49,9 +49,10 @@ func (h *LogHandler) GetLogs(c *gin.Context) {
 		// URL logs from mitmproxy TLS interception
 		currentDate := time.Now().Format("02_01_2006")
 		filePath = filepath.Join("/etc/sarhad-guard/url_logs", fmt.Sprintf("urls_%s.log", currentDate))
-	} else {
-		filePath = filepath.Join(wd, fmt.Sprintf("%s_logs.jsonl", logType))
-	}
+	} 
+	// else {
+	// 	filePath = filepath.Join(wd, fmt.Sprintf("%s_logs.jsonl", logType))
+	// }
 
 	file, err := os.Open(filePath)
 	if err != nil {
