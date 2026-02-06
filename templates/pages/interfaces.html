@@ -8,17 +8,22 @@
         </h4>
         <small class="text-muted">WAN / LAN / VLAN / Vmxnet3 / Virtual Management</small>
     </div>
-    <div class="dropdown">
-        <button class="btn btn-primary dropdown-toggle fw-bold shadow-sm" type="button" id="addInterfaceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-plus-lg me-1"></i> Create Interface
+    <div class="btn-group shadow-sm">
+        <button class="btn btn-dark fw-bold" onclick="openVmxnetModal()">
+            <i class="bi bi-cpu-fill me-1"></i>+ Vmxnet3
         </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="addInterfaceDropdown">
-            <li><button class="dropdown-item" type="button" onclick="openVmxnetModal()"><i class="bi bi-cpu-fill me-2 text-dark"></i>Vmxnet3</button></li>
-            <li><button class="dropdown-item" type="button" onclick="openVlanModal()"><i class="bi bi-diagram-3 me-2 text-warning"></i>VLAN</button></li>
-            <li><button class="dropdown-item" type="button" onclick="addLoopback()"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Loopback</button></li>
-            <li><button class="dropdown-item" type="button" onclick="openVhostModal()"><i class="bi bi-cpu me-2 text-primary"></i>Vhost-User</button></li>
-            <li><button class="dropdown-item" type="button" onclick="openTapModal()"><i class="bi bi-patch-plus me-2 text-info"></i>TAP</button></li>
-        </ul>
+        <button class="btn btn-outline-warning fw-bold" onclick="openVlanModal()">
+            <i class="bi bi-diagram-3 me-1"></i>+ VLAN
+        </button>
+        <button class="btn btn-outline-primary fw-bold" onclick="addLoopback()">
+            <i class="bi bi-arrow-repeat me-1"></i>+ Loopback
+        </button>
+        <button class="btn btn-primary fw-bold" onclick="openVhostModal()">
+            <i class="bi bi-cpu me-1"></i>+ Vhost
+        </button>
+        <button class="btn btn-outline-info fw-bold" onclick="openTapModal()">
+            <i class="bi bi-patch-plus me-1"></i>+ TAP
+        </button>
     </div>
 </div>
 
