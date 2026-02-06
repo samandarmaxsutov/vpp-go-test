@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"time"
 	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/web"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -41,6 +42,15 @@ func main() {
 
 	client.StartTime = time.Now()
 	r := gin.Default()
+
+	// Add cache control middleware for development
+	r.Use(func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+		c.Next()
+	})
+
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("templates/**/*.html")
 	web.SetupRoutes(r, client)
