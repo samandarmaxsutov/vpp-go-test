@@ -13,7 +13,8 @@ func main() {
 	client, err := vpp.ConnectVPP("/run/sarhad-guard/api.sock", "/dev/shm/sarhad-guard/stats.sock")
 	if err != nil {
 		log.Printf("Sarhad-FW not running on start: %v", err)
-
+	}else{
+		vpp.InitStatsCollector(client)
 	}
 
 	go func() {
@@ -27,7 +28,7 @@ func main() {
 					client.Stats = newClient.Stats
 
 					client.RefreshManagers()
-
+					vpp.InitStatsCollector(client)
 					log.Println("Sarhad-FW Reconnected and Managers Refreshed!")
 
 					time.Sleep(3 * time.Second)

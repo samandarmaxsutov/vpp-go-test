@@ -198,6 +198,7 @@ func SetupRoutes(r *gin.Engine, client *vpp.VPPClient /*collector *flow.Collecto
 
 			api.GET("/pci", iface.ScanAvailableInterfaces)
 			api.GET("/stats", iface.GetStats)
+			api.GET("/stats/history", iface.GetStatsHistory)
 
 			// ROUTING
 			api.GET("/routes", routing.GetRoutes)
