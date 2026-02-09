@@ -33,14 +33,14 @@
                         <input type="text" id="logSearch" class="form-control border-start-0" placeholder="Qidiruv (IP, Port, Harakat)..." onkeyup="handleSearch()">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <select class="form-select" id="actionFilter" onchange="handleSearch()">
                         <option value="">Barcha Harakatlar</option>
                         <option value="DROP">DROP</option>
                         <option value="ACCEPT">ACCEPT</option>
                         <option value="REJECT">REJECT</option>
                     </select>
-                </div>
+                </div> -->
                 <div class="col-md-3">
                     <select class="form-select" id="protoFilter" onchange="handleSearch()">
                         <option value="">Barcha Protokollar</option>
@@ -649,7 +649,7 @@ function changePage(page) {
 
 function handleSearch() {
     const term = document.getElementById('logSearch').value.toLowerCase();
-    const actionFilter = document.getElementById('actionFilter').value;
+    // const actionFilter = document.getElementById('actionFilter').value;
     const protoFilter = document.getElementById('protoFilter').value;
     
     filteredData = allData.filter(log => {
@@ -674,10 +674,11 @@ function handleSearch() {
                 (log.target && log.target.toLowerCase().includes(term));
         }
             
-        const matchAction = !actionFilter || log.action === actionFilter;
+        // const matchAction = !actionFilter || log.action === actionFilter;
         const matchProto = !protoFilter || log.protocol === protoFilter;
         
-        return matchSearch && matchAction && matchProto;
+        // return matchSearch && matchAction && matchProto;
+        return matchSearch && matchProto;
     });
     
     currentPage = 1;
