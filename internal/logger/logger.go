@@ -42,7 +42,7 @@ func LogAction(logType, action, target, status string) {
 	fmt.Printf("[LOG-%s] %s | %s -> %s\n", logType, action, target, status)
 
 	// 2. Umumiy log faylga yozish
-	saveToFile("system_logs.jsonl", logEntry)
+	// saveToFile("system_logs.jsonl", logEntry)
 
 	// 3. Alohida kategoriya fayliga yozish (vpp.jsonl, web.jsonl va h.k.)
 	specificFileName := fmt.Sprintf("%s_logs.jsonl", logType)
@@ -75,7 +75,7 @@ func LogConfigChange(user, ip, action, target, details string) {
 	saveToFile(filePath, logEntry)
 
 	// 3. Also write to system logs for aggregation
-	saveToFile("system_logs.jsonl", logEntry)
+	// saveToFile("system_logs.jsonl", logEntry)
 }
 
 // LogAuth logs authentication events to /etc/sarhad-guard/auth_logs/auth_logs.log
@@ -96,7 +96,7 @@ func LogAuth(user, ip, action, status string) {
 	_ = os.MkdirAll(logDir, 0755)
 	filePath := filepath.Join(logDir, "auth_logs.log")
 	saveToFile(filePath, logEntry)
-	saveToFile("system_logs.jsonl", logEntry)
+	// saveToFile("system_logs.jsonl", logEntry)
 }
 
 func saveToFile(fileName string, entry ActionLog) {
