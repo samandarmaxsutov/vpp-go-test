@@ -1,51 +1,57 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"time"
 	"vpp-go-test/internal/vpp"
 	"vpp-go-test/internal/web"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 1. Initial Connect
-	client, err := vpp.ConnectVPP("/run/vpp/api.sock", "/dev/shm/vpp/stats.sock")
+	client, err := vpp.ConnectVPP("/run/sarhad-guard/api.sock", "/dev/shm/sarhad-guard/stats.sock")
 	if err != nil {
-		log.Printf("⚠️ VPP not running on start: %v", err)
-		// We don't exit; the watcher below will connect when VPP starts
+		log.Printf("Sarhad-FW not running on start: %v", err)
+	}else{
+		vpp.InitStatsCollector(client)
 	}
 
-	// 2. Start the Auto-Reconnection & Restore Watcher
 	go func() {
 		for {
 			if !client.IsConnected() {
-				log.Println("🚨 VPP connection lost. Retrying...")
+				log.Println(" Sarhad-FW  connection lost. Retrying...")
 
-				// Try to connect
-				newClient, err := vpp.ConnectVPP("/run/vpp/api.sock", "/dev/shm/vpp/stats.sock")
+				newClient, err := vpp.ConnectVPP("/run/sarhad-guard/api.sock", "/dev/shm/sarhad-guard/stats.sock")
 				if err == nil {
-					// Update the core connection pointers
 					client.Conn = newClient.Conn
 					client.Stats = newClient.Stats
 
-					// CRITICAL: Refresh all sub-managers so they don't have broken pipes
 					client.RefreshManagers()
-
-					log.Println("✅ VPP Reconnected and Managers Refreshed!")
+					vpp.InitStatsCollector(client)
+					log.Println("Sarhad-FW Reconnected and Managers Refreshed!")
 
 					time.Sleep(3 * time.Second)
 					if err := client.RestoreConfiguration(); err != nil {
-						log.Printf("❌ Auto-Restore failed: %v", err)
+						log.Printf("Auto-Restore failed: %v", err)
 					}
 				}
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}()
-	// 4. Start Web Server
+
 	client.StartTime = time.Now()
 	r := gin.Default()
+
+	// Add cache control middleware for development
+	r.Use(func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+		c.Next()
+	})
+
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("templates/**/*.html")
 	web.SetupRoutes(r, client)
@@ -58,4 +64,5 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to start HTTPS server: %v", err)
     }
+
 }

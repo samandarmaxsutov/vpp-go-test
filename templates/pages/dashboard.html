@@ -4,37 +4,171 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-    /* FortiGate Style Professional Overrides */
-    .card { border-radius: 4px; border: 1px solid #e0e0e0 !important; background-color: #fff; }
-    .text-muted-forti { color: #666; font-size: 0.8rem; letter-spacing: 0.5px; }
-    .progress { border-radius: 2px; height: 6px !important; background-color: #f0f0f0; }
-    canvas { max-height: 240px; width: 100% !important; }
-    .status-value { font-size: 1.8rem; color: #212529; }
-    
-    /* FortiGate Side Borders */
-    .border-primary-forti { border-left: 4px solid #1c3664 !important; }
-    .border-danger-forti { border-left: 4px solid #d9534f !important; }
-    .border-warning-forti { border-left: 4px solid #f0ad4e !important; }
-    .border-success-forti { border-left: 4px solid #5cb85c !important; }
+    /* FortiGate Professional Dashboard Styles */
+    .dashboard-container {
+        padding: 1.5rem;
+        background-color: #f5f5f5;
+    }
+
+    /* Cards - Equal Height */
+    .stats-card {
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+        background-color: #fff;
+        padding: 1.25rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.2s ease;
+    }
+
+    .stats-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-card.border-primary-forti {
+        border-top: 3px solid #0d6efd;
+    }
+
+    .stats-card.border-danger-forti {
+        border-top: 3px solid #dc3545;
+    }
+
+    .stats-card.border-warning-forti {
+        border-top: 3px solid #ffc107;
+    }
+
+    .stats-card.border-success-forti {
+        border-top: 3px solid #198754;
+    }
+
+    .stats-card.border-info-forti {
+        border-top: 3px solid #0dcaf0;
+    }
+
+    .card-label {
+        color: #666;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-grow: 1;
+    }
+
+    .card-value {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #212529;
+        line-height: 1;
+    }
+
+    .card-icon {
+        opacity: 0.15;
+        font-size: 2.5rem;
+        color: #666;
+    }
+
+    .progress-container {
+        width: 50%;
+        min-width: 100px;
+    }
+
+    .progress {
+        border-radius: 2px;
+        height: 8px;
+        background-color: #f0f0f0;
+    }
+
+    .progress-bar {
+        transition: width 0.5s ease;
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+        background-color: #fff;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .chart-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #212529;
+        margin: 0;
+    }
+
+    .chart-select {
+        border: none;
+        background-color: #f8f9fa;
+        padding: 0.375rem 0.75rem;
+        border-radius: 3px;
+        font-size: 0.875rem;
+        color: #495057;
+    }
+
+    .chart-select:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+    }
+
+    canvas {
+        max-height: 240px;
+        width: 100% !important;
+    }
+
+    #resourceChart {
+        max-height: 180px !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .card-value {
+            font-size: 1.5rem;
+        }
+
+        .stats-card {
+            margin-bottom: 1rem;
+        }
+    }
 </style>
 
-<div class="container-fluid py-3">
+<div class="dashboard-container">
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm p-3 border-primary-forti">
-                <div class="text-muted-forti fw-bold text-uppercase">Total Drops</div>
-                <div class="d-flex align-items-center justify-content-between mt-1">
-                    <h3 id="card-drops" class="mb-0 fw-bold status-value">0</h3>
-                    <i class="bi bi-shield-slash text-muted opacity-25 fs-2"></i>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stats-card border-primary-forti">
+                <div class="card-label">Total Drops</div>
+                <div class="card-content">
+                    <div class="card-value" id="card-drops">0</div>
+                    <i class="bi bi-shield-slash card-icon"></i>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm p-3 border-danger-forti">
-                <div class="text-muted-forti fw-bold text-uppercase">CPU Usage</div>
-                <div class="d-flex align-items-center justify-content-between mt-1">
-                    <h3 id="card-cpu" class="mb-0 fw-bold status-value">0%</h3>
-                    <div class="w-50">
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stats-card border-danger-forti">
+                <div class="card-label">CPU Usage</div>
+                <div class="card-content">
+                    <div class="card-value" id="card-cpu">0%</div>
+                    <div class="progress-container">
                         <div class="progress">
                             <div id="cpu-bar" class="progress-bar bg-danger" style="width: 0%"></div>
                         </div>
@@ -42,12 +176,13 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm p-3 border-warning-forti">
-                <div class="text-muted-forti fw-bold text-uppercase">Memory Usage</div>
-                <div class="d-flex align-items-center justify-content-between mt-1">
-                    <h3 id="card-mem" class="mb-0 fw-bold status-value">0%</h3>
-                    <div class="w-50">
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stats-card border-warning-forti">
+                <div class="card-label">Memory Usage</div>
+                <div class="card-content">
+                    <div class="card-value" id="card-mem">0%</div>
+                    <div class="progress-container">
                         <div class="progress">
                             <div id="mem-bar" class="progress-bar bg-warning" style="width: 0%"></div>
                         </div>
@@ -55,100 +190,198 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm p-3 border-success-forti">
-                <div class="text-muted-forti fw-bold text-uppercase">System Uptime</div>
-                <div class="d-flex align-items-center justify-content-between mt-1">
-                    <h3 id="card-uptime" class="mb-0 fw-bold status-value">-</h3>
-                    <i class="bi bi-clock-history text-muted opacity-25 fs-2"></i>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stats-card border-success-forti">
+                <div class="card-label">System Uptime</div>
+                <div class="card-content">
+                    <div class="card-value" id="card-uptime">-</div>
+                    <i class="bi bi-clock-history card-icon"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm p-3">
-                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                    <h6 class="fw-bold mb-0 text-dark">Interface Throughput (BPS)</h6>
-                    <select id="interfaceSelect" class="form-select form-select-sm w-auto border-0 bg-light" onchange="changeInterface()">
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-6">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h6 class="chart-title">Interface Throughput</h6>
+                    <select id="interfaceSelect" class="chart-select" onchange="changeInterface()">
                         <option value="all">Aggregate (All)</option>
                     </select>
                 </div>
                 <canvas id="bpsChart"></canvas>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm p-3">
-                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                    <h6 class="fw-bold mb-0 text-dark">Packet Rate (PPS) & Drops</h6>
+
+        <div class="col-12 col-lg-6">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h6 class="chart-title">Packet Rate & Drops</h6>
                 </div>
                 <canvas id="ppsChart"></canvas>
             </div>
         </div>
-        <div class="col-md-12">
-            <div class="card shadow-sm p-3">
-                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                    <h6 class="fw-bold mb-0 text-dark">Resource Utilization History (%)</h6>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h6 class="chart-title">Resource Utilization History</h6>
                 </div>
-                <canvas id="resourceChart" style="max-height: 180px;"></canvas>
+                <canvas id="resourceChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // ===== UTILITY FUNCTIONS =====
+
+    /**
+     * Format bytes per second - UPDATED to handle values < 1 and prevent undefined
+     */
+    function formatBits(bps) {
+        if (bps === 0) return '0 bps';
+
+        const units = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
+        const k = 1000;
+        // Fix: Ensure index is never negative
+        const i = Math.max(0, Math.floor(Math.log(Math.abs(bps)) / Math.log(k)));
+        const value = bps / Math.pow(k, i);
+
+        // Fix: Show decimals for small values or non-bps units
+        const decimals = (i === 0 && value >= 10) ? 0 : 2;
+        return value.toFixed(decimals) + ' ' + units[i];
+    }
+
+    /**
+     * Format packets per second - UPDATED to handle values < 1 and prevent undefined
+     */
+    function formatPackets(pps) {
+        if (pps === 0) return '0 pps';
+
+        const units = ['pps', 'Kpps', 'Mpps', 'Gpps'];
+        const k = 1000;
+        // Fix: Ensure index is never negative
+        const i = Math.max(0, Math.floor(Math.log(Math.abs(pps)) / Math.log(k)));
+        const value = pps / Math.pow(k, i);
+
+        // Fix: Show decimals for small values (e.g. 0.5 pps)
+        const decimals = (i === 0 && value >= 10) ? 0 : 2;
+        return value.toFixed(decimals) + ' ' + units[i];
+    }
+
+    /**
+     * Format number with thousand separators
+     */
+    function formatNumber(num) {
+        return Math.round(num).toLocaleString();
+    }
+
+    // ===== GLOBAL STATE =====
+    let globalHistory = [];
     let lastData = null;
-    let lastTime = Date.now();
     let currentInterface = "all";
-    const maxDataPoints = 40;
+    const maxDataPoints = 60;
 
-    // FortiGate Colors
-    const fBlue = 'rgba(28, 54, 100, 1)';
-    const fBlueFill = 'rgba(28, 54, 100, 0.12)';
-    const fGreen = 'rgba(92, 184, 92, 1)';
-    const fGreenFill = 'rgba(92, 184, 92, 0.12)';
-    const fRed = 'rgba(217, 83, 79, 1)';
-    const fRedFill = 'rgba(217, 83, 79, 0.08)';
-    const fOrange = 'rgba(240, 173, 78, 1)';
-    const fOrangeFill = 'rgba(240, 173, 78, 0.08)';
+    // FortiGate Color Palette
+    const fBlue = 'rgba(13, 110, 253, 1)';
+    const fBlueFill = 'rgba(13, 110, 253, 0.1)';
+    const fGreen = 'rgba(25, 135, 84, 1)';
+    const fGreenFill = 'rgba(25, 135, 84, 0.1)';
+    const fRed = 'rgba(220, 53, 69, 1)';
+    const fRedFill = 'rgba(220, 53, 69, 0.08)';
+    const fOrange = 'rgba(255, 193, 7, 1)';
+    const fOrangeFill = 'rgba(255, 193, 7, 0.08)';
 
+    // ===== CHART OPTIONS =====
     const commonOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } },
-        scales: { 
-            y: { 
-                beginAtZero: true, 
-                grid: { color: '#f0f0f0' }, 
-                ticks: { color: '#888', font: { size: 10 } } 
-            }, 
-            x: { display: false } 
+        elements: {
+            point: { radius: 0 },
+            line: { borderWidth: 2 }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: '#f0f0f0',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: '#888',
+                    font: { size: 10 },
+                    padding: 8
+                }
+            },
+            x: {
+                display: true,
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#888',
+                    font: { size: 9 },
+                    maxRotation: 45,
+                    minRotation: 45,
+                    autoSkip: true,
+                    maxTicksLimit: 10
+                }
+            }
         },
         animation: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: { 
-            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } } 
+        plugins: {
+            legend: {
+                position: 'top',
+                align: 'end',
+                labels: {
+                    boxWidth: 12,
+                    usePointStyle: true,
+                    font: { size: 11 },
+                    padding: 12,
+                    color: '#495057'
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 10,
+                cornerRadius: 4,
+                titleFont: { size: 12 },
+                bodyFont: { size: 11 }
+            }
         }
     };
 
-    // Initialize Charts
+    // ===== CHART INITIALIZATION =====
     const bpsChart = new Chart(document.getElementById('bpsChart'), {
         type: 'line',
-        data: { labels: [], datasets: [
-            { label: 'In (bps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
-            { label: 'Out (bps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 }
-        ]},
-        options: commonOptions
-    });
-
-    const ppsChart = new Chart(document.getElementById('ppsChart'), {
-        type: 'line',
-        data: { labels: [], datasets: [
-            { label: 'In (pps)', borderColor: fBlue, backgroundColor: fBlueFill, data: [], fill: true, tension: 0.3 },
-            { label: 'Out (pps)', borderColor: fGreen, backgroundColor: fGreenFill, data: [], fill: true, tension: 0.3 },
-            { label: 'Drops', borderColor: fOrange, backgroundColor: fOrangeFill, data: [], fill: true, tension: 0.3 }
-        ]},
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Inbound',
+                    borderColor: fBlue,
+                    backgroundColor: fBlueFill,
+                    data: [],
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Outbound',
+                    borderColor: fGreen,
+                    backgroundColor: fGreenFill,
+                    data: [],
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
         options: {
             ...commonOptions,
             scales: {
@@ -157,8 +390,88 @@
                     ...commonOptions.scales.y,
                     ticks: {
                         ...commonOptions.scales.y.ticks,
-                        // Ensure only integers are shown on the Y axis scale
-                        callback: function(value) { if (value % 1 === 0) { return value; } }
+                        callback: function (value) {
+                            return formatBits(value);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                ...commonOptions.plugins,
+                tooltip: {
+                    ...commonOptions.plugins.tooltip,
+                    callbacks: {
+                        label: function (context) {
+                            return context.dataset.label + ': ' + formatBits(context.parsed.y);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const ppsChart = new Chart(document.getElementById('ppsChart'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Inbound',
+                    borderColor: fBlue,
+                    backgroundColor: fBlueFill,
+                    data: [],
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Outbound',
+                    borderColor: fGreen,
+                    backgroundColor: fGreenFill,
+                    data: [],
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Drops',
+                    borderColor: fOrange,
+                    backgroundColor: fOrangeFill,
+                    data: [],
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2.5
+                }
+            ]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                ...commonOptions.scales,
+                y: {
+                    ...commonOptions.scales.y,
+                    ticks: {
+                        ...commonOptions.scales.y.ticks,
+                        // These two lines are the fix:
+                        stepSize: 1,
+                        precision: 0,
+                        callback: function (value) {
+                            // Only return label if it's an integer
+                            if (value % 1 === 0) {
+                                return formatPackets(value);
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: {
+                ...commonOptions.plugins,
+                tooltip: {
+                    ...commonOptions.plugins.tooltip,
+                    callbacks: {
+                        label: function (context) {
+                            return context.dataset.label + ': ' + formatPackets(context.parsed.y);
+                        }
                     }
                 }
             }
@@ -167,99 +480,199 @@
 
     const resourceChart = new Chart(document.getElementById('resourceChart'), {
         type: 'line',
-        data: { labels: [], datasets: [
-            { label: 'CPU %', borderColor: fRed, backgroundColor: fRedFill, data: [], fill: true, tension: 0.3 },
-            { label: 'Mem %', borderColor: fOrange, backgroundColor: fOrangeFill, data: [], fill: true, tension: 0.3 }
-        ]},
-        options: commonOptions
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'CPU %',
+                    borderColor: fRed,
+                    backgroundColor: fRedFill,
+                    data: [],
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Memory %',
+                    borderColor: fOrange,
+                    backgroundColor: fOrangeFill,
+                    data: [],
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                ...commonOptions.scales,
+                y: {
+                    ...commonOptions.scales.y,
+                    max: 100,
+                    ticks: {
+                        ...commonOptions.scales.y.ticks,
+                        callback: function (value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                ...commonOptions.plugins,
+                tooltip: {
+                    ...commonOptions.plugins.tooltip,
+                    callbacks: {
+                        label: function (context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                        }
+                    }
+                }
+            }
+        }
     });
 
-    async function updateDashboard() {
-        try {
-            const res = await fetch('/api/stats');
-            const data = await res.json();
-            const now = Date.now();
-            const deltaTime = (now - lastTime) / 1000;
-
-            // Update Status Widgets
+    // ===== CORE DATA PROCESSING =====
+    function processDataEntry(data, isHistoryReplay = false) {
+        // Update stat cards (only on live updates)
+        if (!isHistoryReplay) {
             const cpuVal = Math.round(data.cpu_usage) || 0;
             const memVal = parseFloat(data.mem_usage.toFixed(1)) || 0;
-            
-            document.getElementById('card-drops').innerText = data.total_drops.toLocaleString();
+
+            document.getElementById('card-drops').innerText = formatNumber(data.total_drops);
             document.getElementById('card-cpu').innerText = cpuVal + '%';
             document.getElementById('cpu-bar').style.width = cpuVal + '%';
             document.getElementById('card-mem').innerText = memVal + '%';
             document.getElementById('mem-bar').style.width = memVal + '%';
             document.getElementById('card-uptime').innerText = data.uptime;
 
-            // Populate Interface Selector once
+            // Populate interface selector
             const select = document.getElementById('interfaceSelect');
             if (select.options.length === 1 && data.interfaces) {
                 data.interfaces.forEach(iface => {
                     select.add(new Option(iface.name, iface.index));
                 });
             }
+        }
 
-            // Calculate Rates
-            if (lastData && deltaTime > 0) {
-                let rxB = 0, txB = 0, rxP = 0, txP = 0, drP = 0;
-                
-                if (currentInterface === "all") {
-                    data.interfaces.forEach(iface => {
-                        const prev = lastData.interfaces.find(p => p.index === iface.index);
-                        if (prev) {
-                            rxB += (iface.rx_bytes - prev.rx_bytes) * 8 / deltaTime;
-                            txB += (iface.tx_bytes - prev.tx_bytes) * 8 / deltaTime;
-                            rxP += (iface.rx_pkts - prev.rx_pkts) / deltaTime;
-                            txP += (iface.tx_pkts - prev.tx_pkts) / deltaTime;
-                            drP += (iface.drops - prev.drops) / deltaTime;
-                        }
-                    });
-                } else {
-                    const currIf = data.interfaces.find(i => i.index == currentInterface);
-                    const prevIf = lastData.interfaces.find(i => i.index == currentInterface);
-                    if (currIf && prevIf) {
-                        rxB = (currIf.rx_bytes - prevIf.rx_bytes) * 8 / deltaTime;
-                        txB = (currIf.tx_bytes - prevIf.tx_bytes) * 8 / deltaTime;
-                        rxP = (currIf.rx_pkts - prevIf.rx_pkts) / deltaTime;
-                        txP = (currIf.tx_pkts - prevIf.tx_pkts) / deltaTime;
-                        drP = (currIf.drops - prevIf.drops) / deltaTime;
+        // Calculate rates using deltas
+        if (lastData) {
+            const deltaTime = (data.timestamp - lastData.timestamp) / 1000 || 1;
+            let rxB = 0, txB = 0, rxP = 0, txP = 0, drP = 0;
+
+            if (currentInterface === "all") {
+                data.interfaces.forEach(iface => {
+                    const prev = lastData.interfaces.find(p => p.index === iface.index);
+                    if (prev) {
+                        rxB += Math.max(0, (iface.rx_bytes - prev.rx_bytes) * 8 / deltaTime);
+                        txB += Math.max(0, (iface.tx_bytes - prev.tx_bytes) * 8 / deltaTime);
+                        rxP += Math.max(0, (iface.rx_pkts - prev.rx_pkts) / deltaTime);
+                        txP += Math.max(0, (iface.tx_pkts - prev.tx_pkts) / deltaTime);
+                        drP += Math.max(0, (iface.drops - prev.drops) / deltaTime);
                     }
+                });
+            } else {
+                const currIf = data.interfaces.find(i => i.index == currentInterface);
+                const prevIf = lastData.interfaces.find(i => i.index == currentInterface);
+                if (currIf && prevIf) {
+                    rxB = Math.max(0, (currIf.rx_bytes - prevIf.rx_bytes) * 8 / deltaTime);
+                    txB = Math.max(0, (currIf.tx_bytes - prevIf.tx_bytes) * 8 / deltaTime);
+                    rxP = Math.max(0, (currIf.rx_pkts - prevIf.rx_pkts) / deltaTime);
+                    txP = Math.max(0, (currIf.tx_pkts - prevIf.tx_pkts) / deltaTime);
+                    drP = Math.max(0, (currIf.drops - prevIf.drops) / deltaTime);
                 }
-
-                const timeLabel = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                pushData(bpsChart, timeLabel, [rxB, txB]);
-                // Round PPS values to integers for the chart
-                pushData(ppsChart, timeLabel, [Math.round(rxP), Math.round(txP), Math.round(drP)]);
-                pushData(resourceChart, timeLabel, [cpuVal, memVal]);
             }
 
-            lastData = data;
-            lastTime = now;
-        } catch (e) { console.error("Update fail:", e); }
+            const timeLabel = new Date(data.timestamp).toLocaleTimeString([], {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            pushToChart(bpsChart, timeLabel, [rxB, txB]);
+            pushToChart(ppsChart, timeLabel, [rxP, txP, drP]);
+
+            if (!isHistoryReplay) {
+                pushToChart(resourceChart, timeLabel, [data.cpu_usage, data.mem_usage]);
+            }
+        }
+
+        lastData = data;
     }
 
-    function pushData(chart, label, values) {
+    function pushToChart(chart, label, values) {
         chart.data.labels.push(label);
-        values.forEach((v, i) => chart.data.datasets[i].data.push(v));
+        values.forEach((v, i) => {
+            chart.data.datasets[i].data.push(v);
+        });
+
         if (chart.data.labels.length > maxDataPoints) {
             chart.data.labels.shift();
             chart.data.datasets.forEach(d => d.data.shift());
         }
+
         chart.update('none');
     }
 
-    function changeInterface() {
-        currentInterface = document.getElementById('interfaceSelect').value;
-        [bpsChart, ppsChart].forEach(c => {
-            c.data.labels = [];
-            c.data.datasets.forEach(d => d.data = []);
-            c.update();
-        });
+    // ===== DATA FETCHING =====
+    async function loadDashboard() {
+        try {
+            const histRes = await fetch('/api/stats/history');
+            globalHistory = await histRes.json();
+
+            if (Array.isArray(globalHistory)) {
+                globalHistory.forEach(entry => processDataEntry(entry));
+            }
+
+            // Real-time polling
+            setInterval(async () => {
+                try {
+                    const res = await fetch('/api/stats');
+                    const data = await res.json();
+
+                    // Use timestamp from API if available, otherwise use current time
+                    if (!data.timestamp) {
+                        data.timestamp = Date.now();
+                    }
+
+                    globalHistory.push(data);
+                    if (globalHistory.length > maxDataPoints + 1) {
+                        globalHistory.shift();
+                    }
+
+                    processDataEntry(data);
+                } catch (err) {
+                    console.error("Polling error:", err);
+                }
+            }, 1000);
+
+        } catch (e) {
+            console.error("Dashboard initialization failed:", e);
+        }
     }
 
-    setInterval(updateDashboard, 1000);
-    updateDashboard();
+    // ===== INTERFACE SWITCHING =====
+    function changeInterface() {
+        currentInterface = document.getElementById('interfaceSelect').value;
+
+        // Clear charts
+        [bpsChart, ppsChart].forEach(chart => {
+            chart.data.labels = [];
+            chart.data.datasets.forEach(d => d.data = []);
+        });
+
+        // Reset delta calculation
+        lastData = null;
+
+        // Replay history with new interface
+        if (Array.isArray(globalHistory)) {
+            globalHistory.forEach(entry => processDataEntry(entry, true));
+        }
+
+        bpsChart.update();
+        ppsChart.update();
+    }
+
+    // ===== INITIALIZE =====
+    loadDashboard();
 </script>
 {{ end }}

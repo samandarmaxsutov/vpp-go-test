@@ -216,15 +216,6 @@ func (h *InterfaceHandler) DeleteInterface(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "deleted", "index": input.Index})
 }
 
-// GetStats - Global interfeys statistikalarini olish
-func (h *InterfaceHandler) GetStats(c *gin.Context) {
-	stats, err := h.VPP.GetGlobalStats()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Statistikani yuklash xatosi"})
-		return
-	}
-	c.JSON(http.StatusOK, stats)
-}
 
 func (h *InterfaceHandler) CreateTap(c *gin.Context) {
     var input struct {
